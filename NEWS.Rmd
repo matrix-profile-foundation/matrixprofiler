@@ -1,0 +1,26 @@
+---
+title: "NEWS"
+author: "Francisco Bischoff"
+date: "`r format(Sys.Date(), '- %d %b %Y')`"
+output:
+  github_document:
+    html_preview: false
+  md_document:
+    pandoc_args: [
+      "--output", "NEWS",
+      ]
+---
+
+<!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/NEWS-"
+)
+```
+
+# matrixprofiler 0.1.0
+
+* The beginning
