@@ -1,7 +1,7 @@
 NEWS
 ================
 Francisco Bischoff
-\- 04 Mar 2020
+\- 05 Mar 2020
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 

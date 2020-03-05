@@ -25,3 +25,4 @@
 ^matrixprofiler.*\.tar\.gz$
 ^matrixprofiler.*\.tgz$
 ^matrixprofiler\.Rcheck$
+^API$
