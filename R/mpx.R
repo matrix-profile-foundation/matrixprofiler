@@ -10,10 +10,16 @@
 #'
 #' @return Returns MP and MPI
 #' @export
+#'
+#' @examples
+#' \donttest{
+#' mp <- mpx(mp_toy_data$data[1:200, 1], window_size = 30)
+#' }
 
 mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean", "pearson"), n_workers = 1) {
 
   # Parse arguments ---------------------------------
+  "!!DEBUG Parsing Arguments"
   minlag <- floor(window_size / 2)
   dist <- match.arg(dist)
   checkmate::qassert(data, "N+")
@@ -31,6 +37,7 @@ mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean
   result <- NULL
 
   # Register anytime exit point
+  "!DEBUG Register anytime exit point"
   on.exit(
     if (is.null(result)) {
       return(invisible(NULL))
@@ -42,10 +49,13 @@ mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean
   )
 
   # Computation ------------------------------------
+  "!DEBUG Computation"
   if (is.null(query)) {
     ## Self-Join ====================================
+    "!DEBUG Self-Join"
     tryCatch(
       {
+        "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
           n_workers <- min(n_workers, p)
@@ -70,12 +80,15 @@ mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean
       },
       error = print
     )
+    "!DEBUG End Self-Join"
   } else {
     ## AB-Join ====================================
+    "!DEBUG AB-Join"
     ez <- 0
 
     tryCatch(
       {
+        "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
           n_workers <- min(n_workers, p)
@@ -100,5 +113,6 @@ mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean
       },
       error = print
     )
+    "!DEBUG End AB-Join"
   }
 }

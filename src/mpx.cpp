@@ -27,7 +27,7 @@ List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs = false, b
     IntegerVector seq_diag = Range(minlag, profile_len - 1);
 
     NumericVector mmp(profile_len, -1.0);
-    IntegerVector mmpi(profile_len, R_NaN);
+    IntegerVector mmpi(profile_len, R_NaN); // TODO: SANITIZE?
 
     double *mp = &mmp[0];
     int *mpi = &mmpi[0];
@@ -73,7 +73,7 @@ List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs = false, b
           }
         }
       }
-    } catch (internal::InterruptedException &ex) {
+    } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process terminated.\n";
     }
@@ -152,7 +152,7 @@ List mpxab_rcpp(NumericVector a, NumericVector b, uint16_t w, bool idxs = false,
     ddg_a.push_front(0);
     NumericVector ddf_b = 0.5 * (b[Range(w, b_len - 1)] - b[Range(0, b_len - w - 1)]);
     ddf_b.push_front(0);
-    NumericVector ddg_b = (b[Range(w, a_len - 1)] - mmu_b[Range(1, profile_len_b - 1)]) + (b[Range(0, b_len - w - 1)] - mmu_b[Range(0, b_len - w - 1)]);
+    NumericVector ddg_b = (b[Range(w, b_len - 1)] - mmu_b[Range(1, profile_len_b - 1)]) + (b[Range(0, b_len - w - 1)] - mmu_b[Range(0, b_len - w - 1)]);
     ddg_b.push_front(0);
 
     double *df_a = &ddf_a[0];
@@ -217,7 +217,7 @@ List mpxab_rcpp(NumericVector a, NumericVector b, uint16_t w, bool idxs = false,
           }
         }
       }
-    } catch (internal::InterruptedException &ex) {
+    } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout  << "Process terminated.\n";
     }
@@ -340,7 +340,7 @@ List mpx_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs =
 
     try {
       parallelFor(minlag, profile_len, matrix_profile, 100);
-    } catch (internal::InterruptedException &ex) {
+    } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process terminated.\n";
     }
@@ -404,15 +404,15 @@ struct MatrixProfilePAB : public Worker {
                    const NumericVector ww_a, const NumericVector ww_b,
                    NumericVector mp_a, NumericVector mp_b,
                    IntegerVector mpi_a, IntegerVector mpi_b) :
-                    a(a), b(b), w(w),
-                    df_a(df_a), df_b(df_b),
-                    dg_a(dg_a), dg_b(dg_b),
-                    mu_a(mu_a), mu_b(mu_b),
-                    sig_a(sig_a), sig_b(sig_b),
-                    ww_a(ww_a), ww_b(ww_b),
-                    mp_a(mp_a), mp_b(mp_b),
-                    mpi_a(mpi_a), mpi_b(mpi_b),
-                    ab_ba(0) {}
+    a(a), b(b), w(w),
+    df_a(df_a), df_b(df_b),
+    dg_a(dg_a), dg_b(dg_b),
+    mu_a(mu_a), mu_b(mu_b),
+    sig_a(sig_a), sig_b(sig_b),
+    ww_a(ww_a), ww_b(ww_b),
+    mp_a(mp_a), mp_b(mp_b),
+    mpi_a(mpi_a), mpi_b(mpi_b),
+    ab_ba(0) {}
 
 
 
@@ -523,7 +523,7 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
     dg_a.push_front(0);
     NumericVector df_b = 0.5 * (b[Range(w, b_len - 1)] - b[Range(0, b_len - w - 1)]);
     df_b.push_front(0);
-    NumericVector dg_b = (b[Range(w, a_len - 1)] - mu_b[Range(1, profile_len_b - 1)]) + (b[Range(0, b_len - w - 1)] - mu_b[Range(0, b_len - w - 1)]);
+    NumericVector dg_b = (b[Range(w, b_len - 1)] - mu_b[Range(1, profile_len_b - 1)]) + (b[Range(0, b_len - w - 1)] - mu_b[Range(0, b_len - w - 1)]);
     dg_b.push_front(0);
 
     NumericVector ww_a = (a[Range(0, w - 1)] - mu_a[0]);
@@ -540,7 +540,7 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
 
     try {
       parallelFor(0, profile_len_a, matrix_profile);
-    } catch (internal::InterruptedException &ex) {
+    } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process AB terminated.\n";
     }
@@ -552,7 +552,7 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
 
     try {
       parallelFor(0, profile_len_b, matrix_profile);
-    } catch (internal::InterruptedException &ex) {
+    } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process BA terminated.\n";
     }

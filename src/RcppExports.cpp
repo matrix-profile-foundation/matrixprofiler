@@ -5,6 +5,64 @@
 
 using namespace Rcpp;
 
+// mass_rcpp
+List mass_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t data_size, uint32_t window_size, NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd, Function fft);
+RcppExport SEXP _matrixprofiler_mass_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP fftSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< ComplexVector >::type data_fft(data_fftSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type query_window(query_windowSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type data_size(data_sizeSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data_mean(data_meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data_sd(data_sdSEXP);
+    Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
+    Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
+    Rcpp::traits::input_parameter< Function >::type fft(fftSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass_rcpp(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, fft));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mass2_rcpp
+List mass2_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t data_size, uint32_t window_size, NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd, Function fft);
+RcppExport SEXP _matrixprofiler_mass2_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP fftSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< ComplexVector >::type data_fft(data_fftSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type query_window(query_windowSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type data_size(data_sizeSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data_mean(data_meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data_sd(data_sdSEXP);
+    Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
+    Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
+    Rcpp::traits::input_parameter< Function >::type fft(fftSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass2_rcpp(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, fft));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mass3_rcpp
+List mass3_rcpp(NumericVector query_window, NumericVector data, uint32_t window_size, uint64_t data_size, NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd, Function fft, uint32_t k);
+RcppExport SEXP _matrixprofiler_mass3_rcpp(SEXP query_windowSEXP, SEXP dataSEXP, SEXP window_sizeSEXP, SEXP data_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP fftSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type query_window(query_windowSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type data_size(data_sizeSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data_mean(data_meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type data_sd(data_sdSEXP);
+    Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
+    Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
+    Rcpp::traits::input_parameter< Function >::type fft(fftSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass3_rcpp(query_window, data, window_size, data_size, data_mean, data_sd, query_mean, query_sd, fft, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // std_rcpp
 double std_rcpp(const NumericVector data, const bool na_rm);
 RcppExport SEXP _matrixprofiler_std_rcpp(SEXP dataSEXP, SEXP na_rmSEXP) {
@@ -219,6 +277,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_matrixprofiler_mass_rcpp", (DL_FUNC) &_matrixprofiler_mass_rcpp, 9},
+    {"_matrixprofiler_mass2_rcpp", (DL_FUNC) &_matrixprofiler_mass2_rcpp, 9},
+    {"_matrixprofiler_mass3_rcpp", (DL_FUNC) &_matrixprofiler_mass3_rcpp, 10},
     {"_matrixprofiler_std_rcpp", (DL_FUNC) &_matrixprofiler_std_rcpp, 2},
     {"_matrixprofiler_list_to_matrix", (DL_FUNC) &_matrixprofiler_list_to_matrix, 1},
     {"_matrixprofiler_diff_lag", (DL_FUNC) &_matrixprofiler_diff_lag, 2},
