@@ -139,7 +139,6 @@ List mass3_rcpp(NumericVector query_window, NumericVector data,
         d = 2 * (w_size - (z[Range(w_size - 1, jump - 1)] - w_size * d_mean[Range(idx_begin, idx_end)] * q_mean) / (d_std[Range(idx_begin, idx_end)] * q_std));
         std::copy(d.begin(), d.end(), dist_it + j);
         std::copy(z.begin() + w_size - 1, z.begin() + jump, last_it + j);
-        Rcout << "DEBUG: Finished. k=" << k <<std::endl;
       }
     }
   } catch (Rcpp::internal::InterruptedException &ex) {
