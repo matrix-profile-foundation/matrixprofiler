@@ -9,8 +9,12 @@ mass2_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean
     .Call(`_matrixprofiler_mass2_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, fft)
 }
 
-mass3_rcpp <- function(query_window, data, window_size, data_size, data_mean, data_sd, query_mean, query_sd, fft, k = 1024L) {
+mass3_rcpp <- function(query_window, data, window_size, data_size, data_mean, data_sd, query_mean, query_sd, fft, k) {
     .Call(`_matrixprofiler_mass3_rcpp`, query_window, data, window_size, data_size, data_mean, data_sd, query_mean, query_sd, fft, k)
+}
+
+mass_pre_rcpp <- function(data, query, window_size, fft) {
+    .Call(`_matrixprofiler_mass_pre_rcpp`, data, query, window_size, fft)
 }
 
 std_rcpp <- function(data, na_rm = FALSE) {
@@ -19,6 +23,10 @@ std_rcpp <- function(data, na_rm = FALSE) {
 
 list_to_matrix <- function(x) {
     .Call(`_matrixprofiler_list_to_matrix`, x)
+}
+
+which <- function(x) {
+    .Call(`_matrixprofiler_which`, x)
 }
 
 diff_lag <- function(x, lag = 1L) {
@@ -71,6 +79,14 @@ mpx_rcpp_parallel <- function(a, w, minlag, idxs = FALSE, euclidean = TRUE) {
 
 mpxab_rcpp_parallel <- function(a, b, w, idxs = FALSE, euclidean = TRUE) {
     .Call(`_matrixprofiler_mpxab_rcpp_parallel`, a, b, w, idxs, euclidean)
+}
+
+stamp_cpp <- function(data_ref, query_ref, window_size, ez) {
+    .Call(`_matrixprofiler_stamp_cpp`, data_ref, query_ref, window_size, ez)
+}
+
+stomp_cpp <- function(data_ref, query_ref, window_size, ez) {
+    .Call(`_matrixprofiler_stomp_cpp`, data_ref, query_ref, window_size, ez)
 }
 
 movmin <- function(data, window_size) {

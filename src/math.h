@@ -10,6 +10,7 @@ using namespace Rcpp;
 
 double        std_rcpp(const NumericVector data, const bool na_rm);
 NumericMatrix list_to_matrix(const List x); // unnused?
+IntegerVector which(LogicalVector x);
 NumericVector diff_lag(const NumericVector x, const uint32_t lag); // unnused?
 NumericVector diff2_lag(const NumericVector x, const uint32_t lag, const double v);
 NumericVector fast_movsd_rcpp(const NumericVector data, const uint32_t window_size);

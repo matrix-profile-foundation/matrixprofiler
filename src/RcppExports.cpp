@@ -63,6 +63,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mass_pre_rcpp
+List mass_pre_rcpp(const NumericVector data, const NumericVector query, uint32_t window_size, Function fft);
+RcppExport SEXP _matrixprofiler_mass_pre_rcpp(SEXP dataSEXP, SEXP querySEXP, SEXP window_sizeSEXP, SEXP fftSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type query(querySEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< Function >::type fft(fftSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass_pre_rcpp(data, query, window_size, fft));
+    return rcpp_result_gen;
+END_RCPP
+}
 // std_rcpp
 double std_rcpp(const NumericVector data, const bool na_rm);
 RcppExport SEXP _matrixprofiler_std_rcpp(SEXP dataSEXP, SEXP na_rmSEXP) {
@@ -83,6 +97,17 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const List >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(list_to_matrix(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// which
+IntegerVector which(LogicalVector x);
+RcppExport SEXP _matrixprofiler_which(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< LogicalVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(which(x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -251,6 +276,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// stamp_cpp
+List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez);
+RcppExport SEXP _matrixprofiler_stamp_cpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    rcpp_result_gen = Rcpp::wrap(stamp_cpp(data_ref, query_ref, window_size, ez));
+    return rcpp_result_gen;
+END_RCPP
+}
+// stomp_cpp
+List stomp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez);
+RcppExport SEXP _matrixprofiler_stomp_cpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    rcpp_result_gen = Rcpp::wrap(stomp_cpp(data_ref, query_ref, window_size, ez));
+    return rcpp_result_gen;
+END_RCPP
+}
 // movmin
 NumericVector movmin(NumericVector data, uint32_t window_size);
 RcppExport SEXP _matrixprofiler_movmin(SEXP dataSEXP, SEXP window_sizeSEXP) {
@@ -280,8 +333,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mass_rcpp", (DL_FUNC) &_matrixprofiler_mass_rcpp, 9},
     {"_matrixprofiler_mass2_rcpp", (DL_FUNC) &_matrixprofiler_mass2_rcpp, 9},
     {"_matrixprofiler_mass3_rcpp", (DL_FUNC) &_matrixprofiler_mass3_rcpp, 10},
+    {"_matrixprofiler_mass_pre_rcpp", (DL_FUNC) &_matrixprofiler_mass_pre_rcpp, 4},
     {"_matrixprofiler_std_rcpp", (DL_FUNC) &_matrixprofiler_std_rcpp, 2},
     {"_matrixprofiler_list_to_matrix", (DL_FUNC) &_matrixprofiler_list_to_matrix, 1},
+    {"_matrixprofiler_which", (DL_FUNC) &_matrixprofiler_which, 1},
     {"_matrixprofiler_diff_lag", (DL_FUNC) &_matrixprofiler_diff_lag, 2},
     {"_matrixprofiler_diff2_lag", (DL_FUNC) &_matrixprofiler_diff2_lag, 3},
     {"_matrixprofiler_fast_movsd_rcpp", (DL_FUNC) &_matrixprofiler_fast_movsd_rcpp, 2},
@@ -295,6 +350,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mpxab_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_rcpp, 5},
     {"_matrixprofiler_mpx_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_rcpp_parallel, 5},
     {"_matrixprofiler_mpxab_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_rcpp_parallel, 5},
+    {"_matrixprofiler_stamp_cpp", (DL_FUNC) &_matrixprofiler_stamp_cpp, 4},
+    {"_matrixprofiler_stomp_cpp", (DL_FUNC) &_matrixprofiler_stomp_cpp, 4},
     {"_matrixprofiler_movmin", (DL_FUNC) &_matrixprofiler_movmin, 2},
     {"_matrixprofiler_movmax", (DL_FUNC) &_matrixprofiler_movmax, 2},
     {NULL, NULL, 0}

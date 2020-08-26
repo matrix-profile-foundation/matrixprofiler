@@ -1,4 +1,5 @@
 #include "mass.h"
+#include "math.h"
 
 //[[Rcpp::export]]
 List mass_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t data_size,
@@ -6,8 +7,7 @@ List mass_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t data
                double query_mean, double query_sd, Function fft) {
 
   // pre-process query for fft
-
-  NumericVector rev_query(data_fft.length());
+  NumericVector rev_query(data_fft.length()); // use data_fft because is padded to a power of 2
   std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
 
   ComplexVector prod = data_fft * as<ComplexVector>(fft(rev_query));
@@ -33,7 +33,7 @@ List mass2_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t dat
 
   // pre-process query for fft
 
-  NumericVector rev_query(data_fft.length());
+  NumericVector rev_query(data_fft.length()); // use data_fft because is padded to a power of 2
   std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
 
   // compute the product
@@ -54,7 +54,7 @@ List mass2_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t dat
 List mass3_rcpp(NumericVector query_window, NumericVector data,
                 uint32_t window_size, uint64_t data_size, NumericVector data_mean,
                 NumericVector data_sd, double query_mean, double query_sd, Function fft,
-                uint32_t k = 1024) {
+                uint32_t k) {
 
   // data is the long time series
   // query_window is the query
@@ -67,7 +67,7 @@ List mass3_rcpp(NumericVector query_window, NumericVector data,
   }
 
   if (k <= window_size) {
-    k = pow(2,(ceil(log2(window_size)) + 1));
+    k = pow(2, (ceil(log2(window_size)) + 1));
     if (k > data_size) {
       k = data_size;
     }
@@ -129,7 +129,7 @@ List mass3_rcpp(NumericVector query_window, NumericVector data,
       uint64_t idx_begin = j;
       uint64_t idx_end = d_size - w_size;
 
-      if((jump - (w_size - 1) + j) > data_mean.length()) {
+      if ((jump - (w_size - 1) + j) > data_mean.length()) {
         Rcout << "DEBUG: error." << std::endl;
       } else {
         ComplexVector X = fft(data[Range(j, d_size - 1)]);
@@ -150,5 +150,43 @@ List mass3_rcpp(NumericVector query_window, NumericVector data,
   return (List::create(
             Rcpp::Named("distance_profile") = dist,
             Rcpp::Named("last_product") = last
+          ));
+}
+
+//[[Rcpp::export]]
+List mass_pre_rcpp(const NumericVector data, const NumericVector query, uint32_t window_size, Function fft) {
+
+  uint64_t data_size = data.length();
+  uint64_t query_size = query.length();
+
+  List data_avgsd = fast_avg_sd_rcpp(data, window_size); // precompute moving average and SD
+
+  uint32_t pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
+  NumericVector data_padded(pad_size);
+
+  std::copy(data.begin(), data.end(), data_padded.begin());
+
+  ComplexVector data_fft = as<ComplexVector>(fft(data_padded)); // precompute fft of data
+
+  NumericVector query_mean;
+  NumericVector query_sd;
+
+  if (query_size > 0) {
+    List query_avgsd = fast_avg_sd_rcpp(query, window_size); // precompute moving average and SD
+    query_mean = query_avgsd["avg"];
+    query_sd = query_avgsd["sd"];
+  } else {
+    query_mean = data_avgsd["avg"];
+    query_sd = data_avgsd["sd"];
+  }
+
+  return (List::create(
+            Rcpp::Named("window_size") = window_size,
+            Rcpp::Named("data_fft") = data_fft,
+            Rcpp::Named("data_size") = data_size,
+            Rcpp::Named("data_mean") = data_avgsd["avg"],
+            Rcpp::Named("data_sd") = data_avgsd["sd"],
+            Rcpp::Named("query_mean") = query_mean,
+            Rcpp::Named("query_sd") = query_sd
           ));
 }

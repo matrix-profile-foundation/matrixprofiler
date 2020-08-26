@@ -47,6 +47,21 @@ NumericMatrix list_to_matrix(const List x){
   return(m);
 }
 
+// [[Rcpp::export]]
+IntegerVector which(LogicalVector x) {
+
+  int nx = x.size();
+  std::vector<int> y;
+  y.reserve(nx);
+
+  for(int i = 0; i < nx; i++) {
+    if (x[i] == true)
+      y.push_back(i);
+  }
+
+  return wrap(y);
+}
+
 //[[Rcpp::export]]
 NumericVector diff_lag(const NumericVector x, const uint32_t lag = 1){
   uint32_t n = x.size();

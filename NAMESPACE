@@ -2,6 +2,7 @@
 
 export("%>%")
 export("%T>%")
+export(mass_pre)
 export(mass_v1)
 export(mass_v3)
 export(mpx)

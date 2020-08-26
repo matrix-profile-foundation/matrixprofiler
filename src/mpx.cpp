@@ -87,15 +87,15 @@ List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs = false, b
 
     if (idxs) {
       return (List::create(
-          Rcpp::Named("mp") = mmp,
-          Rcpp::Named("pi") = mmpi,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mmp,
+                Rcpp::Named("pi") = mmpi,
+                Rcpp::Named("partial") = partial
+              ));
     } else {
       return (List::create(
-          Rcpp::Named("mp") = mmp,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mmp,
+                Rcpp::Named("partial") = partial
+              ));
     }
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -233,18 +233,18 @@ List mpxab_rcpp(NumericVector a, NumericVector b, uint16_t w, bool idxs = false,
 
     if (idxs) {
       return (List::create(
-          Rcpp::Named("mp") = mmp_a,
-          Rcpp::Named("pi") = mmpi_a,
-          Rcpp::Named("mpb") = mmp_b,
-          Rcpp::Named("pib") = mmpi_b,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mmp_a,
+                Rcpp::Named("pi") = mmpi_a,
+                Rcpp::Named("mpb") = mmp_b,
+                Rcpp::Named("pib") = mmpi_b,
+                Rcpp::Named("partial") = partial
+              ));
     } else {
       return (List::create(
-          Rcpp::Named("mp") = mmp_a,
-          Rcpp::Named("mpb") = mmp_b,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mmp_a,
+                Rcpp::Named("mpb") = mmp_b,
+                Rcpp::Named("partial") = partial
+              ));
     }
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -354,15 +354,15 @@ List mpx_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs =
 
     if (idxs) {
       return (List::create(
-          Rcpp::Named("mp") = mp,
-          Rcpp::Named("pi") = mpi,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mp,
+                Rcpp::Named("pi") = mpi,
+                Rcpp::Named("partial") = partial
+              ));
     } else {
       return (List::create(
-          Rcpp::Named("mp") = mp,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mp,
+                Rcpp::Named("partial") = partial
+              ));
     }
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -432,7 +432,7 @@ struct MatrixProfilePAB : public Worker {
     uint32_t b_len = b.length();
     std::vector<double> inn(w);
 
-    if(ab_ba == 0) {
+    if (ab_ba == 0) {
 
       for (uint32_t diag = begin; diag < end; diag++) {
 
@@ -568,18 +568,18 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
 
     if (idxs) {
       return (List::create(
-          Rcpp::Named("mp") = mp_a,
-          Rcpp::Named("pi") = mpi_a,
-          Rcpp::Named("mpb") = mp_b,
-          Rcpp::Named("pib") = mpi_b,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mp_a,
+                Rcpp::Named("pi") = mpi_a,
+                Rcpp::Named("mpb") = mp_b,
+                Rcpp::Named("pib") = mpi_b,
+                Rcpp::Named("partial") = partial
+              ));
     } else {
       return (List::create(
-          Rcpp::Named("mp") = mp_a,
-          Rcpp::Named("mpb") = mp_b,
-          Rcpp::Named("partial") = partial
-      ));
+                Rcpp::Named("mp") = mp_a,
+                Rcpp::Named("mpb") = mp_b,
+                Rcpp::Named("partial") = partial
+              ));
     }
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
