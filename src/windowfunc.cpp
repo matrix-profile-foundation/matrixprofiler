@@ -15,7 +15,29 @@
 #include "windowfunc.h"
 
 //[[Rcpp::export]]
-NumericVector movmin(NumericVector data, uint32_t window_size) {
+NumericVector movsum(NumericVector data, uint32_t window_size) {
+  uint32_t data_size = data.length();
+
+  NumericVector result(data_size - window_size + 1);
+
+  /* Raw sum to start running sum */
+  double seed = 0.0;
+  for (uint32_t i = 0; i < window_size; i++) {
+    seed += data[i];
+  }
+
+  result[0] = seed;
+
+  /* Loop over non-NA input values */
+  for (uint32_t i = window_size; i < data_size; i++) {
+    result[i - window_size + 1] = result[i - window_size] + data[i] - data[i - window_size];
+  }
+
+  return result;
+}
+
+//[[Rcpp::export]]
+NumericVector movmin(const NumericVector data, uint32_t window_size) {
   uint32_t data_size = data.length();
 
   if (window_size <= 1) {
@@ -56,7 +78,7 @@ NumericVector movmin(NumericVector data, uint32_t window_size) {
 }
 
 //[[Rcpp::export]]
-NumericVector movmax(NumericVector data, uint32_t window_size) {
+NumericVector movmax(const NumericVector data, uint32_t window_size) {
   uint32_t data_size = data.length();
 
   if (window_size <= 1) {
@@ -94,4 +116,31 @@ NumericVector movmax(NumericVector data, uint32_t window_size) {
   }
 
   return out;
+}
+
+
+//[[Rcpp::export]]
+NumericVector mov_mean_online_rcpp(const NumericVector data, uint32_t window_size, double eps = 0.19) {
+
+  uint32_t data_size = data.length();
+
+  double w = window_size;
+  double alpha = pow(eps, 1 / w);
+  NumericVector out(data_size - window_size + 1);
+
+  double n = 0.0;
+  double sum = 0.0;
+
+  for (uint32_t i = 0; i < data_size; i++) {
+    sum = sum * alpha + data[i];
+    n = n * alpha + 1;
+
+    if (i >= window_size) {
+      out[i - window_size] = sum / n;
+    }
+  }
+
+  out[data_size - window_size] = sum / n;
+
+  return (out);
 }

@@ -10,7 +10,7 @@ using namespace Rcpp;
 
 double        std_rcpp(const NumericVector data, const bool na_rm);
 NumericMatrix list_to_matrix(const List x); // unnused?
-IntegerVector which(LogicalVector x);
+IntegerVector which(const LogicalVector x);
 NumericVector diff_lag(const NumericVector x, const uint32_t lag); // unnused?
 NumericVector diff2_lag(const NumericVector x, const uint32_t lag, const double v);
 NumericVector fast_movsd_rcpp(const NumericVector data, const uint32_t window_size);
@@ -18,9 +18,9 @@ List          fast_avg_sd_rcpp(const NumericVector data, const uint32_t window_s
 int32_t       mode_rcpp(const NumericVector x);
 NumericVector znorm_rcpp(const NumericVector data);
 NumericVector binary_split_rcpp(const uint32_t n);
-double        inner_product(NumericVector a, NumericVector b);
-double        sum_of_squares(NumericVector a);
-NumericVector sum2s_rcpp(NumericVector a, uint32_t w);
-List          muinvn_rcpp(NumericVector a, uint32_t w);
+double        inner_product(const NumericVector a, const NumericVector b);
+double        sum_of_squares(const NumericVector a);
+NumericVector sum2s_rcpp(const NumericVector a, uint32_t w);
+List          muinvn_rcpp(const NumericVector a, uint32_t w);
 
 #endif // __MATH__

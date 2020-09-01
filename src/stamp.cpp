@@ -4,7 +4,7 @@
 
 // [[Rcpp::export]]
 List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
-           double ez) {
+               double ez) {
 
   double exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
@@ -17,7 +17,7 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
   LogicalVector skip_location(matrix_profile_size);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
-    NumericVector range = data_ref[Range(i,(i + window_size - 1))];
+    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
       skip_location[i] = true;
     }
@@ -35,41 +35,48 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
   IntegerVector profile_index(matrix_profile_size, R_NegInf);
   Environment stats = Environment::namespace_env("stats");
   Function fft = stats["fft"];
-  List pre = mass_pre_rcpp(data, query, window_size, fft);
+  List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
   order = sample(order, num_queries);
 
-  for (int32_t i : order) {
+  uint32_t k = find_best_k(data, query, window_size);
 
-    List nn = mass2_rcpp(pre["data_fft"], query[Range(i, i + window_size - 1)],
-                         pre["data_size"], pre["window_size"], pre["data_mean"], pre["data_sd"],
-                         as<NumericVector>(pre["query_mean"])[i], as<NumericVector>(pre["query_sd"])[i], fft);
+  try {
+    for (int32_t i : order) {
+      List nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"],
+                           pre["data_mean"], pre["data_sd"], as<NumericVector>(pre["query_mean"])[i],
+                           as<NumericVector>(pre["query_sd"])[i], fft, k);
 
-    NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
+      NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
 
-// apply exclusion zone
-    if (exclusion_zone > 0) {
-      uint64_t exc_st = MAX(0, i - exclusion_zone);
-      uint64_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
-      IntegerVector dp_range = Range(exc_st, exc_ed);
-      distance_profile[dp_range] = R_PosInf;
+      // apply exclusion zone
+      if (exclusion_zone > 0) {
+        uint64_t exc_st = MAX(0, i - exclusion_zone);
+        uint64_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
+        IntegerVector dp_range = Range(exc_st, exc_ed);
+        distance_profile[dp_range] = R_PosInf;
+      }
+
+      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
+      if (skip_location[i] || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+        distance_profile.fill(R_PosInf);
+      }
+      distance_profile[skip_location] = R_PosInf;
+
+      // normal matrix_profile
+      LogicalVector idx = (distance_profile < matrix_profile);
+      matrix_profile[idx] = distance_profile[idx];
+      profile_index[which(idx)] = i + 1;
     }
-
-    distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
-    if (skip_location[i] || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
-      distance_profile.fill(R_PosInf);
-    }
-    distance_profile[skip_location] = R_PosInf;
-
-    // normal matrix_profile
-    LogicalVector idx = (distance_profile < matrix_profile);
-    matrix_profile[idx] = distance_profile[idx];
-    profile_index[which(idx)] = i + 1;
+  } catch (Rcpp::internal::InterruptedException &ex) {
+    Rcout << "Process terminated." << std::endl;
+  } catch (...) {
+    ::Rf_error("c++ exception (unknown reason)");
   }
 
   return (List::create(
-      Rcpp::Named("matrix_profile") = matrix_profile,
-      Rcpp::Named("profile_index") = profile_index
-  ));
+            Rcpp::Named("matrix_profile") = matrix_profile,
+            Rcpp::Named("profile_index") = profile_index
+          ));
 }
