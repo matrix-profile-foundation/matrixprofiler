@@ -31,8 +31,6 @@ List stomp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector profile_index(matrix_profile_size, R_NegInf);
-  Environment stats = Environment::namespace_env("stats");
-  Function fft = stats["fft"];
 
   uint32_t k = find_best_k(data, query, window_size);
 
@@ -40,13 +38,13 @@ List stomp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
   List rpre = mass_pre_rcpp(query, data, window_size);
   List nn = mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], rpre["window_size"],
                        pre["data_mean"], pre["data_sd"], as<NumericVector>(pre["query_mean"])[0],
-                       as<NumericVector>(pre["query_sd"])[0], fft, k);
+                       as<NumericVector>(pre["query_sd"])[0], k);
 
 
   ///// This is needed for JOIN similarity
   List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"],
                         rpre["data_mean"], rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0],
-                        as<NumericVector>(rpre["query_sd"])[0], fft, k);
+                        as<NumericVector>(rpre["query_sd"])[0], k);
 
   NumericVector first_product = rnn["last_product"];
 

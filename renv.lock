@@ -739,6 +739,13 @@
       "Repository": "CRAN",
       "Hash": "a4b9662282097d1033c60420dcb83350"
     },
+    "tsmp": {
+      "Package": "tsmp",
+      "Version": "0.4.14",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c9db5f103e4c0c8400ddb5fc4ee2124c"
+    },
     "usethis": {
       "Package": "usethis",
       "Version": "1.6.1.9001",

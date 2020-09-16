@@ -55,7 +55,7 @@ Imports:
     progress,
     Rcpp,
     RcppParallel,
-    RJSONIO
+    RJSONIO,
 Suggests:
     covr,
     gdtools,

@@ -22,5 +22,7 @@ double        inner_product(const NumericVector a, const NumericVector b);
 double        sum_of_squares(const NumericVector a);
 NumericVector sum2s_rcpp(const NumericVector a, uint32_t w);
 List          muinvn_rcpp(const NumericVector a, uint32_t w);
+ComplexVector fft_rcpp(const ComplexVector z, bool invert = false);
+ComplexVector fft_rcpp(const NumericVector z, bool invert = false);
 
 #endif // __MATH__

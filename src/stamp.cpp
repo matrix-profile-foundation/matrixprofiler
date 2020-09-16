@@ -33,8 +33,6 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector profile_index(matrix_profile_size, R_NegInf);
-  Environment stats = Environment::namespace_env("stats");
-  Function fft = stats["fft"];
   List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
@@ -46,7 +44,7 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
     for (int32_t i : order) {
       List nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"],
                            pre["data_mean"], pre["data_sd"], as<NumericVector>(pre["query_mean"])[i],
-                           as<NumericVector>(pre["query_sd"])[i], fft, k);
+                           as<NumericVector>(pre["query_sd"])[i], k);
 
       NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
 

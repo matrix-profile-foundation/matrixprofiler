@@ -1,4 +1,5 @@
 #include "math.h"
+#include "fft.h"
 
 //[[Rcpp::export]]
 double std_rcpp(const NumericVector data, const bool na_rm = false) {
@@ -266,4 +267,37 @@ List muinvn_rcpp(const NumericVector a, uint32_t w) {
             Rcpp::Named("avg") = mu,
             Rcpp::Named("sig") = sig
           ));
+}
+
+// Version compatible with RCPP code
+ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
+
+  ComplexVector result;
+  int n = z.length();
+  std::vector<std::complex<double>> zz(n);
+
+  for(int i = 0; i < n; i++) {
+    zz[i].real(z[i].r);
+    zz[i].imag(z[i].i);
+  }
+
+  result = wrap(fftw(zz, invert));
+
+  return result;
+}
+
+ComplexVector fft_rcpp(const NumericVector z, bool invert) {
+
+  ComplexVector result;
+  int n = z.length();
+  std::vector<std::complex<double>> zz(n);
+
+  for(int i = 0; i < n; i++) {
+    zz[i].real(z[i]);
+    zz[i].imag(0.0);
+  }
+
+  result = wrap(fftw(zz, invert));
+
+  return result;
 }
