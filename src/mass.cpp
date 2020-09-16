@@ -170,17 +170,17 @@ struct MassWorker : public Worker {
         for (uint64_t i = w_size; i > 0; i--, j++) {
           rev_query[i-1] = std::complex<double>(window_ref[j], 0.0);
         }
-         Y = fftw(rev_query);                            ////////// FFT
+         Y = rev_query;//fftw(rev_query);                            ////////// FFT
     }
     m.unlock();
 
     if (Y.size() == 0)
       std::cout << "DEBUG5: " << begin << "_" << end << std::endl;
 
-    std::vector<std::complex<double>> X = fftw(data); ////////// FFT
+    std::vector<std::complex<double>> X = data;//fftw(data); ////////// FFT
     std::vector<std::complex<double>> Z(X.size());
     std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
-    std::vector<std::complex<double>> z = fftw(Z, true); ////////// FFT
+    std::vector<std::complex<double>> z = Z;// fftw(Z, true); ////////// FFT
     //
     // // std::cout << "DEBUG6: " << begin << "_" << end << std::endl;
     //

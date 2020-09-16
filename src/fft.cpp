@@ -151,12 +151,12 @@ inline int imin2(int x, int y) {
    factor any positive int n, up to 2^31 - 1.
 */
 
-static int old_n = 0;
-static int nfac[20];
-static int m_fac;
-static int kt;
-static int maxf;
-static int maxp;
+int old_n = 0;
+int nfac[20];
+int m_fac;
+int kt;
+int maxf;
+int maxp;
 
 void fftmx(double *a, double *b, int ntot, int n, int nspan, int isn,
                   int m, int kt, double *at, double *ck, double *bt, double *sk,
@@ -925,8 +925,6 @@ std::vector<std::complex<double>> fftw(std::vector<std::complex<double>> z, bool
   size_t smaxf;
   size_t maxsize = ((size_t) - 1) / 4;
 
-  // std::cout << "cplx 1" << std::endl;
-
   n = z.size();
 
   if (inverse) {
@@ -938,15 +936,13 @@ std::vector<std::complex<double>> fftw(std::vector<std::complex<double>> z, bool
   }
   std::vector<std::complex<double>> res(n);
 
-  return res;
-
   if (n > 1) {
     fft_factor(n, &maxf, &maxp);
     if (maxf == 0) {
       std::cout << "fft factorization error" << std::endl;
     }
 
-        smaxf = maxf;
+    smaxf = maxf;
     if (smaxf > maxsize) {
       std::cout << "fft too large" << std::endl;
     }
@@ -954,6 +950,7 @@ std::vector<std::complex<double>> fftw(std::vector<std::complex<double>> z, bool
     work = (double *)std::calloc(4 * smaxf, sizeof(double));
     iwork = (int *)std::calloc(maxp, sizeof(int));
     cplx = (complex_t *)std::calloc(n, sizeof(complex_t));
+
     for (i = 0; i < n; i++) {
       cplx[i].r = z[i].real();
       cplx[i].i = z[i].imag();
@@ -962,7 +959,7 @@ std::vector<std::complex<double>> fftw(std::vector<std::complex<double>> z, bool
     fft_work(&cplx[0].r, &cplx[0].i, 1, n, 1, inv, work, iwork);
 
     for (i = 0; i < n; i++) {
-      res[i] = std::complex<double>(cplx[i].r, cplx[i].i) / f;
+      res[i] = std::complex<double>(cplx[i].r / f, cplx[i].i / f);
     }
   }
 
