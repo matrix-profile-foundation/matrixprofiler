@@ -1,6 +1,7 @@
 matrixprofiler_default_options <- list(
   matrixprofiler.verbose = 2,
-  matrixprofiler.exclusion_zone = 1 / 2
+  matrixprofiler.exclusion_zone = 1 / 2,
+  matrixprofiler.workers = 2
 )
 
 .onLoad <- function(libname, pkgname) {
@@ -23,6 +24,6 @@ matrixprofiler_default_options <- list(
   packageStartupMessage("Welcome to Matrix ProfileR")
 }
 
-.onDetach  <- function(libname, pkgname) {
+.onDetach <- function(libname, pkgname) {
   unloadNamespace("debugme")
 }

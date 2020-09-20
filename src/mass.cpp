@@ -2,11 +2,14 @@
 #include "fft.h"
 #include "math.h"
 #include "windowfunc.h"
-#include "tbb/mutex.h"
 #include <Rcpp/Benchmark/Timer.h>
+#if RCPP_PARALLEL_USE_TBB
+#include "tbb/mutex.h"
+#else
+#include "tthread/fast_mutex.h"
+#endif
 
 // #### MASS functions ####
-
 //[[Rcpp::export]]
 List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
                         uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
@@ -30,7 +33,7 @@ List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_
   std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
 
   ComplexVector prod = data_fft * fft_rcpp(rev_weight * rev_query);
-  NumericVector data_queryw = Re(fft_rcpp(prod, true));
+  NumericVector data_queryw = Re(fft_rcpp(prod, true)) / prod.length();
 
   IntegerVector range_d = Range(window_size - 1, data_size - 1);
 
@@ -59,7 +62,7 @@ List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_
 
     // compute the product
     ComplexVector prod = data_fft * fft_rcpp(rev_query);
-    NumericVector z = Re(fft_rcpp(prod, true));
+    NumericVector z = Re(fft_rcpp(prod, true)) / prod.length();
     // compute the distance profile
     IntegerVector range_z = Range(window_size - 1, data_size - 1);
     IntegerVector range_d = Range(0, data_size - window_size);
@@ -92,7 +95,7 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
 
     // compute the product
     ComplexVector prod = data_fft * fft_rcpp(rev_query);
-    NumericVector z = Re(fft_rcpp(prod, true));
+    NumericVector z = Re(fft_rcpp(prod, true)) / prod.length();
     // compute the distance profile
     last_product = z[Range(window_size - 1, data_size - 1)];
     distance_profile = 2 * (window_size - (last_product - window_size * data_mean * query_mean) / (data_sd * query_sd));
@@ -123,37 +126,39 @@ struct MassWorker : public Worker {
   const RVector<double> d_std;
   const double q_mean;
   const double q_std;
+
+#if RCPP_PARALLEL_USE_TBB
   tbb::mutex m;
-  // output
-  RVector<double> dp;
+#else
+  tthread::fast_mutex m;
+#endif
 
   std::vector<std::complex<double>> Y;
+  // output
+  RVector<double> dp;
+  RVector<double> lp;
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
   MassWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size, const uint64_t d_size,
              const NumericVector d_mean, const NumericVector d_std, const double q_mean,
              const double q_std,
-             NumericVector dp) :
+             NumericVector dp, NumericVector lp) :
     data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-    q_mean(q_mean), q_std(q_std), dp(dp) {}
+    q_mean(q_mean), q_std(q_std), dp(dp), lp(lp) {}
 
   // function call operator that work for the specified range (begin/end)
   void operator()(std::size_t begin, std::size_t end) {
-
-    // std::cout << "DEBUG1: " << begin << "_" << end << std::endl;
-
     uint64_t jump = end - begin;
     uint64_t k = jump + w_size - 1;
     uint64_t s = pow(2, (ceil(log2(k))));
-    //
-    // // std::cout << "DEBUG2: " << begin << "_" << end << std::endl;
-    //
+
+    FFT::fftw *fft = new FFT::fftw();
+
     if (end > d_size - w_size) { // Last
       jump = (d_size - w_size + 1) /*end*/ - begin;
       k = end - begin;
     }
-    // // std::cout << "DEBUG3: " << begin << "_" << end << std::endl;
 
     std::vector<std::complex<double>> data(s);
 
@@ -161,7 +166,6 @@ struct MassWorker : public Worker {
       data[i] = std::complex<double>(data_ref[begin + i], 0.0);
     }
 
-    // // std::cout << "DEBUG4: " << begin << "_" << end << std::endl;
     m.lock();
     if (Y.size() == 0) {
         std::vector<std::complex<double>> rev_query(s);
@@ -170,50 +174,46 @@ struct MassWorker : public Worker {
         for (uint64_t i = w_size; i > 0; i--, j++) {
           rev_query[i-1] = std::complex<double>(window_ref[j], 0.0);
         }
-         Y = rev_query;//fftw(rev_query);                            ////////// FFT
+        Y = fft->fft(rev_query, false);
     }
     m.unlock();
 
-    if (Y.size() == 0)
-      std::cout << "DEBUG5: " << begin << "_" << end << std::endl;
-
-    std::vector<std::complex<double>> X = data;//fftw(data); ////////// FFT
+    std::vector<std::complex<double>> X = fft->fft(data, false);
     std::vector<std::complex<double>> Z(X.size());
     std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
-    std::vector<std::complex<double>> z = Z;// fftw(Z, true); ////////// FFT
-    //
-    // // std::cout << "DEBUG6: " << begin << "_" << end << std::endl;
-    //
+    std::vector<std::complex<double>> z = fft->fft(Z, true);
+
     for (uint64_t i = 0; i < jump; i++) {
       dp[begin + i] = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean)
                            / (d_std[begin + i] * q_std));
+      lp[begin + i] = z[k - jump + i].real();
     }
-    // std::cout << "DEBUG7: " << begin << "_" << end << std::endl;
+    delete(fft);
   }
 };
 
 //[[Rcpp::export]]
-NumericVector parallel_mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
+List mass3_parallel_rcpp(const NumericVector query_window, const NumericVector data_ref,
                                   uint64_t data_size, uint32_t window_size, const NumericVector data_mean,
-                                  const NumericVector data_sd, double query_mean, double query_sd, uint16_t k = 8192) {
+                                  const NumericVector data_sd, double query_mean, double query_sd, uint16_t k) {
   try {
-    k = set_k(k, data_size, window_size);
+    k = set_k_rcpp(k, data_size, window_size);
 
     // allocate the output matrix
-    NumericVector output(data_mean.length());
+    NumericVector distance_profile(data_mean.length());
+    NumericVector last_product(data_mean.length());
 
     // SquareRoot functor (pass input and output matrixes)
     MassWorker mass_worker(data_ref, query_window, window_size, data_size, data_mean,
-                           data_sd, query_mean, query_sd, output);
+                           data_sd, query_mean, query_sd, distance_profile, last_product);
 
   // call parallelFor to do the work
-
     RcppParallel::parallelFor(0, data_size, mass_worker, k);
 
-    // return the output matrix
-    return output;
-  } catch( tbb::captured_exception& ex ) {
-    ::Rf_error("captured_exception\\n");
+    return (List::create(
+        Rcpp::Named("distance_profile") = distance_profile,
+        Rcpp::Named("last_product") = last_product
+    ));
   } catch( std::out_of_range& ex ) {
     ::Rf_error("out_of_range\\n");
   } catch (...) {
@@ -241,7 +241,7 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
   NumericVector last(data_mean.length());
   NumericVector::iterator last_it = last.begin();
 
-  k = set_k(k, d_size, w_size);
+  k = set_k_rcpp(k, d_size, w_size);
 
   // compute query_window stats -- O(d_size)
   double q_mean = query_mean;
@@ -317,7 +317,7 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
 }
 
 //[[Rcpp::export]]
-uint32_t set_k(uint32_t k, uint64_t data_size, uint64_t window_size) {
+uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size) {
 
   try {
     if (k > data_size) {
@@ -341,9 +341,9 @@ uint32_t set_k(uint32_t k, uint64_t data_size, uint64_t window_size) {
 }
 
 //[[Rcpp::export]]
-uint32_t find_best_k(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size) {
+uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size) {
   uint64_t data_size = data_ref.length();
-  uint32_t k = set_k(window_size, data_size, window_size); // Set baseline
+  uint32_t k = set_k_rcpp(window_size, data_size, window_size); // Set baseline
   uint64_t best_time = pow(2, 50);
   uint32_t best_k = k;
   List pre = mass_pre_rcpp(data_ref, query_ref, window_size);
@@ -500,10 +500,10 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
 
   IntegerVector range_s = Range(window_size - 1, data_size - 1);
 
-  NumericVector data_w = Re(fft_rcpp(data_fft_w_fft, true));
+  NumericVector data_w = Re(fft_rcpp(data_fft_w_fft, true)) / data_fft_w_fft.length();
   ComplexVector data2_fft = fft_rcpp(pow(data_padded, 2));
   ComplexVector data2_fft_w_fft = data2_fft * w_fft;
-  NumericVector data2_w = Re(fft_rcpp(data2_fft_w_fft, true));
+  NumericVector data2_w = Re(fft_rcpp(data2_fft_w_fft, true)) / data2_fft_w_fft.length();
   NumericVector sumxw2 = data2_w[range_s];
   NumericVector sumxw = data_w[range_s];
 

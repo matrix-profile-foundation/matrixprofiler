@@ -32,7 +32,7 @@ List stomp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector profile_index(matrix_profile_size, R_NegInf);
 
-  uint32_t k = find_best_k(data, query, window_size);
+  uint32_t k = find_best_k_rcpp(data, query, window_size);
 
   List pre = mass_pre_rcpp(data, query, window_size);
   List rpre = mass_pre_rcpp(query, data, window_size);

@@ -54,16 +54,7 @@ mass_v3 <- function(query_window, data, window_size, data_size, data_mean, data_
     k <- 1024
   }
 
-  if (k > data_size) {
-    k <- 2^ceiling(log2(sqrt(data_size)))
-  }
-
-  if (k <= window_size) {
-    k <- 2^(ceiling(log2(window_size)) + 1)
-    if (k > data_size) {
-      k <- data_size
-    }
-  }
+  k <- set_k(k, data_size, window_size)
 
   # pre-process query for fft
   query_window <- rev(query_window)
@@ -107,4 +98,55 @@ mass_v3 <- function(query_window, data, window_size, data_size, data_mean, data_
   distance_profile[distance_profile < 0] <- 0
 
   return(list(distance_profile = distance_profile, last_product = last_product))
+}
+
+set_k <- function(k, data_size, window_size) {
+  if (k > data_size) {
+    k <- 2^ceiling(log2(sqrt(data_size)))
+  }
+
+  if (k <= window_size) {
+    k <- 2^(ceiling(log2(window_size)) + 1)
+    if (k > data_size) {
+      k <- data_size
+    }
+  }
+
+  return(k)
+}
+
+find_best_k <- function(data_ref, query_ref, window_size) {
+  data_size <- length(data_ref)
+  k <- set_k(window_size, data_size, window_size) # Set baseline
+  best_time <- 2^50
+  best_k <- k
+  pre <- mass_pre(data_ref, query_ref, window_size)
+
+
+  for (j in 1:10) {
+    tictoc <- Sys.time()
+    for (i in 1:10) {
+      nn <- mass_v3(
+        query_ref[i:(i + window_size - 1)], data_ref, pre$window_size,
+        pre$data_size,
+        pre$data_mean,
+        pre$data_sd,
+        pre$query_mean[i],
+        pre$query_sd[i], k
+      )
+    }
+    time_res <- Sys.time() - tictoc
+    if (time_res < best_time) {
+      best_time <- time_res
+      best_k <- k
+      k <- k * 2
+      if (k > data_size) {
+        break
+      }
+    } else {
+      break
+    }
+  }
+
+  return(best_k)
 }

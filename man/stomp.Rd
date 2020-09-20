@@ -4,12 +4,7 @@
 \alias{stomp}
 \title{Univariate STOMP algorithm}
 \usage{
-stomp(
-  ...,
-  window_size,
-  exclusion_zone = getOption("tsmp.exclusion_zone", 1/2),
-  verbose = getOption("tsmp.verbose", 2)
-)
+stomp(..., window_size, exclusion_zone = 1/2, verbose = 2)
 }
 \arguments{
 \item{\dots}{a \code{matrix} or a \code{vector}. If a second time series is supplied it will be a join matrix
@@ -66,5 +61,9 @@ Joins. Icdm. 2016 Jan 22;54(1):739-48.
 }
 
 Website: \url{http://www.cs.ucr.edu/~eamonn/MatrixProfile.html}
+}
+\seealso{
+Other matrix profile computations: 
+\code{\link{stamp}()}
 }
 \concept{matrix profile computations}

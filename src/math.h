@@ -5,8 +5,12 @@
 
 using namespace Rcpp;
 
-#define MIN(y,x) ((x)<(y) && (x)==(x) ? (x) : (y))
-#define MAX(y,x) ((x)>(y) && (x)==(x) ? (x) : (y))
+#ifndef MIN
+#define MIN(y, x) ((x) < (y) && (x) == (x) ? (x) : (y))
+#endif
+#ifndef MAX
+#define MAX(y, x) ((x) > (y) && (x) == (x) ? (x) : (y))
+#endif
 
 double        std_rcpp(const NumericVector data, const bool na_rm);
 NumericMatrix list_to_matrix(const List x); // unnused?
@@ -24,5 +28,9 @@ NumericVector sum2s_rcpp(const NumericVector a, uint32_t w);
 List          muinvn_rcpp(const NumericVector a, uint32_t w);
 ComplexVector fft_rcpp(const ComplexVector z, bool invert = false);
 ComplexVector fft_rcpp(const NumericVector z, bool invert = false);
+ComplexVector fft_rcpp_debug(const ComplexVector z);
+ComplexVector fft_rcpp_debug2(const ComplexVector z, Function stats_fft);
+ComplexVector fft_rcpp_debug3(const ComplexVector z, bool invert);
+std::vector<std::complex<double>> fftw_rcpp_debug(const std::vector<std::complex<double>> z);
 
 #endif // __MATH__

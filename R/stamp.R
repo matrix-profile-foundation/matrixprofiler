@@ -1,15 +1,17 @@
-#' Univariate STOMP algorithm
+#' Anytime univariate STAMP algorithm
 #'
-#' Computes the Matrix Profile and Profile Index for Univariate Time Series.
+#' Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
 #'
 #' @details
 #' The Matrix Profile, has the potential to revolutionize time series data mining because of its
 #' generality, versatility, simplicity and scalability. In particular it has implications for time
 #' series motif discovery, time series joins, shapelet discovery (classification), density
-#' estimation, semantic segmentation, visualization, rule discovery, clustering etc. `verbose`
-#' changes how much information is printed by this function; `0` means nothing, `1` means text, `2`
-#' adds the progress bar, `3` adds the finish sound. `exclusion_zone` is used to avoid  trivial
-#' matches; if a query data is provided (join similarity), this parameter is ignored.
+#' estimation, semantic segmentation, visualization, rule discovery, clustering etc. The anytime
+#' STAMP computes the Matrix Profile and Profile Index in such manner that it can be stopped before
+#' its complete calculation and return the best so far results allowing ultra-fast approximate
+#' solutions. `verbose` changes how much information is printed by this function; `0` means nothing,
+#' `1` means text, `2` adds the progress bar, `3` adds the finish sound. `exclusion_zone` is used to
+#' avoid  trivial matches; if a query data is provided (join similarity), this parameter is ignored.
 #'
 #' @param \dots a `matrix` or a `vector`. If a second time series is supplied it will be a join matrix
 #'   profile.
@@ -17,6 +19,10 @@
 #' @param exclusion_zone a `numeric`. Size of the exclusion zone, based on window size (default is
 #'   `1/2`). See details.
 #' @param verbose an `int`. See details. (Default is `2`).
+#' @param s_size a `numeric`. for anytime algorithm, represents the size (in observations) the
+#'   random calculation will occur (default is `Inf`).
+#' @param weight a `vector` of `numeric` or `NULL` with the same length of the `window_size`. This is
+#' a MASS extension to weight the query.
 #'
 #' @return Returns a `MatrixProfile` object, a `list` with the matrix profile `mp`, profile index `pi`
 #'   left and right matrix profile `lmp`, `rmp` and profile index `lpi`, `rpi`, window size `w` and
@@ -26,28 +32,32 @@
 #'
 #' @family matrix profile computations
 #'
-#' @describeIn stomp Single thread version.
+#' @describeIn stamp Single thread version.
 #'
-#' @references * Zhu Y, Zimmerman Z, Senobari NS, Yeh CM, Funning G. Matrix Profile II : Exploiting
-#'   a Novel Algorithm and GPUs to Break the One Hundred Million Barrier for Time Series Motifs and
-#'   Joins. Icdm. 2016 Jan 22;54(1):739-48.
+#' @references * Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All
+#'   pairs similarity joins for time series: A unifying view that includes motifs, discords and
+#'   shapelets. Proc - IEEE Int Conf Data Mining, ICDM. 2017;1317-22.
+#' @references * Zhu Y, Imamura M, Nikovski D, Keogh E. Matrix Profile VII: Time Series Chains: A
+#'   New Primitive for Time Series Data Mining. Knowl Inf Syst. 2018 Jun 2;1-27.
 #' @references Website: <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>
 #'
 #' @examples
-#' mp <- stomp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
+#' mp <- stamp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
 #' \donttest{
+#'
 #' #' # using threads
-#' mp <- stomp_par(mp_toy_data$data[1:400, 1], window_size = 30, verbose = 0)
+#' mp <- stamp_par(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
 #'
 #' ref_data <- mp_toy_data$data[, 1]
 #' query_data <- mp_toy_data$data[, 2]
 #' # self similarity
-#' mp <- stomp(ref_data, window_size = 30)
+#' mp <- stamp(ref_data, window_size = 30, s_size = round(nrow(ref_data) * 0.1))
 #' # join similarity
-#' mp2 <- stomp(ref_data, query_data, window_size = 30)
+#' mp <- stamp(ref_data, query_data, window_size = 30, s_size = round(nrow(query_data) * 0.1))
 #' }
-stomp <- function(..., window_size, exclusion_zone = 1 / 2,
-                  verbose = 2) {
+#'
+stamp <- function(..., window_size, exclusion_zone = 1 / 2,
+                  verbose = 2, s_size = Inf, weight = NULL) {
   argv <- list(...)
   argc <- length(argv)
   data <- argv[[1]]
@@ -69,7 +79,7 @@ stomp <- function(..., window_size, exclusion_zone = 1 / 2,
       data <- t(data)
     }
   } else {
-    stop("Unknown type of data. Must be: a column matrix or a vector.", call. = FALSE)
+    stop("Unknown type of data. Must be: a column matrix or a vector.")
   }
 
   if (is.vector(query)) {
@@ -79,7 +89,7 @@ stomp <- function(..., window_size, exclusion_zone = 1 / 2,
       query <- t(query)
     }
   } else {
-    stop("Unknown type of query. Must be: a column matrix or a vector.", call. = FALSE)
+    stop("Unknown type of query. Must be: a column matrix or a vector.")
   }
 
   ez <- exclusion_zone # store original
@@ -93,10 +103,10 @@ stomp <- function(..., window_size, exclusion_zone = 1 / 2,
     stop("Query must be smaller or the same size as reference data.")
   }
   if (window_size > ceiling(query_size / 2)) {
-    stop("Time series is too short relative to desired window size.", call. = FALSE)
+    stop("Time series is too short relative to desired window size.")
   }
   if (window_size < 4) {
-    stop("`window_size` must be at least 4.", call. = FALSE)
+    stop("`window_size` must be at least 4.")
   }
 
   # check skip position
@@ -114,31 +124,9 @@ stomp <- function(..., window_size, exclusion_zone = 1 / 2,
   query[is.na(query)] <- 0
   query[is.infinite(query)] <- 0
 
-  if (verbose > 1) {
-    pb <- progress::progress_bar$new(
-      format = "STOMP [:bar] :percent at :tick_rate it/s, elapsed: :elapsed, eta: :eta",
-      clear = FALSE, total = num_queries, width = 80
-    )
-  }
-
-  if (verbose > 2) {
-    on.exit(beep(sounds[[1]]), TRUE)
-  }
-
-  first_product <- matrix(0, num_queries, 1)
-
-  # forward
-  nn <- dist_profile(data, query, window_size = window_size)
-  # reverse
-  # This is needed to handle with the join similarity.
-  rnn <- dist_profile(query, data, window_size = window_size)
-
-  first_product[, 1] <- rnn$last_product
-
-  tictac <- Sys.time()
-
   matrix_profile <- matrix(Inf, matrix_profile_size, 1)
   profile_index <- matrix(-Inf, matrix_profile_size, 1)
+
   if (join) {
     # no RMP and LMP for joins
     left_matrix_profile <- right_matrix_profile <- NULL
@@ -147,79 +135,84 @@ stomp <- function(..., window_size, exclusion_zone = 1 / 2,
     left_matrix_profile <- right_matrix_profile <- matrix_profile
     left_profile_index <- right_profile_index <- profile_index
   }
-  distance_profile <- matrix(0, matrix_profile_size, 1)
-  last_product <- matrix(0, matrix_profile_size, 1)
-  drop_value <- matrix(0, 1, 1)
 
-  for (i in 1:num_queries) {
-    # compute the distance profile
-    query_window <- as.matrix(query[i:(i + window_size - 1), 1])
+  j <- 1
+  ssize <- min(s_size, num_queries)
+  order <- 1:num_queries
+  order <- sample(order, size = ssize)
 
-    if (i == 1) {
-      distance_profile[, 1] <- nn$distance_profile
-      last_product[, 1] <- nn$last_product
+  tictac <- Sys.time()
+
+  if (verbose > 1) {
+    pb <- progress::progress_bar$new(
+      format = "STAMP [:bar] :percent at :tick_rate it/s, elapsed: :elapsed, eta: :eta",
+      clear = FALSE, total = ssize, width = 80
+    )
+  }
+
+  if (verbose > 2) {
+    on.exit(beep(sounds[[1]]), TRUE)
+  }
+  # anytime must return the result always
+  on.exit(return({
+    obj <- list(
+      mp = matrix_profile, pi = profile_index,
+      rmp = right_matrix_profile, rpi = right_profile_index,
+      lmp = left_matrix_profile, lpi = left_profile_index,
+      w = window_size,
+      ez = ez
+    )
+    class(obj) <- "MatrixProfile"
+    attr(obj, "join") <- join
+    obj
+  }), TRUE)
+
+  nn <- NULL
+
+  for (i in order) {
+    j <- j + 1
+
+    if (is.null(weight)) {
+      nn <- dist_profile(data, query, nn, window_size = window_size, index = i)
     } else {
-      last_product[2:(data_size - window_size + 1), 1] <- last_product[1:(data_size - window_size), 1] -
-        data[1:(data_size - window_size), 1] * drop_value +
-        data[(window_size + 1):data_size, 1] * query_window[window_size, 1]
-
-      last_product[1, 1] <- first_product[i, 1]
-      distance_profile <- 2 * (window_size - (last_product - window_size * nn$par$data_mean * nn$par$query_mean[i]) /
-        (nn$par$data_sd * nn$par$query_sd[i]))
+      nn <- dist_profile(data, query, nn, window_size = window_size, index = i, method = "weighted", weight = weight)
     }
 
-    distance_profile[distance_profile < 0] <- 0
-    distance_profile <- sqrt(distance_profile)
-
-    # if (distance_profile[3] < 6.169999) {
-    #   message("i: ", i, "dp: ", distance_profile)
-    #   return(distance_profile)
-    # }
-
-
-    drop_value <- query_window[1, 1]
+    distance_profile <- sqrt(nn$distance_profile)
 
     # apply exclusion zone
     if (exclusion_zone > 0) {
       exc_st <- max(1, i - exclusion_zone)
       exc_ed <- min(matrix_profile_size, i + exclusion_zone)
-      distance_profile[exc_st:exc_ed, 1] <- Inf
+      distance_profile[exc_st:exc_ed] <- Inf
     }
 
-    distance_profile[nn$par$data_sd < 1.490116e-08] <- Inf
-    if (skip_location[i] || any(nn$par$query_sd[i] < 1.490116e-08)) {
+    distance_profile[nn$var$data_sd < 1.490116e-08] <- Inf
+    if (skip_location[i] || any(nn$var$query_sd[i] < 1.490116e-08)) {
       distance_profile[] <- Inf
     }
     distance_profile[skip_location] <- Inf
 
+    # anytime version
     if (!join) {
       # no RMP and LMP for joins
       # left matrix_profile
       ind <- (distance_profile[i:matrix_profile_size] < left_matrix_profile[i:matrix_profile_size])
       ind <- c(rep(FALSE, (i - 1)), ind) # pad left
       left_matrix_profile[ind] <- distance_profile[ind]
-      left_profile_index[base::which(ind)] <- i
+      left_profile_index[which(ind)] <- i
 
       # right matrix_profile
       ind <- (distance_profile[1:i] < right_matrix_profile[1:i])
       ind <- c(ind, rep(FALSE, matrix_profile_size - i)) # pad right
       right_matrix_profile[ind] <- distance_profile[ind]
-      right_profile_index[base::which(ind)] <- i
+      right_profile_index[which(ind)] <- i
     }
 
+    # normal matrix_profile
     ind <- (distance_profile < matrix_profile)
     matrix_profile[ind] <- distance_profile[ind]
-    profile_index[base::which(ind)] <- i
-
-    # if (i == 2) {
-    #   return(list(
-    #     matrix_profile = as.vector(matrix_profile),
-    #     profile_index = as.vector(profile_index),
-    #     distance_profile = as.vector(distance_profile),
-    #     last_product = as.vector(last_product),
-    #     drop_value = drop_value
-    #   ))
-    # }
+    profile_index[which(ind)] <- i
 
     if (verbose > 1) {
       pb$tick()
@@ -232,16 +225,5 @@ stomp <- function(..., window_size, exclusion_zone = 1 / 2,
     message(sprintf("Finished in %.2f %s", tictac, units(tictac)))
   }
 
-  return({
-    obj <- list(
-      mp = matrix_profile, pi = profile_index,
-      rmp = right_matrix_profile, rpi = right_profile_index,
-      lmp = left_matrix_profile, lpi = left_profile_index,
-      w = window_size,
-      ez = ez
-    )
-    class(obj) <- "MatrixProfile"
-    attr(obj, "join") <- join
-    obj
-  })
+  # return() is at on.exit() function
 }
