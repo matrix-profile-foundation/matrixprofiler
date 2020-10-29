@@ -1,6 +1,8 @@
 #include "math.h" // math first to fix OSX error
 #include "mpx.h"
 
+#include <RcppParallel.h>
+using namespace RcppParallel;
 // MPX
 //
 // @param a Time Series
@@ -16,7 +18,7 @@ List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs = false, b
     // matrix profile using cross correlation,
     uint32_t n = a.length();
 
-    List msd = muinvn_rcpp(a, w);
+    List msd = muinvn_parallel_rcpp(a, w);
 
     NumericVector mmu = msd["avg"];
     NumericVector ssig = msd["sig"];
@@ -49,7 +51,7 @@ List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs = false, b
     try {
       for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
 
-        if (*diag % 1000) {
+        if (*diag % 1000 == 0) {
           Rcpp::checkUserInterrupt();
         }
 
@@ -113,8 +115,8 @@ List mpxab_rcpp(NumericVector a, NumericVector b, uint16_t w, bool idxs = false,
     uint32_t a_len = a.length();
     uint32_t b_len = b.length();
 
-    List msd_a = muinvn_rcpp(a, w);
-    List msd_b = muinvn_rcpp(b, w);
+    List msd_a = muinvn_parallel_rcpp(a, w);
+    List msd_b = muinvn_parallel_rcpp(b, w);
 
     NumericVector mmu_a = msd_a["avg"];
     NumericVector ssig_a = msd_a["sig"];
@@ -316,7 +318,7 @@ List mpx_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs =
     bool partial = false;
     uint32_t n = a.length();
 
-    List msd = muinvn_rcpp(a, w);
+    List msd = muinvn_parallel_rcpp(a, w);
 
     NumericVector mu = msd["avg"];
     NumericVector sig = msd["sig"];
@@ -339,10 +341,12 @@ List mpx_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs =
     MatrixProfileP matrix_profile(a, w, df, dg, mu, sig, ww, mp, mpi);
 
     try {
-      parallelFor(minlag, profile_len, matrix_profile, 100);
+      RcppParallel::parallelFor(minlag, profile_len, matrix_profile);
     } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process terminated.\n";
+    } catch (...) {
+      ::Rf_error("c++ exception (unknown reason)");
     }
 
     // to do ed
@@ -497,8 +501,8 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
     uint32_t a_len = a.length();
     uint32_t b_len = b.length();
 
-    List msd_a = muinvn_rcpp(a, w);
-    List msd_b = muinvn_rcpp(b, w);
+    List msd_a = muinvn_parallel_rcpp(a, w);
+    List msd_b = muinvn_parallel_rcpp(b, w);
 
     NumericVector mu_a = msd_a["avg"];
     NumericVector sig_a = msd_a["sig"];
@@ -539,10 +543,12 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
                                     mpi_a, mpi_b);
 
     try {
-      parallelFor(0, profile_len_a, matrix_profile);
+      RcppParallel::parallelFor(0, profile_len_a, matrix_profile);
     } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process AB terminated.\n";
+    } catch (...) {
+      ::Rf_error("c++ exception (unknown reason)");
     }
 
     // TODO: make a thread-safe interrupt check for stop the process and try to return the partial computation
@@ -551,10 +557,12 @@ List mpxab_rcpp_parallel(NumericVector a, NumericVector b, uint16_t w, bool idxs
     matrix_profile.set_ba();
 
     try {
-      parallelFor(0, profile_len_b, matrix_profile);
+      RcppParallel::parallelFor(0, profile_len_b, matrix_profile);
     } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
       Rcout << "Process BA terminated.\n";
+    } catch (...) {
+      ::Rf_error("c++ exception (unknown reason)");
     }
 
     // to do ed

@@ -59,9 +59,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// mass3_parallel_rcpp
-List mass3_parallel_rcpp(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, uint16_t k);
-RcppExport SEXP _matrixprofiler_mass3_parallel_rcpp(SEXP query_windowSEXP, SEXP data_refSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP kSEXP) {
+// mass3_rcpp_parallel
+List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, uint16_t k);
+RcppExport SEXP _matrixprofiler_mass3_rcpp_parallel(SEXP query_windowSEXP, SEXP data_refSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -74,7 +74,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
     Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
     Rcpp::traits::input_parameter< uint16_t >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(mass3_parallel_rcpp(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k));
+    rcpp_result_gen = Rcpp::wrap(mass3_rcpp_parallel(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -302,6 +302,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// muinvn_parallel_rcpp
+List muinvn_parallel_rcpp(const NumericVector a, uint32_t w);
+RcppExport SEXP _matrixprofiler_muinvn_parallel_rcpp(SEXP aSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type a(aSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(muinvn_parallel_rcpp(a, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// muinvn_rcpp
+List muinvn_rcpp(const NumericVector a, uint32_t w);
+RcppExport SEXP _matrixprofiler_muinvn_rcpp(SEXP aSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type a(aSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(muinvn_rcpp(a, w));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fft_rcpp
 ComplexVector fft_rcpp(const ComplexVector z, bool invert);
 RcppExport SEXP _matrixprofiler_fft_rcpp(SEXP zSEXP, SEXP invertSEXP) {
@@ -388,9 +412,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// stamp_par_cpp
-List stamp_par_cpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez);
-RcppExport SEXP _matrixprofiler_stamp_par_cpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP) {
+// stamp_cpp_parallel
+NumericVector stamp_cpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez);
+RcppExport SEXP _matrixprofiler_stamp_cpp_parallel(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -398,7 +422,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector >::type query_ref(query_refSEXP);
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
     Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
-    rcpp_result_gen = Rcpp::wrap(stamp_par_cpp(data_ref, query_ref, window_size, ez));
+    rcpp_result_gen = Rcpp::wrap(stamp_cpp_parallel(data_ref, query_ref, window_size, ez));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -416,52 +440,190 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// movsum
-NumericVector movsum(NumericVector data, uint32_t window_size);
-RcppExport SEXP _matrixprofiler_movsum(SEXP dataSEXP, SEXP window_sizeSEXP) {
+// stomp_rcpp_parallel
+List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez);
+RcppExport SEXP _matrixprofiler_stomp_rcpp_parallel(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    rcpp_result_gen = Rcpp::wrap(stomp_rcpp_parallel(data_ref, query_ref, window_size, ez));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movmean_rcpp
+NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size);
+RcppExport SEXP _matrixprofiler_movmean_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const uint32_t >::type window_size(window_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(movmean_rcpp(data, window_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movvar_rcpp
+NumericVector movvar_rcpp(const NumericVector data, const uint32_t window_size);
+RcppExport SEXP _matrixprofiler_movvar_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const uint32_t >::type window_size(window_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(movvar_rcpp(data, window_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movvar2_rcpp
+NumericVector movvar2_rcpp(const NumericVector data, uint32_t window_size);
+RcppExport SEXP _matrixprofiler_movvar2_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(movvar2_rcpp(data, window_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movsum_rcpp
+NumericVector movsum_rcpp(NumericVector data, uint32_t window_size);
+RcppExport SEXP _matrixprofiler_movsum_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(movsum(data, window_size));
+    rcpp_result_gen = Rcpp::wrap(movsum_rcpp(data, window_size));
     return rcpp_result_gen;
 END_RCPP
 }
-// movmin
-NumericVector movmin(const NumericVector data, uint32_t window_size);
-RcppExport SEXP _matrixprofiler_movmin(SEXP dataSEXP, SEXP window_sizeSEXP) {
+// movsum_ogita_rcpp
+NumericVector movsum_ogita_rcpp(const NumericVector a, uint32_t w);
+RcppExport SEXP _matrixprofiler_movsum_ogita_rcpp(SEXP aSEXP, SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type a(aSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(movsum_ogita_rcpp(a, w));
+    return rcpp_result_gen;
+END_RCPP
+}
+// precision_test_rcpp
+double precision_test_rcpp(std::vector<double> d);
+RcppExport SEXP _matrixprofiler_precision_test_rcpp(SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<double> >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(precision_test_rcpp(d));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movmin_rcpp
+NumericVector movmin_rcpp(const NumericVector data, uint32_t window_size);
+RcppExport SEXP _matrixprofiler_movmin_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(movmin(data, window_size));
+    rcpp_result_gen = Rcpp::wrap(movmin_rcpp(data, window_size));
     return rcpp_result_gen;
 END_RCPP
 }
-// movmax
-NumericVector movmax(const NumericVector data, uint32_t window_size);
-RcppExport SEXP _matrixprofiler_movmax(SEXP dataSEXP, SEXP window_sizeSEXP) {
+// movmax_rcpp
+NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size);
+RcppExport SEXP _matrixprofiler_movmax_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(movmax(data, window_size));
+    rcpp_result_gen = Rcpp::wrap(movmax_rcpp(data, window_size));
     return rcpp_result_gen;
 END_RCPP
 }
-// mov_mean_online_rcpp
-NumericVector mov_mean_online_rcpp(const NumericVector data, uint32_t window_size, double eps);
-RcppExport SEXP _matrixprofiler_mov_mean_online_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
+// movmean_weighted_rcpp
+NumericVector movmean_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps);
+RcppExport SEXP _matrixprofiler_movmean_weighted_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
     Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
-    rcpp_result_gen = Rcpp::wrap(mov_mean_online_rcpp(data, window_size, eps));
+    rcpp_result_gen = Rcpp::wrap(movmean_weighted_rcpp(data, window_size, eps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movmean_fading_rcpp
+NumericVector movmean_fading_rcpp(const NumericVector data, uint32_t window_size, double eps);
+RcppExport SEXP _matrixprofiler_movmean_fading_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(movmean_fading_rcpp(data, window_size, eps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movsum_weighted_rcpp
+NumericVector movsum_weighted_rcpp(NumericVector data, uint32_t window_size, double eps);
+RcppExport SEXP _matrixprofiler_movsum_weighted_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(movsum_weighted_rcpp(data, window_size, eps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movsum_fading_rcpp
+NumericVector movsum_fading_rcpp(NumericVector data, uint32_t window_size, double eps);
+RcppExport SEXP _matrixprofiler_movsum_fading_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(movsum_fading_rcpp(data, window_size, eps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movvar_weighted_rcpp
+NumericVector movvar_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps);
+RcppExport SEXP _matrixprofiler_movvar_weighted_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(movvar_weighted_rcpp(data, window_size, eps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// movvar_fading_rcpp
+NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size, double eps);
+RcppExport SEXP _matrixprofiler_movvar_fading_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP, SEXP epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(movvar_fading_rcpp(data, window_size, eps));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -470,7 +632,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mass_weighted_rcpp", (DL_FUNC) &_matrixprofiler_mass_weighted_rcpp, 10},
     {"_matrixprofiler_mass_absolute_rcpp", (DL_FUNC) &_matrixprofiler_mass_absolute_rcpp, 6},
     {"_matrixprofiler_mass2_rcpp", (DL_FUNC) &_matrixprofiler_mass2_rcpp, 8},
-    {"_matrixprofiler_mass3_parallel_rcpp", (DL_FUNC) &_matrixprofiler_mass3_parallel_rcpp, 9},
+    {"_matrixprofiler_mass3_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mass3_rcpp_parallel, 9},
     {"_matrixprofiler_mass3_rcpp", (DL_FUNC) &_matrixprofiler_mass3_rcpp, 9},
     {"_matrixprofiler_set_k_rcpp", (DL_FUNC) &_matrixprofiler_set_k_rcpp, 3},
     {"_matrixprofiler_find_best_k_rcpp", (DL_FUNC) &_matrixprofiler_find_best_k_rcpp, 3},
@@ -489,18 +651,31 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_binary_split_rcpp", (DL_FUNC) &_matrixprofiler_binary_split_rcpp, 1},
     {"_matrixprofiler_inner_product", (DL_FUNC) &_matrixprofiler_inner_product, 2},
     {"_matrixprofiler_sum_of_squares", (DL_FUNC) &_matrixprofiler_sum_of_squares, 1},
+    {"_matrixprofiler_muinvn_parallel_rcpp", (DL_FUNC) &_matrixprofiler_muinvn_parallel_rcpp, 2},
+    {"_matrixprofiler_muinvn_rcpp", (DL_FUNC) &_matrixprofiler_muinvn_rcpp, 2},
     {"_matrixprofiler_fft_rcpp", (DL_FUNC) &_matrixprofiler_fft_rcpp, 2},
     {"_matrixprofiler_mpx_rcpp", (DL_FUNC) &_matrixprofiler_mpx_rcpp, 5},
     {"_matrixprofiler_mpxab_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_rcpp, 5},
     {"_matrixprofiler_mpx_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_rcpp_parallel, 5},
     {"_matrixprofiler_mpxab_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_rcpp_parallel, 5},
     {"_matrixprofiler_stamp_cpp", (DL_FUNC) &_matrixprofiler_stamp_cpp, 4},
-    {"_matrixprofiler_stamp_par_cpp", (DL_FUNC) &_matrixprofiler_stamp_par_cpp, 4},
+    {"_matrixprofiler_stamp_cpp_parallel", (DL_FUNC) &_matrixprofiler_stamp_cpp_parallel, 4},
     {"_matrixprofiler_stomp_cpp", (DL_FUNC) &_matrixprofiler_stomp_cpp, 4},
-    {"_matrixprofiler_movsum", (DL_FUNC) &_matrixprofiler_movsum, 2},
-    {"_matrixprofiler_movmin", (DL_FUNC) &_matrixprofiler_movmin, 2},
-    {"_matrixprofiler_movmax", (DL_FUNC) &_matrixprofiler_movmax, 2},
-    {"_matrixprofiler_mov_mean_online_rcpp", (DL_FUNC) &_matrixprofiler_mov_mean_online_rcpp, 3},
+    {"_matrixprofiler_stomp_rcpp_parallel", (DL_FUNC) &_matrixprofiler_stomp_rcpp_parallel, 4},
+    {"_matrixprofiler_movmean_rcpp", (DL_FUNC) &_matrixprofiler_movmean_rcpp, 2},
+    {"_matrixprofiler_movvar_rcpp", (DL_FUNC) &_matrixprofiler_movvar_rcpp, 2},
+    {"_matrixprofiler_movvar2_rcpp", (DL_FUNC) &_matrixprofiler_movvar2_rcpp, 2},
+    {"_matrixprofiler_movsum_rcpp", (DL_FUNC) &_matrixprofiler_movsum_rcpp, 2},
+    {"_matrixprofiler_movsum_ogita_rcpp", (DL_FUNC) &_matrixprofiler_movsum_ogita_rcpp, 2},
+    {"_matrixprofiler_precision_test_rcpp", (DL_FUNC) &_matrixprofiler_precision_test_rcpp, 1},
+    {"_matrixprofiler_movmin_rcpp", (DL_FUNC) &_matrixprofiler_movmin_rcpp, 2},
+    {"_matrixprofiler_movmax_rcpp", (DL_FUNC) &_matrixprofiler_movmax_rcpp, 2},
+    {"_matrixprofiler_movmean_weighted_rcpp", (DL_FUNC) &_matrixprofiler_movmean_weighted_rcpp, 3},
+    {"_matrixprofiler_movmean_fading_rcpp", (DL_FUNC) &_matrixprofiler_movmean_fading_rcpp, 3},
+    {"_matrixprofiler_movsum_weighted_rcpp", (DL_FUNC) &_matrixprofiler_movsum_weighted_rcpp, 3},
+    {"_matrixprofiler_movsum_fading_rcpp", (DL_FUNC) &_matrixprofiler_movsum_fading_rcpp, 3},
+    {"_matrixprofiler_movvar_weighted_rcpp", (DL_FUNC) &_matrixprofiler_movvar_weighted_rcpp, 3},
+    {"_matrixprofiler_movvar_fading_rcpp", (DL_FUNC) &_matrixprofiler_movvar_fading_rcpp, 3},
     {NULL, NULL, 0}
 };
 

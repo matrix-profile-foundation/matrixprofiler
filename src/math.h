@@ -3,6 +3,8 @@
 
 #include <Rcpp.h>
 
+// [[Rcpp::plugins(cpp11)]]
+
 using namespace Rcpp;
 
 #ifndef MIN
@@ -24,13 +26,8 @@ NumericVector znorm_rcpp(const NumericVector data);
 NumericVector binary_split_rcpp(const uint32_t n);
 double        inner_product(const NumericVector a, const NumericVector b);
 double        sum_of_squares(const NumericVector a);
-NumericVector sum2s_rcpp(const NumericVector a, uint32_t w);
 List          muinvn_rcpp(const NumericVector a, uint32_t w);
+List muinvn_parallel_rcpp(const NumericVector a, uint32_t w);
 ComplexVector fft_rcpp(const ComplexVector z, bool invert = false);
 ComplexVector fft_rcpp(const NumericVector z, bool invert = false);
-ComplexVector fft_rcpp_debug(const ComplexVector z);
-ComplexVector fft_rcpp_debug2(const ComplexVector z, Function stats_fft);
-ComplexVector fft_rcpp_debug3(const ComplexVector z, bool invert);
-std::vector<std::complex<double>> fftw_rcpp_debug(const std::vector<std::complex<double>> z);
-
 #endif // __MATH__

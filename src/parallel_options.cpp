@@ -8,23 +8,18 @@
 
 void setThreadOptions(int numThreads, int stackSize) {
 
-  static tbb::task_scheduler_init* s_pTaskScheduler = NULL;
+  static tbb::task_scheduler_init *s_pTaskScheduler = NULL;
 
-  try
-  {
+  try {
     if (!s_pTaskScheduler) {
       s_pTaskScheduler = new tbb::task_scheduler_init(numThreads, stackSize);
     } else {
       s_pTaskScheduler->terminate();
       s_pTaskScheduler->initialize(numThreads, stackSize);
     }
-  }
-  catch(const std::exception& e)
-  {
+  } catch (const std::exception &e) {
     std::cout << "Error loading TBB: " + e.what() << std::endl;
-  }
-  catch(...)
-  {
+  } catch (...) {
     std::cout << "Error loading TBB: (Unknown error)" << std::endl;
   }
 

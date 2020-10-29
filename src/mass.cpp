@@ -2,6 +2,9 @@
 #include "fft.h"
 #include "math.h"
 #include "windowfunc.h"
+// [[Rcpp::depends(RcppParallel)]]
+#include <RcppParallel.h>
+using namespace RcppParallel;
 #include <Rcpp/Benchmark/Timer.h>
 #if RCPP_PARALLEL_USE_TBB
 #include "tbb/mutex.h"
@@ -112,9 +115,7 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
           ));
 }
 
-// inline double cplx_divide (std::complex<double> x, double y) {
-//   return x.real()/y;
-// }
+
 
 struct MassWorker : public Worker {
   // input
@@ -168,13 +169,13 @@ struct MassWorker : public Worker {
 
     m.lock();
     if (Y.size() == 0) {
-        std::vector<std::complex<double>> rev_query(s);
+      std::vector<std::complex<double>> rev_query(s);
 
-        uint64_t j = 0;
-        for (uint64_t i = w_size; i > 0; i--, j++) {
-          rev_query[i-1] = std::complex<double>(window_ref[j], 0.0);
-        }
-        Y = fft->fft(rev_query, false);
+      uint64_t j = 0;
+      for (uint64_t i = w_size; i > 0; i--, j++) {
+        rev_query[i - 1] = std::complex<double>(window_ref[j], 0.0);
+      }
+      Y = fft->fft(rev_query, false);
     }
     m.unlock();
 
@@ -193,9 +194,9 @@ struct MassWorker : public Worker {
 };
 
 //[[Rcpp::export]]
-List mass3_parallel_rcpp(const NumericVector query_window, const NumericVector data_ref,
-                                  uint64_t data_size, uint32_t window_size, const NumericVector data_mean,
-                                  const NumericVector data_sd, double query_mean, double query_sd, uint16_t k) {
+List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref,
+                         uint64_t data_size, uint32_t window_size, const NumericVector data_mean,
+                         const NumericVector data_sd, double query_mean, double query_sd, uint16_t k) {
   try {
     k = set_k_rcpp(k, data_size, window_size);
 
@@ -207,14 +208,20 @@ List mass3_parallel_rcpp(const NumericVector query_window, const NumericVector d
     MassWorker mass_worker(data_ref, query_window, window_size, data_size, data_mean,
                            data_sd, query_mean, query_sd, distance_profile, last_product);
 
-  // call parallelFor to do the work
-    RcppParallel::parallelFor(0, data_size, mass_worker, k);
+    // call parallelFor to do the work
+    try {
+      RcppParallel::parallelFor(0, data_size, mass_worker, k);
+    } catch (Rcpp::internal::InterruptedException &ex) {
+      Rcout << "Process terminated.\n";
+    } catch (...) {
+      ::Rf_error("c++ exception (unknown reason)");
+    }
 
     return (List::create(
-        Rcpp::Named("distance_profile") = distance_profile,
-        Rcpp::Named("last_product") = last_product
-    ));
-  } catch( std::out_of_range& ex ) {
+              Rcpp::Named("distance_profile") = distance_profile,
+              Rcpp::Named("last_product") = last_product
+            ));
+  } catch (std::out_of_range &ex) {
     ::Rf_error("out_of_range\\n");
   } catch (...) {
     ::Rf_error("Interrupted\\n");
@@ -436,11 +443,11 @@ List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_r
   std::copy(data_ref.begin(), data_ref.end(), data_padded.begin());
 
   ComplexVector data_fft = fft_rcpp(data_padded); // precompute fft of data
-  NumericVector sumx2 = movsum(pow(data_ref, 2), window_size);
+  NumericVector sumx2 = movsum_ogita_rcpp(pow(data_ref, 2), window_size);
   NumericVector sumy2;
   try {
     if (query_size > 0) {
-      sumy2 = movsum(pow(query_ref, 2), window_size);
+      sumy2 = movsum_ogita_rcpp(pow(query_ref, 2), window_size);
     } else {
       sumy2 = sumx2;
     }

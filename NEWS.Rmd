@@ -23,4 +23,4 @@ knitr::opts_chunk$set(
 
 # matrixprofiler 0.1.0
 
-* The beginning
+-   The beginning

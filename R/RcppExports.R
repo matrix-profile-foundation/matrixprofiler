@@ -13,8 +13,8 @@ mass2_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean
     .Call(`_matrixprofiler_mass2_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd)
 }
 
-mass3_parallel_rcpp <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k) {
-    .Call(`_matrixprofiler_mass3_parallel_rcpp`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k)
+mass3_rcpp_parallel <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k) {
+    .Call(`_matrixprofiler_mass3_rcpp_parallel`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k)
 }
 
 mass3_rcpp <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k) {
@@ -89,6 +89,14 @@ sum_of_squares <- function(a) {
     .Call(`_matrixprofiler_sum_of_squares`, a)
 }
 
+muinvn_parallel_rcpp <- function(a, w) {
+    .Call(`_matrixprofiler_muinvn_parallel_rcpp`, a, w)
+}
+
+muinvn_rcpp <- function(a, w) {
+    .Call(`_matrixprofiler_muinvn_rcpp`, a, w)
+}
+
 fft_rcpp <- function(z, invert) {
     .Call(`_matrixprofiler_fft_rcpp`, z, invert)
 }
@@ -113,27 +121,71 @@ stamp_cpp <- function(data_ref, query_ref, window_size, ez) {
     .Call(`_matrixprofiler_stamp_cpp`, data_ref, query_ref, window_size, ez)
 }
 
-stamp_par_cpp <- function(data_ref, query_ref, window_size, ez) {
-    .Call(`_matrixprofiler_stamp_par_cpp`, data_ref, query_ref, window_size, ez)
+stamp_cpp_parallel <- function(data_ref, query_ref, window_size, ez) {
+    .Call(`_matrixprofiler_stamp_cpp_parallel`, data_ref, query_ref, window_size, ez)
 }
 
 stomp_cpp <- function(data_ref, query_ref, window_size, ez) {
     .Call(`_matrixprofiler_stomp_cpp`, data_ref, query_ref, window_size, ez)
 }
 
-movsum <- function(data, window_size) {
-    .Call(`_matrixprofiler_movsum`, data, window_size)
+stomp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez) {
+    .Call(`_matrixprofiler_stomp_rcpp_parallel`, data_ref, query_ref, window_size, ez)
 }
 
-movmin <- function(data, window_size) {
-    .Call(`_matrixprofiler_movmin`, data, window_size)
+movmean_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movmean_rcpp`, data, window_size)
 }
 
-movmax <- function(data, window_size) {
-    .Call(`_matrixprofiler_movmax`, data, window_size)
+movvar_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movvar_rcpp`, data, window_size)
 }
 
-mov_mean_online_rcpp <- function(data, window_size, eps = 0.19) {
-    .Call(`_matrixprofiler_mov_mean_online_rcpp`, data, window_size, eps)
+movvar2_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movvar2_rcpp`, data, window_size)
+}
+
+movsum_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movsum_rcpp`, data, window_size)
+}
+
+movsum_ogita_rcpp <- function(a, w) {
+    .Call(`_matrixprofiler_movsum_ogita_rcpp`, a, w)
+}
+
+precision_test_rcpp <- function(d) {
+    .Call(`_matrixprofiler_precision_test_rcpp`, d)
+}
+
+movmin_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movmin_rcpp`, data, window_size)
+}
+
+movmax_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movmax_rcpp`, data, window_size)
+}
+
+movmean_weighted_rcpp <- function(data, window_size, eps) {
+    .Call(`_matrixprofiler_movmean_weighted_rcpp`, data, window_size, eps)
+}
+
+movmean_fading_rcpp <- function(data, window_size, eps) {
+    .Call(`_matrixprofiler_movmean_fading_rcpp`, data, window_size, eps)
+}
+
+movsum_weighted_rcpp <- function(data, window_size, eps) {
+    .Call(`_matrixprofiler_movsum_weighted_rcpp`, data, window_size, eps)
+}
+
+movsum_fading_rcpp <- function(data, window_size, eps) {
+    .Call(`_matrixprofiler_movsum_fading_rcpp`, data, window_size, eps)
+}
+
+movvar_weighted_rcpp <- function(data, window_size, eps) {
+    .Call(`_matrixprofiler_movvar_weighted_rcpp`, data, window_size, eps)
+}
+
+movvar_fading_rcpp <- function(data, window_size, eps) {
+    .Call(`_matrixprofiler_movvar_fading_rcpp`, data, window_size, eps)
 }
 

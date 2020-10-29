@@ -1,5 +1,9 @@
 #include "math.h"
 #include "fft.h"
+#include "windowfunc.h"
+// [[Rcpp::depends(RcppParallel)]]
+#include <RcppParallel.h>
+using namespace RcppParallel;
 
 //[[Rcpp::export]]
 double std_rcpp(const NumericVector data, const bool na_rm = false) {
@@ -216,37 +220,65 @@ double sum_of_squares(const NumericVector a) {
   return (res);
 }
 
+struct MuinWorker : public Worker {
+  // input
+  const RVector<double> a;
+  const RVector<double> mu;
+  const uint32_t w_size;
+  // output
+  RVector<double> sig;
 
-NumericVector sum2s_rcpp(const NumericVector a, uint32_t w) {
-  NumericVector res(a.length() - w + 1, 0);
-  double accum = a[0];
-  double resid = 0.0;
+  // initialize from Rcpp input and output matrixes (the RMatrix class
+  // can be automatically converted to from the Rcpp matrix type)
+  MuinWorker(const NumericVector a, const NumericVector mu, const uint32_t w_size,
+             NumericVector sig) :
+    a(a), mu(mu), w_size(w_size), sig(sig) {}
 
-  for (uint32_t i = 1; i < w; i++) {
-    double m = a[i];
-    double p = accum;
-    accum = accum + m;
-    double q = accum - p;
-    resid = resid + ((p - (accum - q)) + (m - q));
+  // function call operator that work for the specified range (begin/end)
+  void operator()(std::size_t begin, std::size_t end) {
+
+    uint32_t j, k;
+    std::vector<double> b(w_size);
+
+    for (uint32_t i = begin; i < end; i++) {
+
+      for(j = i, k = 0; j < (i + w_size); j++, k++) {
+        b[k] = a[j] - mu[i];
+      }
+
+      sig[i] = 1 / sqrt(std::inner_product(b.begin(), b.end(), b.begin(), 0.0));
+    }
+  }
+};
+
+//[[Rcpp::export]]
+List muinvn_parallel_rcpp(const NumericVector a, uint32_t w) {
+  // Functions here are based on the work in
+  // Ogita et al, Accurate Sum and Dot Product
+  // results here are a moving average and stable inverse centered norm based
+  // on Accurate Sum and Dot Product, Ogita et al
+
+  NumericVector sig(a.length() - w + 1);
+  NumericVector mu = movsum_ogita_rcpp(a, w) / w;
+
+  MuinWorker muin_worker(a, mu, w, sig);
+
+  // call parallelFor to do the work
+  try {
+    RcppParallel::parallelFor(0, mu.length(), muin_worker);
+  } catch (Rcpp::internal::InterruptedException &ex) {
+    Rcout << "Process terminated.\n";
+  } catch (...) {
+    ::Rf_error("c++ exception (unknown reason)");
   }
 
-  res[0] = accum + resid;
-
-  for (uint32_t i = w; i < a.length(); i++) {
-    double m = a[i - w];
-    double n = a[i];
-    double p = accum - m;
-    double q = p - accum;
-    double r = resid + ((accum - (p - q)) - (m + q));
-    accum = p + n;
-    double t = accum - p;
-    resid = r + ((p - (accum - t)) + (n - t));
-    res[i - w + 1] = accum + resid;
-  }
-
-  return (res);
+  return (List::create(
+      Rcpp::Named("avg") = mu,
+      Rcpp::Named("sig") = sig
+  ));
 }
 
+//[[Rcpp::export]]
 List muinvn_rcpp(const NumericVector a, uint32_t w) {
   // Functions here are based on the work in
   // Ogita et al, Accurate Sum and Dot Product
@@ -254,7 +286,7 @@ List muinvn_rcpp(const NumericVector a, uint32_t w) {
   // on Accurate Sum and Dot Product, Ogita et al
 
   NumericVector sig(a.length() - w + 1, 0);
-  NumericVector mu = sum2s_rcpp(a, w) / w;
+  NumericVector mu = movsum_ogita_rcpp(a, w) / w;
 
   for (uint32_t i = 0; i < mu.length(); i++) {
     IntegerVector a_range = Range(i, i + w - 1);
@@ -278,7 +310,7 @@ ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
   std::vector<std::complex<double>> zz(n);
   FFT::fftw *fft = new FFT::fftw();
 
-  for(int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     zz[i].real(z[i].r);
     zz[i].imag(z[i].i);
   }
@@ -296,7 +328,7 @@ ComplexVector fft_rcpp(const NumericVector z, bool invert) {
   std::vector<std::complex<double>> zz(n);
   FFT::fftw *fft = new FFT::fftw();
 
-  for(int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     zz[i].real(z[i]);
     zz[i].imag(0.0);
   }
