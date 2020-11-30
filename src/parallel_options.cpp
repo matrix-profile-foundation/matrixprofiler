@@ -1,3 +1,4 @@
+#include <Rcpp.h>
 #include <RcppParallel.h>
 
 #if RCPP_PARALLEL_USE_TBB // TBB support turned on
@@ -5,6 +6,8 @@
 #include <string>
 #include <exception>
 #include <tbb/task_scheduler_init.h>
+
+using namespace Rcpp;
 
 void setThreadOptions(int numThreads, int stackSize) {
 
@@ -18,7 +21,7 @@ void setThreadOptions(int numThreads, int stackSize) {
       s_pTaskScheduler->initialize(numThreads, stackSize);
     }
   } catch (const std::exception &e) {
-    std::cout << "Error loading TBB: " + e.what() << std::endl;
+    std::cout << "Error loading TBB: " << e.what() << std::endl;
   } catch (...) {
     std::cout << "Error loading TBB: (Unknown error)" << std::endl;
   }

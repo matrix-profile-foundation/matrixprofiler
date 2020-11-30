@@ -67,7 +67,9 @@ Suggests:
     vdiffr
 LinkingTo: 
     Rcpp (>= 1.0.3),
-    RcppParallel (>= 4.4.4)
+    RcppParallel (>= 4.4.4),
+    RcppThread,
+    RcppProgress
 VignetteBuilder: 
     knitr
 Encoding: UTF-8

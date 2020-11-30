@@ -13,6 +13,9 @@ namespace FFT {
 #define MAX(y, x) ((x) > (y) && (x) == (x) ? (x) : (y))
 #endif
 
+#ifndef INT_MAX
+#define INT_MAX 2147483647
+#endif
 
 #ifndef M_SQRT_3
 #define M_SQRT_3 1.732050807568877293527446341506 /* sqrt(3) */

@@ -242,7 +242,7 @@ struct MuinWorker : public Worker {
 
     for (uint32_t i = begin; i < end; i++) {
 
-      for(j = i, k = 0; j < (i + w_size); j++, k++) {
+      for (j = i, k = 0; j < (i + w_size); j++, k++) {
         b[k] = a[j] - mu[i];
       }
 
@@ -273,9 +273,9 @@ List muinvn_parallel_rcpp(const NumericVector a, uint32_t w) {
   }
 
   return (List::create(
-      Rcpp::Named("avg") = mu,
-      Rcpp::Named("sig") = sig
-  ));
+            Rcpp::Named("avg") = mu,
+            Rcpp::Named("sig") = sig
+          ));
 }
 
 //[[Rcpp::export]]

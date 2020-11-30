@@ -7,9 +7,13 @@
 
 using namespace Rcpp;
 
-List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs, bool euclidean);
-List mpxab_rcpp(NumericVector a, NumericVector b, uint16_t w, bool idxs, bool euclidean);
-List mpx_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs, bool euclidean);
-List mpxab_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs, bool euclidean);
+List mpx_rcpp(NumericVector a, uint64_t window_size, double ez, bool idxs,
+              bool euclidean, bool progress);
+List mpxab_rcpp(NumericVector a, NumericVector b, uint64_t window_size, bool idxs,
+                bool euclidean, bool progress);
+List mpx_rcpp_parallel(NumericVector a, uint64_t window_size, double ez, bool idxs,
+                       bool euclidean, bool progress);
+List mpxab_rcpp_parallel(NumericVector a, uint64_t window_size, bool idxs,
+                         bool euclidean, bool progress);
 
 #endif // __MPX__
