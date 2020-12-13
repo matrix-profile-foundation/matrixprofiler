@@ -19,7 +19,8 @@ double std_rcpp(const NumericVector data, const bool na_rm = false) {
     }
   }
 
-  double result = sqrt(sum(pow((the_data - mean(the_data)), 2)) / the_data.length());
+  double result =
+      sqrt(sum(pow((the_data - mean(the_data)), 2)) / the_data.length());
 
   return (result);
 }
@@ -80,7 +81,8 @@ NumericVector diff_lag(const NumericVector x, const uint32_t lag = 1) {
 }
 
 //[[Rcpp::export]]
-NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1, const double v = 0.0) {
+NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1,
+                        const double v = 0.0) {
   uint32_t n = x.size();
   NumericVector out(n - lag + 1);
 
@@ -93,18 +95,23 @@ NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1, const dou
 }
 
 //[[Rcpp::export]]
-NumericVector fast_movsd_rcpp(const NumericVector data, const uint32_t window_size) {
+NumericVector fast_movsd_rcpp(const NumericVector data,
+                              const uint32_t window_size) {
 
   // Improve the numerical analysis by subtracting off the series mean
   // this has no effect on the standard deviation.
   NumericVector data_zeromean = data - mean(data);
 
-  NumericVector data_sum = cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
+  NumericVector data_sum =
+      cumsum(diff2_lag(data_zeromean, window_size,
+                       sum(data_zeromean[Range(0, (window_size - 1))])));
   NumericVector data_mean = data_sum / window_size;
 
   NumericVector data2 = pow(data_zeromean, 2);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_sd2 = (data2_sum / window_size) - pow(data_mean, 2); // variance
+  NumericVector data2_sum = cumsum(
+      diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
+  NumericVector data_sd2 =
+      (data2_sum / window_size) - pow(data_mean, 2); // variance
   NumericVector data_sd = sqrt(data_sd2);
 
   return (data_sd);
@@ -113,31 +120,35 @@ NumericVector fast_movsd_rcpp(const NumericVector data, const uint32_t window_si
 //[[Rcpp::export]]
 List fast_avg_sd_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  NumericVector mov_sum = cumsum(diff2_lag(data, window_size, sum(as<NumericVector>(data[Range(0, (window_size - 1))]))));
+  NumericVector mov_sum = cumsum(
+      diff2_lag(data, window_size,
+                sum(as<NumericVector>(data[Range(0, (window_size - 1))]))));
   NumericVector mov_mean = mov_sum / window_size;
   NumericVector data2 = pow(data, 2);
-  NumericVector mov2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
+  NumericVector mov2_sum = cumsum(
+      diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
 
   // Improve the numerical analysis by subtracting off the series mean
   // this has no effect on the standard deviation.
   NumericVector data_zeromean = data - mean(data);
 
-  NumericVector data_sum = cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
+  NumericVector data_sum =
+      cumsum(diff2_lag(data_zeromean, window_size,
+                       sum(data_zeromean[Range(0, (window_size - 1))])));
   NumericVector data_mean = data_sum / window_size;
 
   data2 = pow(data_zeromean, 2);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_sd2 = (data2_sum / window_size) - pow(data_mean, 2); // variance
+  NumericVector data2_sum = cumsum(
+      diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
+  NumericVector data_sd2 =
+      (data2_sum / window_size) - pow(data_mean, 2); // variance
   NumericVector data_sd = sqrt(data_sd2);
   NumericVector data_sig = sqrt(1 / (data_sd2 * window_size));
 
-  return (List::create(
-            Rcpp::Named("avg") = mov_mean,
-            Rcpp::Named("sd") = data_sd,
-            Rcpp::Named("sig") = data_sig,
-            Rcpp::Named("sum") = mov_sum,
-            Rcpp::Named("sqrsum") = mov2_sum
-          ));
+  return (
+      List::create(Rcpp::Named("avg") = mov_mean, Rcpp::Named("sd") = data_sd,
+                   Rcpp::Named("sig") = data_sig, Rcpp::Named("sum") = mov_sum,
+                   Rcpp::Named("sqrsum") = mov2_sum));
 }
 
 //[[Rcpp::export]]
@@ -166,7 +177,7 @@ NumericVector binary_split_rcpp(const uint32_t n) {
 
   NumericVector idxs(n);
 
-  idxs[0] = 1;// We always begin by explore the first integer
+  idxs[0] = 1; // We always begin by explore the first integer
   // After exploring the first integer, we begin splitting the interval 2:n
 
   std::deque<uint32_t> lb_list;
@@ -230,9 +241,9 @@ struct MuinWorker : public Worker {
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  MuinWorker(const NumericVector a, const NumericVector mu, const uint32_t w_size,
-             NumericVector sig) :
-    a(a), mu(mu), w_size(w_size), sig(sig) {}
+  MuinWorker(const NumericVector a, const NumericVector mu,
+             const uint32_t w_size, NumericVector sig)
+      : a(a), mu(mu), w_size(w_size), sig(sig) {}
 
   // function call operator that work for the specified range (begin/end)
   void operator()(std::size_t begin, std::size_t end) {
@@ -272,10 +283,7 @@ List muinvn_parallel_rcpp(const NumericVector a, uint32_t w) {
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(
-            Rcpp::Named("avg") = mu,
-            Rcpp::Named("sig") = sig
-          ));
+  return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
 
 //[[Rcpp::export]]
@@ -295,10 +303,7 @@ List muinvn_rcpp(const NumericVector a, uint32_t w) {
 
   sig = 1 / sqrt(sig);
 
-  return (List::create(
-            Rcpp::Named("avg") = mu,
-            Rcpp::Named("sig") = sig
-          ));
+  return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
 
 // Version compatible with RCPP code
@@ -316,7 +321,7 @@ ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
   }
 
   result = wrap(fft->fft(zz, invert));
-  delete(fft);
+  delete (fft);
 
   return result;
 }
@@ -334,7 +339,7 @@ ComplexVector fft_rcpp(const NumericVector z, bool invert) {
   }
 
   result = wrap(fft->fft(zz, invert));
-  delete(fft);
+  delete (fft);
 
   return result;
 }

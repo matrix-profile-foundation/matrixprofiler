@@ -1,7 +1,7 @@
 #include "stamp.h"
+#include "fft.h"
 #include "mass.h"
 #include "math.h"
-#include "fft.h"
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
@@ -17,8 +17,8 @@ using namespace RcppParallel;
 #endif
 
 // [[Rcpp::export]]
-List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
-               double ez = 0.5, bool progress = false) {
+List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
+                uint32_t window_size, double ez = 0.5, bool progress = false) {
 
   bool partial = false;
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
@@ -26,7 +26,6 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
   uint64_t query_size = query_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;
   uint64_t num_queries = query_size - window_size + 1;
-
 
   // check skip position
   LogicalVector skip_location(matrix_profile_size);
@@ -65,11 +64,14 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
         RcppThread::checkUserInterrupt();
       }
 
-      List nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"],
-                           pre["data_mean"], pre["data_sd"], as<NumericVector>(pre["query_mean"])[i],
-                           as<NumericVector>(pre["query_sd"])[i], k);
+      List nn =
+          mass3_rcpp(query[Range(i, i + window_size - 1)], data,
+                     pre["data_size"], pre["window_size"], pre["data_mean"],
+                     pre["data_sd"], as<NumericVector>(pre["query_mean"])[i],
+                     as<NumericVector>(pre["query_sd"])[i], k);
 
-      NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
+      NumericVector distance_profile =
+          sqrt(as<NumericVector>(nn["distance_profile"]));
 
       // apply exclusion zone
       if (exclusion_zone > 0) {
@@ -79,8 +81,10 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
         distance_profile[dp_range] = R_PosInf;
       }
 
-      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
-      if (skip_location[i] || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
+          R_PosInf;
+      if (skip_location[i] ||
+          as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
         distance_profile.fill(R_PosInf);
       }
       distance_profile[skip_location] = R_PosInf;
@@ -92,19 +96,17 @@ List stamp_cpp(const NumericVector data_ref, const NumericVector query_ref, uint
     }
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
-    Rcout << "Process terminated by the user successfully, partial results were returned.";
+    Rcout << "Process terminated by the user successfully, partial results "
+             "were returned.";
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(
-            Rcpp::Named("matrix_profile") = matrix_profile,
-            Rcpp::Named("profile_index") = profile_index,
-            Rcpp::Named("partial") = partial,
-            Rcpp::Named("ez") = ez
-          ));
+  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile,
+                       Rcpp::Named("profile_index") = profile_index,
+                       Rcpp::Named("partial") = partial,
+                       Rcpp::Named("ez") = ez));
 }
-
 
 struct StampWorker : public Worker {
   // input
@@ -123,20 +125,21 @@ struct StampWorker : public Worker {
   RVector<double> mp;
   RVector<int> pi;
 
-
   tbb::mutex m;
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  StampWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size, const uint64_t d_size,
-              const NumericVector d_mean, const NumericVector d_std, const NumericVector q_mean,
-              const NumericVector q_std, const uint64_t ez, Progress *p, NumericVector mp, IntegerVector pi) :
-    data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-    q_mean(q_mean), q_std(q_std), ez(ez), p(p), mp(mp), pi(pi) {}
+  StampWorker(const NumericVector data_ref, const NumericVector window_ref,
+              const uint64_t w_size, const uint64_t d_size,
+              const NumericVector d_mean, const NumericVector d_std,
+              const NumericVector q_mean, const NumericVector q_std,
+              const uint64_t ez, Progress *p, NumericVector mp,
+              IntegerVector pi)
+      : data_ref(data_ref), window_ref(window_ref), w_size(w_size),
+        d_size(d_size), d_mean(d_mean), d_std(d_std), q_mean(q_mean),
+        q_std(q_std), ez(ez), p(p), mp(mp), pi(pi) {}
 
-  ~StampWorker() {
-
-  }
+  ~StampWorker() {}
 
   // function call operator that work for the specified range (begin/end)
   void operator()(std::size_t begin, std::size_t end) {
@@ -206,13 +209,15 @@ struct StampWorker : public Worker {
 
         std::vector<std::complex<double>> X = fft->fft(data, false);
         std::vector<std::complex<double>> Z(X.size());
-        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
+        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(),
+                       std::multiplies<std::complex<double>>());
         std::vector<std::complex<double>> z = fft->fft(Z, true);
 
         for (uint64_t i = 0; i < jump; i++) {
           if ((begin + i) < start_ez || end_ez < (begin + i)) {
-            dp = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean[w])
-                      / (d_std[begin + i] * q_std[w]));
+            dp = 2 * (w_size - (z[k - jump + i].real() -
+                                w_size * d_mean[begin + i] * q_mean[w]) /
+                                   (d_std[begin + i] * q_std[w]));
 
             if (dp < mp[begin + i]) {
               mp[begin + i] = dp;
@@ -221,9 +226,9 @@ struct StampWorker : public Worker {
           }
         }
       }
-      delete(fft);
+      delete (fft);
     } catch (RcppThread::UserInterruptException &e) {
-      delete(fft);
+      delete (fft);
       Rcout << "Computation interrupted by the user." << std::endl;
       Rcout << "Please wait for other threads to stop." << std::endl;
       throw;
@@ -232,9 +237,9 @@ struct StampWorker : public Worker {
 };
 
 // [[Rcpp::export]]
-List stamp_cpp_parallel(const NumericVector data_ref, const NumericVector query_ref,
-                        uint32_t window_size, double ez = 0.5,
-                        bool progress = false) {
+List stamp_rcpp_parallel(const NumericVector data_ref,
+                         const NumericVector query_ref, uint32_t window_size,
+                         double ez = 0.5, bool progress = false) {
 
   uint64_t data_size = data_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;
@@ -265,117 +270,29 @@ List stamp_cpp_parallel(const NumericVector data_ref, const NumericVector query_
 
   uint64_t k = set_k_rcpp(1024, data_size, window_size);
 
-  uint64_t parts = pow(2, ceil(log2(data_size / k))) * matrix_profile_size / window_size;
+  uint64_t parts =
+      pow(2, ceil(log2(data_size / k))) * matrix_profile_size / window_size;
 
   Progress p(parts, progress);
 
   StampWorker stamp_worker(data, query, pre["window_size"], data_size,
                            pre["data_mean"], pre["data_sd"], pre["query_mean"],
-                           pre["query_sd"], exclusion_zone, &p,
-                           matrix_profile, profile_index);
-
+                           pre["query_sd"], exclusion_zone, &p, matrix_profile,
+                           profile_index);
 
   // call parallelFor to do the work
   try {
     RcppParallel::parallelFor(0, data.size(), stamp_worker, k);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
-    Rcout << "Process terminated by the user successfully, partial results were returned.";
+    Rcout << "Process terminated by the user successfully, partial results "
+             "were returned.";
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(
-            Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
-            Rcpp::Named("profile_index") = profile_index,
-            Rcpp::Named("partial") = partial,
-            Rcpp::Named("ez") = ez
-          ));
+  return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
+                       Rcpp::Named("profile_index") = profile_index,
+                       Rcpp::Named("partial") = partial,
+                       Rcpp::Named("ez") = ez));
 }
-
-
-struct StompWorker : public Worker {
-  // input
-  const RVector<double> data_ref;
-  const RVector<double> window_ref;
-  const uint64_t w_size;
-  const uint64_t d_size;
-  const RVector<double> d_mean;
-  const RVector<double> d_std;
-  const RVector<double> q_mean;
-  const RVector<double> q_std;
-  const RVector<double> first_product;
-  const uint64_t ez;
-
-  Progress *p;
-
-  RVector<double> mp;
-  RVector<int> pi;
-
-  tbb::mutex m;
-
-  // initialize from Rcpp input and output matrixes (the RMatrix class
-  // can be automatically converted to from the Rcpp matrix type)
-  StompWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size, const uint64_t d_size,
-              const NumericVector d_mean, const NumericVector d_std, const NumericVector q_mean,
-              const NumericVector q_std, const uint64_t ez, Progress *p, NumericVector mp, IntegerVector pi) :
-    data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-    q_mean(q_mean), q_std(q_std), ez(ez), p(p), mp(mp), pi(pi) {}
-
-  ~StompWorker() {
-
-  }
-
-  // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) {
-    // begin and end are the query window
-
-    List nn = mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], rpre["window_size"],
-                         pre["data_mean"], pre["data_sd"], as<NumericVector>(pre["query_mean"])[0],
-                         as<NumericVector>(pre["query_sd"])[0], k);
-
-    // index of sliding window
-    try {
-      for (uint64_t i = begin; i < end; i++) {
-        // compute the distance profile
-        NumericVector query_window = query[Range(i, (i + window_size - 1))];
-        if (i == begin) {
-          distance_profile = nn["distance_profile"];
-          last_product = nn["last_product"];
-        } else {
-          last_product[lp_range] = (NumericVector)(as<NumericVector>(last_product[lp2_range]) - as<NumericVector>(data[lp2_range]) * drop_value +
-            as<NumericVector>(data[dt_range]) * query_window[window_size - 1]);
-          last_product[0] = first_product[i];
-          distance_profile = 2 * (window_size - (last_product - window_size * as<NumericVector>(pre["data_mean"]) * as<NumericVector>(pre["query_mean"])[i]) /
-            (as<NumericVector>(pre["data_sd"]) * as<NumericVector>(pre["query_sd"])[i]));
-        }
-        distance_profile[distance_profile < 0] = 0;
-        // distance_profile = sqrt(distance_profile);
-        drop_value = query_window[0];
-
-        // apply exclusion zone
-        if (exclusion_zone > 0) {
-          uint32_t exc_st = MAX(0, i - exclusion_zone);
-          uint32_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
-          IntegerVector dp_range = Range(exc_st, exc_ed);
-          distance_profile[dp_range] = R_PosInf;
-        }
-
-        distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
-        if (skip_location[i] || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
-          distance_profile.fill(R_PosInf);
-        }
-        distance_profile[skip_location] = R_PosInf;
-
-        LogicalVector idx = (distance_profile < matrix_profile);
-        matrix_profile[idx] = distance_profile[idx];
-        profile_index[which(idx)] = i + 1;
-      }
-
-    } catch (RcppThread::UserInterruptException &e) {
-      Rcout << "Computation interrupted by the user." << std::endl;
-      Rcout << "Please wait for other threads to stop." << std::endl;
-      throw;
-    }
-  }
-};

@@ -10,6 +10,8 @@ mpx(
   query = NULL,
   idx = TRUE,
   dist = c("euclidean", "pearson"),
+  exclusion_zone = getOption("tsmp.exclusion_zone", 1/2),
+  progress = TRUE,
   n_workers = 1
 )
 }

@@ -3,8 +3,8 @@
 
 #if RCPP_PARALLEL_USE_TBB // TBB support turned on
 
-#include <string>
 #include <exception>
+#include <string>
 #include <tbb/task_scheduler_init.h>
 
 using namespace Rcpp;
@@ -38,9 +38,7 @@ int defaultNumThreads() {
 
 #include <tthread/tinythread.h>
 
-void setThreadOptions(int numThreads, int stackSize) {
-  return;
-}
+void setThreadOptions(int numThreads, int stackSize) { return; }
 
 int defaultNumThreads() {
   int value = tthread::thread::hardware_concurrency();

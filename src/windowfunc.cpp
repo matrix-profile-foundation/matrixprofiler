@@ -11,11 +11,12 @@
 // movmin          Unk     Unk      No
 // movmax          Unk     Unk      No
 
-#include "math.h" // math first to fix OSX error
 #include "windowfunc.h"
+#include "math.h" // math first to fix OSX error
 
 //[[Rcpp::export]]
-NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size) {
+NumericVector movmean_rcpp(const NumericVector data,
+                           const uint32_t window_size) {
   uint32_t data_size = data.length();
 
   NumericVector out(data_size - window_size + 1);
@@ -40,18 +41,23 @@ NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size)
 }
 
 //[[Rcpp::export]]
-NumericVector movvar_rcpp(const NumericVector data, const uint32_t window_size) {
+NumericVector movvar_rcpp(const NumericVector data,
+                          const uint32_t window_size) {
 
   // Improve the numerical analysis by subtracting off the series mean
   // this has no effect on the standard deviation.
   NumericVector data_zeromean = data - mean(data);
 
-  NumericVector data_sum = cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
+  NumericVector data_sum =
+      cumsum(diff2_lag(data_zeromean, window_size,
+                       sum(data_zeromean[Range(0, (window_size - 1))])));
   NumericVector data_mean = data_sum / window_size;
 
   NumericVector data2 = pow(data_zeromean, 2);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_var = (data2_sum / window_size) - pow(data_mean, 2); // variance
+  NumericVector data2_sum = cumsum(
+      diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
+  NumericVector data_var =
+      (data2_sum / window_size) - pow(data_mean, 2); // variance
 
   return (data_var);
 }
@@ -78,7 +84,8 @@ NumericVector movvar2_rcpp(const NumericVector data, uint32_t window_size) {
     }
 
     if (i >= (window_size - 1)) {
-      out[i - (window_size - 1)] = data2_sum / n - (pow(data_sum, 2) / pow(n, 2));
+      out[i - (window_size - 1)] =
+          data2_sum / n - (pow(data_sum, 2) / pow(n, 2));
     }
   }
   return (out);
@@ -121,7 +128,9 @@ NumericVector movsum_ogita_rcpp(const NumericVector a, uint32_t w) {
   }
 
   if (resid > 0.001) {
-    Rf_warning("Residual value is large. Some precision may be lost. res = %f\n", resid);
+    Rf_warning(
+        "Residual value is large. Some precision may be lost. res = %f\n",
+        resid);
   }
 
   res[0] = accum + resid;
@@ -179,18 +188,25 @@ NumericVector movmin_rcpp(const NumericVector data, uint32_t window_size) {
 
   min_res = res_out = R_PosInf;
   for (i = window_size - 1; i < data_size; i++) {
-    // if point comining out of the window was window's min than we need to recalculate 'min_res'
+    // if point comining out of the window was window's min than we need to
+    // recalculate 'min_res'
     if (res_out == min_res) {
       // find minimum over a window of length 'window_size'
-      min_res = *std::min_element(data.begin() + d, data.begin() + d + window_size); // cpp11, faster
+      min_res = *std::min_element(
+          data.begin() + d, data.begin() + d + window_size); // cpp11, faster
     } else {
-      // if point comining out of the window was NOT window min than min of window's first
-      //  'window_size - 1' points is still 'min_res', so we have to add a single point
+      // if point comining out of the window was NOT window min than min of
+      // window's first
+      //  'window_size - 1' points is still 'min_res', so we have to add a
+      //  single point
       min_res = MIN(min_res, data[d + window_size - 1]);
     }
 
-    res_out = data[d++]; // store point comming out of the window for future use and move window
-    out[k++] = (min_res == R_PosInf ? R_NaReal : min_res); // save 'min_res' and move window
+    res_out = data[d++]; // store point comming out of the window for future use
+                         // and move window
+    out[k++] =
+        (min_res == R_PosInf ? R_NaReal
+                             : min_res); // save 'min_res' and move window
   }
 
   return out;
@@ -217,18 +233,25 @@ NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
 
   max_res = res_out = R_NegInf;
   for (i = window_size - 1; i < data_size; i++) {
-    // if point comining out of the window was window's max than we need to recalculate 'max_res'
+    // if point comining out of the window was window's max than we need to
+    // recalculate 'max_res'
     if (res_out == max_res) {
       // find maximum over a window of length 'window_size'
-      max_res = *std::max_element(data.begin() + d, data.begin() + d + window_size); // cpp11, faster
+      max_res = *std::max_element(
+          data.begin() + d, data.begin() + d + window_size); // cpp11, faster
     } else {
-      // if point comining out of the window was NOT window max than max of window's first
-      //  'window_size - 1' points is still 'max_res', so we have to add a single point
+      // if point comining out of the window was NOT window max than max of
+      // window's first
+      //  'window_size - 1' points is still 'max_res', so we have to add a
+      //  single point
       max_res = MAX(max_res, data[d + window_size - 1]);
     }
 
-    res_out = data[d++]; // store point comming out of the window for future use and move window
-    out[k++] = (max_res == R_NegInf ? R_NaReal : max_res); // save 'max_res' and move window
+    res_out = data[d++]; // store point comming out of the window for future use
+                         // and move window
+    out[k++] =
+        (max_res == R_NegInf ? R_NaReal
+                             : max_res); // save 'max_res' and move window
   }
 
   return out;
@@ -236,7 +259,8 @@ NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
 // ONLINE ALGORITHMS
 
 //[[Rcpp::export]]
-NumericVector movmean_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps) {
+NumericVector movmean_weighted_rcpp(const NumericVector data,
+                                    uint32_t window_size, double eps) {
 
   uint32_t data_size = data.length();
 
@@ -265,7 +289,8 @@ NumericVector movmean_weighted_rcpp(const NumericVector data, uint32_t window_si
 }
 
 //[[Rcpp::export]]
-NumericVector movmean_fading_rcpp(const NumericVector data, uint32_t window_size, double eps) {
+NumericVector movmean_fading_rcpp(const NumericVector data,
+                                  uint32_t window_size, double eps) {
 
   uint32_t data_size = data.length();
 
@@ -294,7 +319,8 @@ NumericVector movmean_fading_rcpp(const NumericVector data, uint32_t window_size
 }
 
 //[[Rcpp::export]]
-NumericVector movsum_weighted_rcpp(NumericVector data, uint32_t window_size, double eps) {
+NumericVector movsum_weighted_rcpp(NumericVector data, uint32_t window_size,
+                                   double eps) {
   uint32_t data_size = data.length();
 
   double w = window_size;
@@ -319,7 +345,8 @@ NumericVector movsum_weighted_rcpp(NumericVector data, uint32_t window_size, dou
 }
 
 //[[Rcpp::export]]
-NumericVector movsum_fading_rcpp(NumericVector data, uint32_t window_size, double eps) {
+NumericVector movsum_fading_rcpp(NumericVector data, uint32_t window_size,
+                                 double eps) {
 
   uint32_t data_size = data.length();
 
@@ -345,7 +372,8 @@ NumericVector movsum_fading_rcpp(NumericVector data, uint32_t window_size, doubl
 }
 
 //[[Rcpp::export]]
-NumericVector movvar_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps) {
+NumericVector movvar_weighted_rcpp(const NumericVector data,
+                                   uint32_t window_size, double eps) {
 
   uint32_t data_size = data.length();
 
@@ -365,19 +393,22 @@ NumericVector movvar_weighted_rcpp(const NumericVector data, uint32_t window_siz
 
     if (i >= window_size) {
       data_sum = data_sum - data[i - window_size] * pow(alpha, window_size - 1);
-      data2_sum = data2_sum - pow(data[i - window_size], 2) * pow(alpha, window_size - 1);
+      data2_sum = data2_sum -
+                  pow(data[i - window_size], 2) * pow(alpha, window_size - 1);
       n = n - 1 * pow(alpha, window_size - 1);
     }
 
     if (i >= (window_size - 1)) {
-      out[i - (window_size - 1)] = data2_sum / n - (pow(data_sum, 2) / pow(n, 2));
+      out[i - (window_size - 1)] =
+          data2_sum / n - (pow(data_sum, 2) / pow(n, 2));
     }
   }
   return (out);
 }
 
 //[[Rcpp::export]]
-NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size, double eps) {
+NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size,
+                                 double eps) {
 
   uint32_t data_size = data.length();
 
@@ -396,13 +427,14 @@ NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size,
     n = n * alpha + 1;
 
     // if (i >= window_size) {
-    //   data_sum = data_sum - data[i - window_size] * pow(alpha, window_size - 1);
-    //   data2_sum = data2_sum - pow(data[i - window_size], 2) * pow(alpha, window_size - 1);
-    //   n = n - 1 * pow(alpha, window_size - 1);
+    //   data_sum = data_sum - data[i - window_size] * pow(alpha, window_size -
+    //   1); data2_sum = data2_sum - pow(data[i - window_size], 2) * pow(alpha,
+    //   window_size - 1); n = n - 1 * pow(alpha, window_size - 1);
     // }
 
     if (i >= (window_size - 1)) {
-      out[i - (window_size - 1)] = data2_sum / n - (pow(data_sum, 2) / pow(n, 2));
+      out[i - (window_size - 1)] =
+          data2_sum / n - (pow(data_sum, 2) / pow(n, 2));
     }
   }
   return (out);

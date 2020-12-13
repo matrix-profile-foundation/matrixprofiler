@@ -33,8 +33,8 @@
 
 */
 
-#include <iostream>
 #include "fft.h"
+#include <iostream>
 
 namespace FFT {
 /*  Fast Fourier Transform
@@ -147,7 +147,8 @@ fftw::~fftw() {
   }
 }
 
-std::vector<std::complex<double>> fftw::fft(std::vector<double> z, bool inverse) {
+std::vector<std::complex<double>> fftw::fft(std::vector<double> z,
+                                            bool inverse) {
 
   int n = z.size();
 
@@ -163,20 +164,21 @@ std::vector<std::complex<double>> fftw::fft(std::vector<double> z, bool inverse)
 }
 
 /* Fourier Transform for Univariate Spatial */
-std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z, bool inverse) {
+std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
+                                            bool inverse) {
 
   int i, inv, maxf, maxp, n;
   double f;
   size_t smaxf;
-  size_t maxsize = ((size_t) - 1) / 4;
+  size_t maxsize = ((size_t)-1) / 4;
 
   n = z.size();
 
   if (inverse) {
-    f = (double) n;
+    f = (double)n;
     inv = +2;
   } else {
-    f = (double) 1.0;
+    f = (double)1.0;
     inv = -2;
   }
   std::vector<std::complex<double>> res(n);
@@ -245,8 +247,8 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
 
      If *pmaxf == 0, there was an error, the error type is indicated by *pmaxp:
 
-      If *pmaxp == 0  There was an illegal zero parameter among nseg, n, and nspn.
-      If *pmaxp == 1  There were more than 20 factors to ntot.  */
+      If *pmaxp == 0  There was an illegal zero parameter among nseg, n, and
+     nspn. If *pmaxp == 1  There were more than 20 factors to ntot.  */
 
   int j, jj, k, sqrtk, kchanged;
 
@@ -355,7 +357,8 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
   *pmaxp = maxp;
 }
 
-int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, double *work, int *iwork) {
+int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn,
+                   double *work, int *iwork) {
   /* check that factorization was successful */
 
   if (old_n == 0) {
@@ -373,14 +376,15 @@ int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, dou
   size_t mf = maxf;
   int nspan = n * nspn, ntot = nspan * nseg;
 
-  fftmx(a, b, ntot, n, nspan, isn, m_fac, kt,
-        work, work + mf, work + 2 * mf, work + 3 * mf,
-        iwork, nfac);
+  fftmx(a, b, ntot, n, nspan, isn, m_fac, kt, work, work + mf, work + 2 * mf,
+        work + 3 * mf, iwork, nfac);
 
   return 1;
 }
 
-void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, double *at, double *ck, double *bt, double *sk, int *np, int *nfac) {
+void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn,
+                 int m, int kt, double *at, double *ck, double *bt, double *sk,
+                 int *np, int *nfac) {
   /* called from  fft_work() */
 
   /* Design BUG:  One purpose of fft_factor() would be to compute
@@ -858,7 +862,8 @@ L300:
       c2 = c1 - (cd * c1 + sd * s1);
       s1 = s1 + (sd * c1 - cd * s1);
       /* the following three statements compensate for truncation error.*/
-      /* if rounded arithmetic is used (nowadays always ?!), they may be deleted. */
+      /* if rounded arithmetic is used (nowadays always ?!), they may be
+       * deleted. */
 #ifdef TRUNCATED_ARITHMETIC
       c1 = 0.5 / (c2 * c2 + s1 * s1) + 0.5;
       s1 = c1 * s1;
@@ -908,7 +913,7 @@ L_fin:
 
     /* permutation for single-variate transform (optional code) */
 
-L370:
+  L370:
     do {
       ak = a[kk];
       a[kk] = a[k2];
@@ -919,7 +924,7 @@ L370:
       kk += inc;
       k2 += kspan;
     } while (k2 < ks);
-L380:
+  L380:
     do {
       k2 -= np[j];
       j++;
@@ -941,7 +946,7 @@ L380:
 
     /* permutation for multivariate transform */
 
-L400:
+  L400:
     k = kk + jc;
     do {
       ak = a[kk];
@@ -1033,7 +1038,7 @@ L480:
       np[k] = -kk;
     } while (kk != j);
     k3 = kk;
-L500:
+  L500:
     do {
       j++;
       kk = np[j];
@@ -1060,8 +1065,7 @@ L520:
   k = np[j];
   kk = jc * k + i + jj;
 
-  for (k1 = kk + kspan, k2 = 1; k1 != kk;
-       k1 -= inc, k2++) {
+  for (k1 = kk + kspan, k2 = 1; k1 != kk; k1 -= inc, k2++) {
     at[k2] = a[k1];
     bt[k2] = b[k1];
   }
@@ -1079,8 +1083,7 @@ L520:
     kk = k2;
   } while (k != j);
 
-  for (k1 = kk + kspan, k2 = 1; k1 > kk;
-       k1 -= inc, k2++) {
+  for (k1 = kk + kspan, k2 = 1; k1 > kk; k1 -= inc, k2++) {
     a[k1] = at[k2];
     b[k1] = bt[k2];
   }

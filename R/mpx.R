@@ -16,12 +16,12 @@
 #' mp <- mpx(mp_toy_data$data[1:200, 1], window_size = 30)
 #' }
 
-mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean", "pearson"), n_workers = 1) {
+mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean", "pearson"), exclusion_zone = getOption("tsmp.exclusion_zone", 1 / 2), progress = TRUE, n_workers = 1) {
 
   # Parse arguments ---------------------------------
   "!!DEBUG Parsing Arguments"
-  minlag <- floor(window_size / 2)
   dist <- match.arg(dist)
+  checkmate::qassert(exclusion_zone, "N+")
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
@@ -33,7 +33,7 @@ mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean
     dist <- FALSE
   }
 
-  ez <- getOption("tsmp.exclusion_zone", 1 / 2) # minlag is the exclusion zone
+  ez <- exclusion_zone
   result <- NULL
 
   # Register anytime exit point
@@ -63,18 +63,20 @@ mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean
           result <- mpx_rcpp_parallel(
             data,
             window_size,
-            as.integer(minlag),
+            ez,
             as.logical(idx),
-            as.logical(dist)
+            as.logical(dist),
+            as.logical(progress)
           )
           RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- mpx_rcpp(
             data,
             window_size,
-            as.integer(minlag),
+            ez,
             as.logical(idx),
-            as.logical(dist)
+            as.logical(dist),
+            as.logical(progress)
           )
         }
       },
