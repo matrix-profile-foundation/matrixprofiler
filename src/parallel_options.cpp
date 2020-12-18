@@ -11,6 +11,8 @@ using namespace Rcpp;
 
 void setThreadOptions(int numThreads, int stackSize) {
 
+  // setThreadOptions(numThreads = defaultNumThreads() / 2)
+
   static tbb::task_scheduler_init *s_pTaskScheduler = NULL;
 
   try {

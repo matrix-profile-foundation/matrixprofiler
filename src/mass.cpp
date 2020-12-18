@@ -1,4 +1,5 @@
 #include "mass.h"
+
 #include "fft.h"
 #include "math.h"
 #include "windowfunc.h"
@@ -20,7 +21,6 @@ List mass_weighted_rcpp(const ComplexVector data_fft,
                         const NumericVector data_sd, double query_mean,
                         double query_sd, const NumericVector data_pre,
                         const NumericVector weight) {
-
   NumericVector distance_profile;
   NumericVector last_product;
 
@@ -57,9 +57,9 @@ List mass_absolute_rcpp(const ComplexVector data_fft,
                         const NumericVector query_window, uint32_t data_size,
                         uint32_t window_size, const NumericVector sumx2,
                         double sumy2) {
-
   NumericVector distance_profile;
   NumericVector last_product;
+
   // pre-process query for fft
   try {
     NumericVector rev_query(
@@ -92,7 +92,6 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window,
                 uint64_t data_size, uint32_t window_size,
                 const NumericVector data_mean, const NumericVector data_sd,
                 double query_mean, double query_sd) {
-
   NumericVector distance_profile;
   NumericVector last_product;
   // pre-process query for fft
@@ -243,7 +242,6 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
                 uint64_t data_size, uint32_t window_size,
                 const NumericVector data_mean, const NumericVector data_sd,
                 double query_mean, double query_sd, uint32_t k) {
-
   // data_ref is the long time series
   // query_window is the query
   // k is the size of pieces, preferably a power of two
@@ -291,7 +289,9 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
           j, j + k - 1)]); // idx_begin:(idx_begin + jump + w_size - 2)
 
       Z = X * Y;
+
       z = Re(fft_rcpp(Z, true));
+
       d = 2 * (w_size - (z[Range(w_size - 1, k - 1)] -
                          w_size * d_mean[Range(idx_begin, idx_end)] * q_mean) /
                             (d_std[Range(idx_begin, idx_end)] * q_std));
@@ -316,12 +316,15 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
       } else {
         ComplexVector X = fft_rcpp(data_ref[Range(j, d_size - 1)]);
         Y = fft_rcpp(rev_query[Range(0, jump - 1)]);
+
         Z = X * Y;
         z = Re(fft_rcpp(Z, true));
+
         d = 2 *
             (w_size - (z[Range(w_size - 1, jump - 1)] -
                        w_size * d_mean[Range(idx_begin, idx_end)] * q_mean) /
                           (d_std[Range(idx_begin, idx_end)] * q_std));
+
         std::copy(d.begin(), d.end(), dist_it + j);
         std::copy(z.begin() + w_size - 1, z.begin() + jump, last_it + j);
       }
@@ -338,7 +341,6 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
 
 //[[Rcpp::export]]
 uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size) {
-
   try {
     if (k > data_size) {
       k = pow(2, ceil(log2(sqrt(data_size))));
@@ -405,7 +407,6 @@ uint32_t find_best_k_rcpp(const NumericVector data_ref,
 //[[Rcpp::export]]
 List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref,
                    uint32_t window_size) {
-
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();
 
@@ -450,7 +451,6 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref,
 //[[Rcpp::export]]
 List mass_pre_abs_rcpp(const NumericVector data_ref,
                        const NumericVector query_ref, uint32_t window_size) {
-
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();
 
@@ -485,7 +485,6 @@ List mass_pre_abs_rcpp(const NumericVector data_ref,
 List mass_pre_weighted_rcpp(const NumericVector data_ref,
                             const NumericVector query_ref, uint32_t window_size,
                             const NumericVector weight) {
-
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();
 

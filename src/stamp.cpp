@@ -118,6 +118,7 @@ struct StampWorker : public Worker {
   const RVector<double> d_std;
   const RVector<double> q_mean;
   const RVector<double> q_std;
+  const RVector<int> skip_location;
   const uint64_t ez;
 
   Progress *p;
@@ -133,18 +134,18 @@ struct StampWorker : public Worker {
               const uint64_t w_size, const uint64_t d_size,
               const NumericVector d_mean, const NumericVector d_std,
               const NumericVector q_mean, const NumericVector q_std,
-              const uint64_t ez, Progress *p, NumericVector mp,
-              IntegerVector pi)
+              const IntegerVector skip_location, const uint64_t ez, Progress *p,
+              NumericVector mp, IntegerVector pi)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size),
         d_size(d_size), d_mean(d_mean), d_std(d_std), q_mean(q_mean),
-        q_std(q_std), ez(ez), p(p), mp(mp), pi(pi) {}
+        q_std(q_std), skip_location(skip_location), ez(ez), p(p), mp(mp),
+        pi(pi) {}
 
   ~StampWorker() {}
 
   // function call operator that work for the specified range (begin/end)
   void operator()(std::size_t begin, std::size_t end) {
     // begin and end are the indexes of data.
-
     uint64_t i, j;
     uint64_t start_ez, end_ez;
     double dp;
@@ -214,14 +215,16 @@ struct StampWorker : public Worker {
         std::vector<std::complex<double>> z = fft->fft(Z, true);
 
         for (uint64_t i = 0; i < jump; i++) {
-          if ((begin + i) < start_ez || end_ez < (begin + i)) {
-            dp = 2 * (w_size - (z[k - jump + i].real() -
-                                w_size * d_mean[begin + i] * q_mean[w]) /
-                                   (d_std[begin + i] * q_std[w]));
+          if (skip_location[begin + i] == 0) {
+            if ((begin + i) < start_ez || end_ez < (begin + i)) {
+              dp = 2 * (w_size - (z[k - jump + i].real() -
+                                  w_size * d_mean[begin + i] * q_mean[w]) /
+                                     (d_std[begin + i] * q_std[w]));
 
-            if (dp < mp[begin + i]) {
-              mp[begin + i] = dp;
-              pi[begin + i] = w + 1;
+              if (dp < mp[begin + i]) {
+                mp[begin + i] = dp;
+                pi[begin + i] = w + 1;
+              }
             }
           }
         }
@@ -244,15 +247,16 @@ List stamp_rcpp_parallel(const NumericVector data_ref,
   uint64_t data_size = data_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
+  uint64_t num_queries = query_ref.size() - window_size + 1;
   bool partial = false;
 
   // TODO: check skip position
-  LogicalVector skip_location(matrix_profile_size);
+  IntegerVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
-      skip_location[i] = true;
+      skip_location[i] = 1;
     }
   }
 
@@ -268,21 +272,21 @@ List stamp_rcpp_parallel(const NumericVector data_ref,
   IntegerVector profile_index(matrix_profile_size, R_NegInf);
   List pre = mass_pre_rcpp(data, query, window_size);
 
-  uint64_t k = set_k_rcpp(1024, data_size, window_size);
+  uint64_t k = set_k_rcpp(window_size, data_size, window_size);
 
-  uint64_t parts =
-      pow(2, ceil(log2(data_size / k))) * matrix_profile_size / window_size;
+  uint64_t jobs = pow(2, (ceil(log2((double)data_size / (double)k)) - 1));
+  uint64_t steps = ceil((double)matrix_profile_size / (double)window_size);
 
-  Progress p(parts, progress);
+  Progress p(jobs * steps, progress);
 
   StampWorker stamp_worker(data, query, pre["window_size"], data_size,
                            pre["data_mean"], pre["data_sd"], pre["query_mean"],
-                           pre["query_sd"], exclusion_zone, &p, matrix_profile,
-                           profile_index);
+                           pre["query_sd"], skip_location, exclusion_zone, &p,
+                           matrix_profile, profile_index);
 
   // call parallelFor to do the work
   try {
-    RcppParallel::parallelFor(0, data.size(), stamp_worker, k);
+    RcppParallel::parallelFor(0, data.size(), stamp_worker, 2 * k);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results "

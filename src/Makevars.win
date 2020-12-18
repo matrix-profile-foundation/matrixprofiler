@@ -1,5 +1,5 @@
 CXX_STD = CXX11
-PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=1 -pedantic
+PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=1 -pedantic -UNDEBUG -Wall -gdwarf-2 -O0 -fdiagnostics-color=always
 PKG_LIBS += $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" \
               -e "RcppParallel::RcppParallelLibs()")
 

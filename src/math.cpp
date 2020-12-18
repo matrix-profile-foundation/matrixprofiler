@@ -326,6 +326,68 @@ ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
   return result;
 }
 
+std::vector<std::complex<double>> fft_rcpp(const std::vector<double> z,
+                                           bool invert) {
+
+  std::vector<std::complex<double>> result;
+  int n = z.size();
+  std::vector<std::complex<double>> zz(n);
+  FFT::fftw *fft = new FFT::fftw();
+
+  for (int i = 0; i < n; i++) {
+    zz[i].real(z[i]);
+    zz[i].imag(0);
+  }
+
+  result = fft->fft(zz, invert);
+  delete (fft);
+
+  return result;
+}
+
+std::vector<std::complex<double>>
+fft_rcpp(const std::vector<std::complex<double>> z, bool invert) {
+
+  std::vector<std::complex<double>> result;
+  int n = z.size();
+  std::vector<std::complex<double>> zz(n);
+  FFT::fftw *fft = new FFT::fftw();
+
+  for (int i = 0; i < n; i++) {
+    zz[i].real(z[i].real());
+    zz[i].imag(z[i].imag());
+  }
+
+  result = fft->fft(zz, invert);
+  delete (fft);
+
+  return result;
+}
+
+std::vector<double> fft_rcpp_real(const std::vector<std::complex<double>> z,
+                                  bool invert) {
+
+  int n = z.size();
+  std::vector<double> result(n);
+  std::vector<std::complex<double>> zz(n);
+  std::vector<std::complex<double>> result_cplx;
+  FFT::fftw *fft = new FFT::fftw();
+
+  for (int i = 0; i < n; i++) {
+    zz[i].real(z[i].real());
+    zz[i].imag(z[i].imag());
+  }
+
+  result_cplx = fft->fft(zz, invert);
+  delete (fft);
+
+  for (int i = 0; i < n; i++) {
+    result[i] = result_cplx[i].real();
+  }
+
+  return result;
+}
+
 ComplexVector fft_rcpp(const NumericVector z, bool invert) {
 
   ComplexVector result;

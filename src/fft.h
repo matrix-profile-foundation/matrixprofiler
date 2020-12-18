@@ -1,8 +1,8 @@
 #ifndef __FFT__
 #define __FFT__
 
-#include <vector>
 #include <complex>
+#include <vector>
 
 namespace FFT {
 
@@ -31,7 +31,7 @@ typedef struct complex {
 
 class fftw {
 
- public:
+public:
   // Constructor
   fftw();
 
@@ -39,9 +39,10 @@ class fftw {
   ~fftw();
 
   std::vector<std::complex<double>> fft(std::vector<double> z, bool inverse);
-  std::vector<std::complex<double>> fft(std::vector<std::complex<double>> z, bool inverse);
+  std::vector<std::complex<double>> fft(std::vector<std::complex<double>> z,
+                                        bool inverse);
 
- private:
+private:
   int old_n = 0;
   int nfac[20];
   int m_fac;
@@ -56,8 +57,9 @@ class fftw {
   void fft_factor(int n, int *pmaxf, int *pmaxp);
   int fft_work(double *a, double *b, int nseg, int n, int nspn, int isn,
                double *work, int *iwork);
-  void fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt,
-             double *at, double *ck, double *bt, double *sk, int *np, int *nfac);
+  void fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m,
+             int kt, double *at, double *ck, double *bt, double *sk, int *np,
+             int *nfac);
 };
 } // namespace FFT
 
