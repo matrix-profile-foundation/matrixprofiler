@@ -16,12 +16,12 @@ using namespace RcppParallel;
 #include "tthread/fast_mutex.h"
 #endif
 
-template <typename Iterator> void vprint(Iterator begin, Iterator end) {
-  for (Iterator i = begin; i != end; i++) {
-    std::cout << *i << " ";
-  }
-  std::cout << std::endl;
-}
+// template <typename Iterator> void vprint(Iterator begin, Iterator end) {
+//   for (Iterator i = begin; i != end; i++) {
+//     std::cout << *i << " ";
+//   }
+//   std::cout << std::endl;
+// }
 
 // [[Rcpp::export]]
 List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
