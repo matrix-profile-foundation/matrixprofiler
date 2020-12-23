@@ -101,20 +101,20 @@ fft_rcpp <- function(z, invert) {
     .Call(`_matrixprofiler_fft_rcpp`, z, invert)
 }
 
-mpx_rcpp <- function(a, window_size, ez = 0.5, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
-    .Call(`_matrixprofiler_mpx_rcpp`, a, window_size, ez, idxs, euclidean, progress)
+mpx_rcpp <- function(data_ref, window_size, ez = 0.5, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
+    .Call(`_matrixprofiler_mpx_rcpp`, data_ref, window_size, ez, idxs, euclidean, progress)
 }
 
-mpxab_rcpp <- function(a, b, window_size, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
-    .Call(`_matrixprofiler_mpxab_rcpp`, a, b, window_size, idxs, euclidean, progress)
+mpxab_rcpp <- function(data_ref, query_ref, window_size, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
+    .Call(`_matrixprofiler_mpxab_rcpp`, data_ref, query_ref, window_size, idxs, euclidean, progress)
 }
 
-mpx_rcpp_parallel <- function(a, window_size, ez = 0.5, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
-    .Call(`_matrixprofiler_mpx_rcpp_parallel`, a, window_size, ez, idxs, euclidean, progress)
+mpx_rcpp_parallel <- function(data_ref, window_size, ez = 0.5, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
+    .Call(`_matrixprofiler_mpx_rcpp_parallel`, data_ref, window_size, ez, idxs, euclidean, progress)
 }
 
-mpxab_rcpp_parallel <- function(a, b, window_size, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
-    .Call(`_matrixprofiler_mpxab_rcpp_parallel`, a, b, window_size, idxs, euclidean, progress)
+mpxab_rcpp_parallel <- function(data_ref, query_ref, window_size, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
+    .Call(`_matrixprofiler_mpxab_rcpp_parallel`, data_ref, query_ref, window_size, idxs, euclidean, progress)
 }
 
 stamp_rcpp <- function(data_ref, query_ref, window_size, ez = 0.5, progress = FALSE) {

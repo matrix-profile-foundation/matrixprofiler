@@ -216,11 +216,10 @@ struct StampWorker : public Worker {
 
         for (uint64_t i = 0; i < jump; i++) {
           if (skip_location[begin + i] == 0) {
-            if ((begin + i) < start_ez || end_ez < (begin + i)) {
+            if (ez == 0 || (begin + i) < start_ez || end_ez < (begin + i)) {
               dp = 2 * (w_size - (z[k - jump + i].real() -
                                   w_size * d_mean[begin + i] * q_mean[w]) /
                                      (d_std[begin + i] * q_std[w]));
-
               if (dp < mp[begin + i]) {
                 mp[begin + i] = dp;
                 pi[begin + i] = w + 1;
@@ -247,7 +246,6 @@ List stamp_rcpp_parallel(const NumericVector data_ref,
   uint64_t data_size = data_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
-  uint64_t num_queries = query_ref.size() - window_size + 1;
   bool partial = false;
 
   // TODO: check skip position

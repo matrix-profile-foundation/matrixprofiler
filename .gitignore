@@ -41,6 +41,10 @@ vignettes/*.R
 *.utf8.md
 *.knit.md
 
+# VSCode
+.vscode/
+*.code-workspace
+
 ### R.Bookdown Stack ###
 # R package: bookdown caching files
 /*_files/
@@ -63,3 +67,4 @@ Rplots.pdf
 /revdep/library.noindex
 /revdep/data.sqlite
 /revdep/*.html
+

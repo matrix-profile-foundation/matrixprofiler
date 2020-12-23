@@ -1,6 +1,7 @@
 #ifndef __MATH__
 #define __MATH__
 
+#include "fft.h"
 #include <Rcpp.h>
 
 // [[Rcpp::plugins(cpp11)]]

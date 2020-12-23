@@ -1,5 +1,7 @@
 ^renv$
 ^renv\.lock$
+^\.vscode$
+^.*\.code-workspace$
 ^.*\.Rout$
 ^.*\.Rproj$
 ^.*\.yml$
