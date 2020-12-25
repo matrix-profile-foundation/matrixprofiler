@@ -154,7 +154,7 @@ struct StampWorker : public Worker {
 
     // index of sliding window
     try {
-      for (uint64_t w = 0; w < d_mean.size(); w++) {
+      for (uint64_t w = 0; w < q_mean.size(); w++) {
 
         if (w % w_size == 0) {
           m.lock();
@@ -178,8 +178,6 @@ struct StampWorker : public Worker {
         } else {
           end_ez = d_size - 1;
         }
-
-        // skip_location (NA or Inf)
 
         uint64_t jump = end - begin;
         uint64_t k = jump + w_size - 1;
@@ -248,7 +246,6 @@ List stamp_rcpp_parallel(const NumericVector data_ref,
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   bool partial = false;
 
-  // TODO: check skip position
   IntegerVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
