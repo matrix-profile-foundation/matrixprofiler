@@ -34,12 +34,12 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
   uint32_t num_queries = query_size - window_size + 1;
 
   // check skip position
-  LogicalVector skip_location(matrix_profile_size);
+  IntegerVector skip_location(matrix_profile_size, 0);
 
-  for (uint32_t i = 0; i < matrix_profile_size; i++) {
+  for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
-      skip_location[i] = true;
+      skip_location[i] = 1;
     }
   }
 
@@ -52,7 +52,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
   query[is_infinite(query)] = 0;
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, R_NegInf);
+  IntegerVector profile_index(matrix_profile_size, -1);
 
   uint32_t k = find_best_k_rcpp(data, query, window_size);
 
@@ -123,13 +123,13 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
         distance_profile[dp_range] = R_PosInf;
       }
 
-      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
-          R_PosInf;
-      if (skip_location[i] ||
-          as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
-        distance_profile.fill(R_PosInf);
-      }
-      distance_profile[skip_location] = R_PosInf;
+      // distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
+      //     R_PosInf;
+      // if (skip_location[i] == 1 ||
+      //     as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+      //   distance_profile.fill(R_PosInf);
+      // }
+      // distance_profile[skip_location] = R_PosInf;
 
       LogicalVector idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
@@ -304,7 +304,7 @@ List stomp_rcpp_parallel(const NumericVector data_ref,
   uint64_t num_queries = query_size - window_size + 1;
   bool partial = false;
 
-  // TODO: check skip position
+  // check skip position
   IntegerVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {

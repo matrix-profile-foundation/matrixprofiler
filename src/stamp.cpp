@@ -50,7 +50,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
   List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
-  order = sample(order, num_queries);
+  //order = sample(order, num_queries);
 
   uint32_t k = find_best_k_rcpp(data, query, window_size);
 
@@ -81,13 +81,13 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
         distance_profile[dp_range] = R_PosInf;
       }
 
-      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
-          R_PosInf;
-      if (skip_location[i] ||
-          as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
-        distance_profile.fill(R_PosInf);
-      }
-      distance_profile[skip_location] = R_PosInf;
+      // distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
+      //     R_PosInf;
+      // if (skip_location[i] ||
+      //     as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+      //   distance_profile.fill(R_PosInf);
+      // }
+      // distance_profile[skip_location] = R_PosInf;
 
       // normal matrix_profile
       LogicalVector idx = (distance_profile < matrix_profile);
