@@ -57,10 +57,6 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
   IntegerVector profile_index(matrix_profile_size, -1);
 
   IntegerVector orig_index = Range(0, matrix_profile_size - 1);
-  IntegerVector order = orig_index[orig_index > exclusion_zone];
-
-  // uint64_t ssize = MIN(s_size, order.size());
-  // order = sample(order, ssize);
 
   uint32_t k = set_k_rcpp(window_size, data_size, window_size);
 
@@ -74,8 +70,9 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
   List nn = mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], pre["window_size"], data_mean, data_sd,
                        query_mean[0], query_sd[0], k);
 
-  // PRE-SCRIMP ----
   try {
+    //// PRE-SCRIMP ----
+
     if (pre_scrimp > 0) {
       // initialization
       int64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
@@ -186,6 +183,82 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
         j = j + 1;
       }
     }
+
+    //// SCRIMP ----
+
+    IntegerVector compute_order = orig_index[orig_index > exclusion_zone]; //////////
+    // uint64_t ssize = MIN(s_size, order.size());
+    // order = sample(order, ssize);
+    // compute_order = sample(compute_order, compute_order.size());
+
+    NumericVector curlastz(matrix_profile_size);
+    NumericVector curdistance(matrix_profile_size);
+    NumericVector dist1(matrix_profile_size, R_PosInf);
+    NumericVector dist2(matrix_profile_size, R_PosInf);
+
+    for (uint64_t &&i : compute_order) {
+
+      Rcout << "DEBUG1: " << i << std::endl;
+
+      curlastz[i] = sum(data[Range(0, window_size - 1)] * data[Range(i, i + window_size - 1)]); /////////////////////////
+
+      Rcout << "DEBUG2: " << i << std::endl;
+
+      if (i < (matrix_profile_size - 1)) {
+        curlastz[Range(i + 1, matrix_profile_size - 1)] = /////////////////////////
+            (NumericVector)cumsum(
+                data[Range(window_size, data_size - i)] * data[Range(i + window_size - 1, data_size - 1)] -
+                data[Range(0, matrix_profile_size - i - 1)] * data[Range(i, matrix_profile_size - 2)]) +
+            curlastz[i];
+      }
+
+      Rcout << "DEBUG3" << i << std::endl;
+
+      curdistance[Range(i, matrix_profile_size - 1)] = sqrt(abs( /////////////////////////
+          2 *
+          (window_size -
+           (curlastz[Range(i, matrix_profile_size - 1)] - window_size * data_mean[Range(i, matrix_profile_size - 1)] *
+                                                              data_mean[Range(0, matrix_profile_size - i + 1)]) /
+               (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i + 1)]))));
+
+      //  Rcout << "DEBUG4" << std::endl;
+
+      (NumericVector) dist1[Range(0, i - 1)] = R_PosInf; /////////////////////////
+
+      //  Rcout << "DEBUG5" << std::endl;
+      dist1[Range(i, matrix_profile_size - 1)] = curdistance[Range(i, matrix_profile_size - 1)]; /////////////////////////
+
+      //  Rcout << "DEBUG6" << std::endl;
+
+      dist2[Range(0, matrix_profile_size - i - 1)] = curdistance[Range(i, matrix_profile_size - 1)]; /////////////////////////
+      //  Rcout << "DEBUG7" << std::endl;
+
+      (NumericVector) dist2[Range(matrix_profile_size - i + 1, matrix_profile_size - 1)] = R_PosInf; /////////////////////////
+      //  Rcout << "DEBUG8" << std::endl;
+      LogicalVector loc1 = dist1 < matrix_profile; /////////////////////////
+
+      //  Rcout << "DEBUG9" << std::endl;
+
+      matrix_profile[loc1] = dist1[loc1]; /////////////////////////
+
+      //  Rcout << "DEBUG10" << std::endl;
+
+      profile_index[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
+
+      //  Rcout << "DEBUG11" << std::endl;
+
+      LogicalVector loc2 = dist2 < matrix_profile; /////////////////////////
+
+      //  Rcout << "DEBUG12" << std::endl;
+
+      matrix_profile[loc2] = dist2[loc2]; /////////////////////////
+
+      //  Rcout << "DEBUG13" << std::endl;
+      profile_index[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i - 1);
+
+      //  Rcout << "DEBUG14" << std::endl;
+    }
+
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results "
