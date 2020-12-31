@@ -41,6 +41,10 @@ mass_pre_weighted_rcpp <- function(data_ref, query_ref, window_size, weight) {
     .Call(`_matrixprofiler_mass_pre_weighted_rcpp`, data_ref, query_ref, window_size, weight)
 }
 
+seq_by <- function(start, end, by) {
+    .Call(`_matrixprofiler_seq_by`, start, end, by)
+}
+
 std_rcpp <- function(data, na_rm = FALSE) {
     .Call(`_matrixprofiler_std_rcpp`, data, na_rm)
 }
@@ -115,6 +119,10 @@ mpx_rcpp_parallel <- function(data_ref, window_size, ez = 0.5, idxs = TRUE, eucl
 
 mpxab_rcpp_parallel <- function(data_ref, query_ref, window_size, idxs = TRUE, euclidean = TRUE, progress = FALSE) {
     .Call(`_matrixprofiler_mpxab_rcpp_parallel`, data_ref, query_ref, window_size, idxs, euclidean, progress)
+}
+
+scrimp_rcpp <- function(data_ref, query_ref, window_size, ez = 0.5, pre_scrimp = 0.25, progress = FALSE) {
+    .Call(`_matrixprofiler_scrimp_rcpp`, data_ref, query_ref, window_size, ez, pre_scrimp, progress)
 }
 
 stamp_rcpp <- function(data_ref, query_ref, window_size, ez = 0.5, progress = FALSE) {

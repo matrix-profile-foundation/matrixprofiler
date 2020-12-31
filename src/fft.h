@@ -39,8 +39,7 @@ public:
   ~fftw();
 
   std::vector<std::complex<double>> fft(std::vector<double> z, bool inverse);
-  std::vector<std::complex<double>> fft(std::vector<std::complex<double>> z,
-                                        bool inverse);
+  std::vector<std::complex<double>> fft(std::vector<std::complex<double>> z, bool inverse);
 
 private:
   int old_n = 0;
@@ -55,11 +54,9 @@ private:
 
   /* non-API, but used by package RandomFields */
   void fft_factor(int n, int *pmaxf, int *pmaxp);
-  int fft_work(double *a, double *b, int nseg, int n, int nspn, int isn,
-               double *work, int *iwork);
-  void fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m,
-             int kt, double *at, double *ck, double *bt, double *sk, int *np,
-             int *nfac);
+  int fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, double *work, int *iwork);
+  void fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, double *at, double *ck,
+             double *bt, double *sk, int *np, int *nfac);
 };
 } // namespace FFT
 

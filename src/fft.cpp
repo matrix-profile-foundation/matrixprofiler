@@ -147,8 +147,7 @@ fftw::~fftw() {
   }
 }
 
-std::vector<std::complex<double>> fftw::fft(std::vector<double> z,
-                                            bool inverse) {
+std::vector<std::complex<double>> fftw::fft(std::vector<double> z, bool inverse) {
 
   int n = z.size();
 
@@ -164,8 +163,7 @@ std::vector<std::complex<double>> fftw::fft(std::vector<double> z,
 }
 
 /* Fourier Transform for Univariate Spatial */
-std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
-                                            bool inverse) {
+std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z, bool inverse) {
 
   int i, inv, maxf, maxp, n;
   double f;
@@ -357,8 +355,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
   *pmaxp = maxp;
 }
 
-int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn,
-                   double *work, int *iwork) {
+int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, double *work, int *iwork) {
   /* check that factorization was successful */
 
   if (old_n == 0) {
@@ -376,15 +373,13 @@ int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn,
   size_t mf = maxf;
   int nspan = n * nspn, ntot = nspan * nseg;
 
-  fftmx(a, b, ntot, n, nspan, isn, m_fac, kt, work, work + mf, work + 2 * mf,
-        work + 3 * mf, iwork, nfac);
+  fftmx(a, b, ntot, n, nspan, isn, m_fac, kt, work, work + mf, work + 2 * mf, work + 3 * mf, iwork, nfac);
 
   return 1;
 }
 
-void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn,
-                 int m, int kt, double *at, double *ck, double *bt, double *sk,
-                 int *np, int *nfac) {
+void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, double *at, double *ck,
+                 double *bt, double *sk, int *np, int *nfac) {
   /* called from  fft_work() */
 
   /* Design BUG:  One purpose of fft_factor() would be to compute

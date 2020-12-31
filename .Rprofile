@@ -1,9 +1,13 @@
-
-source(file.path(Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"), ".vscode-R", "init.R"))
+try(
+  silent(source(file.path(Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"),
+                   ".vscode-R", "init.R"))),
+  silent = TRUE
+)
 
 source("renv/activate.R")
 
 if (interactive()) {
+
   suppressMessages(require(devtools))
   suppressMessages(require(usethis))
   # suppressMessages(require(conflicted))

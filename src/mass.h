@@ -7,54 +7,39 @@
 #include <RcppParallel.h>
 using namespace RcppParallel;
 // [[Rcpp::plugins(cpp11)]]
-
 using namespace Rcpp;
-// using namespace RcppParallel;
-List mass_weighted_rcpp(const ComplexVector data_fft,
-                        const NumericVector query_window, uint32_t data_size,
-                        uint32_t window_size, const NumericVector data_mean,
-                        const NumericVector data_sd, double query_mean,
-                        double query_sd, const NumericVector data_pre,
-                        const NumericVector weight);
-List mass_absolute_rcpp(const ComplexVector data_fft,
-                        const NumericVector query_window, uint32_t data_size,
-                        uint32_t window_size, const NumericVector sumx2,
-                        double sumy2);
-List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window,
-                uint64_t data_size, uint32_t window_size,
-                const NumericVector data_mean, const NumericVector data_sd,
-                double query_mean, double query_sd);
-List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref,
-                uint64_t data_size, uint32_t window_size,
-                const NumericVector data_mean, const NumericVector data_sd,
-                double query_mean, double query_sd, uint32_t k = 4096);
+
+List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
+                        uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
+                        double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight);
+List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
+                        uint32_t window_size, const NumericVector sumx2, double sumy2);
+List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint64_t data_size,
+                uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean,
+                double query_sd);
+List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size,
+                uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean,
+                double query_sd, uint32_t k = 4096);
 // template <typename Iterator>
 // List mass3_cpp(const Iterator query_it, const Iterator data_it,
 //                 const uint64_t data_size, const uint32_t window_size,
 //                 const Iterator data_mean_it, const Iterator data_sd_it,
 //                 const double query_mean, const double query_sd, uint32_t k =
 //                 4096);
-List mass3_rcpp_parallel(const NumericVector query_window,
-                         const NumericVector data_ref, uint64_t data_size,
-                         uint32_t window_size, const NumericVector data_mean,
-                         const NumericVector data_sd, double query_mean,
-                         double query_sd, uint16_t k = 8192);
+List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size,
+                         uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
+                         double query_mean, double query_sd, uint16_t k = 8192);
 uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size);
-uint32_t find_best_k_rcpp(const NumericVector data_ref,
-                          const NumericVector query_ref, uint32_t window_size);
-List mass_pre_rcpp(const NumericVector data, const NumericVector query,
-                   uint32_t window_size);
-List mass_pre_abs_rcpp(const NumericVector data_ref,
-                       const NumericVector query_ref, uint32_t window_size);
-List mass_pre_weighted_rcpp(const NumericVector data_ref,
-                            const NumericVector query_ref, uint32_t window_size,
+uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size);
+List mass_pre_rcpp(const NumericVector data, const NumericVector query, uint32_t window_size);
+List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size);
+List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
                             const NumericVector weight);
 
 template <typename Iterator>
-List mass3_cpp(const Iterator query_it, const Iterator data_it,
-               const uint64_t data_size, const uint32_t window_size,
-               const Iterator data_mean_it, const Iterator data_sd_it,
-               const double query_mean, const double query_sd, uint32_t k) {
+List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t data_size, const uint32_t window_size,
+               const Iterator data_mean_it, const Iterator data_sd_it, const double query_mean, const double query_sd,
+               uint32_t k) {
   // data_it is the long time series query_it is the query k is the size of
   //     pieces,
   //     preferably a power of two data_it is the data,
@@ -99,14 +84,12 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it,
       std::vector<double> data_chunk(data_it + j, data_it + j + k);
       std::vector<std::complex<double>> X = fft_rcpp(data_chunk);
 
-      std::transform(X.begin(), X.end(), Y.begin(), Z.begin(),
-                     std::multiplies<std::complex<double>>());
+      std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
 
       z = fft_rcpp_real(Z, true);
 
       for (uint64_t i = 0; i < (k - w_size + 1); i++) {
-        d[i] = 2 * (w_size - (z[w_size - 1 + i] -
-                              w_size * *(d_mean_it + idx_begin + i) * q_mean) /
+        d[i] = 2 * (w_size - (z[w_size - 1 + i] - w_size * *(d_mean_it + idx_begin + i) * q_mean) /
                                  (*(d_std_it + idx_begin + i) * q_std));
       }
 
@@ -130,22 +113,18 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it,
       } else {
         std::vector<double> data_chunk(data_it + j, data_it + d_size);
         std::vector<std::complex<double>> X = fft_rcpp(data_chunk);
-        std::vector<double> rev_query_chunk(rev_query.begin(),
-                                            rev_query.begin() + jump);
+        std::vector<double> rev_query_chunk(rev_query.begin(), rev_query.begin() + jump);
         Y = fft_rcpp(rev_query_chunk);
 
         Z = std::vector<std::complex<double>>(Y.size());
 
-        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(),
-                       std::multiplies<std::complex<double>>());
+        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
 
         z = fft_rcpp_real(Z, true);
 
         for (uint64_t i = 0; i < (jump - w_size + 1); i++) {
-          d[i] =
-              2 * (w_size - (z[i + w_size - 1] -
-                             w_size * *(d_mean_it + idx_begin + i) * q_mean) /
-                                (*(d_std_it + idx_begin + i) * q_std));
+          d[i] = 2 * (w_size - (z[i + w_size - 1] - w_size * *(d_mean_it + idx_begin + i) * q_mean) /
+                                   (*(d_std_it + idx_begin + i) * q_std));
         }
 
         std::copy(d.begin(), d.begin() + (jump - w_size + 1), dist_it + j);
@@ -158,8 +137,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it,
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("distance_profile") = dist,
-                       Rcpp::Named("last_product") = last));
+  return (List::create(Rcpp::Named("distance_profile") = dist, Rcpp::Named("last_product") = last));
 }
 
 #endif // __MASS__

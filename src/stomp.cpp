@@ -13,7 +13,8 @@ using namespace RcppParallel;
 #if RCPP_PARALLEL_USE_TBB
 #include "tbb/mutex.h"
 #else
-#include "tthread/fast_mutex.h"
+#include "rcpp_parallel_fix.h"
+#include "tthread/tinythread.h"
 #endif
 
 // template <typename Iterator> void vprint(Iterator begin, Iterator end) {
@@ -24,8 +25,8 @@ using namespace RcppParallel;
 // }
 
 // [[Rcpp::export]]
-List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
-                uint32_t window_size, double ez = 0.5, bool progress = false) {
+List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez = 0.5,
+                bool progress = false) {
   bool partial = false;
   double exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint32_t data_size = data_ref.length();
@@ -58,16 +59,14 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
 
   List pre = mass_pre_rcpp(data, query, window_size);
   List rpre = mass_pre_rcpp(query, data, window_size);
-  List nn = mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"],
-                       rpre["window_size"], pre["data_mean"], pre["data_sd"],
-                       as<NumericVector>(pre["query_mean"])[0],
-                       as<NumericVector>(pre["query_sd"])[0], k);
+  List nn =
+      mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], rpre["window_size"], pre["data_mean"],
+                 pre["data_sd"], as<NumericVector>(pre["query_mean"])[0], as<NumericVector>(pre["query_sd"])[0], k);
 
   ///// This is needed for JOIN similarity
-  List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size,
-                        rpre["window_size"], rpre["data_mean"], rpre["data_sd"],
-                        as<NumericVector>(rpre["query_mean"])[0],
-                        as<NumericVector>(rpre["query_sd"])[0], k);
+  List rnn =
+      mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
+                 rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0], as<NumericVector>(rpre["query_sd"])[0], k);
 
   NumericVector first_product = rnn["last_product"];
 
@@ -97,18 +96,14 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
         distance_profile = nn["distance_profile"];
         last_product = nn["last_product"];
       } else {
-        last_product[lp_range] = (NumericVector)(
-            as<NumericVector>(last_product[lp2_range]) -
-            as<NumericVector>(data[lp2_range]) * drop_value +
-            as<NumericVector>(data[dt_range]) * query_window[window_size - 1]);
+        last_product[lp_range] = (NumericVector)(as<NumericVector>(last_product[lp2_range]) -
+                                                 as<NumericVector>(data[lp2_range]) * drop_value +
+                                                 as<NumericVector>(data[dt_range]) * query_window[window_size - 1]);
         last_product[0] = first_product[i];
         distance_profile =
-            2 *
-            (window_size -
-             (last_product - window_size * as<NumericVector>(pre["data_mean"]) *
-                                 as<NumericVector>(pre["query_mean"])[i]) /
-                 (as<NumericVector>(pre["data_sd"]) *
-                  as<NumericVector>(pre["query_sd"])[i]));
+            2 * (window_size - (last_product - window_size * as<NumericVector>(pre["data_mean"]) *
+                                                   as<NumericVector>(pre["query_mean"])[i]) /
+                                   (as<NumericVector>(pre["data_sd"]) * as<NumericVector>(pre["query_sd"])[i]));
       }
       distance_profile[distance_profile < 0] = 0;
 
@@ -145,10 +140,8 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile,
-                       Rcpp::Named("profile_index") = profile_index,
-                       Rcpp::Named("partial") = partial,
-                       Rcpp::Named("ez") = ez));
+  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
+                       Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
 }
 
 struct StompWorker : public Worker {
@@ -170,21 +163,21 @@ struct StompWorker : public Worker {
   RVector<double> mp;
   RVector<int> pi;
 
+#if RCPP_PARALLEL_USE_TBB
   tbb::mutex m;
+#else
+  tthread::mutex m;
+#endif
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  StompWorker(const NumericVector data_ref, const NumericVector window_ref,
-              const uint64_t w_size, const uint64_t d_size,
-              const NumericVector d_mean, const NumericVector d_std,
-              const NumericVector q_mean, const NumericVector q_std,
-              const IntegerVector skip_location,
-              const NumericVector first_product, const uint64_t ez, Progress *p,
-              NumericVector mp, IntegerVector pi)
-      : data_ref(data_ref), window_ref(window_ref), w_size(w_size),
-        d_size(d_size), d_mean(d_mean), d_std(d_std), q_mean(q_mean),
-        q_std(q_std), skip_location(skip_location),
-        first_product(first_product), ez(ez), p(p), mp(mp), pi(pi) {}
+  StompWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size,
+              const uint64_t d_size, const NumericVector d_mean, const NumericVector d_std, const NumericVector q_mean,
+              const NumericVector q_std, const IntegerVector skip_location, const NumericVector first_product,
+              const uint64_t ez, Progress *p, NumericVector mp, IntegerVector pi)
+      : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
+        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(p), mp(mp),
+        pi(pi) {}
 
   ~StompWorker() {}
 
@@ -206,16 +199,13 @@ struct StompWorker : public Worker {
       uint64_t k = set_k_rcpp(w_size * 2, chunk, w_size);
 
       m.lock();
-      List nn = mass3_cpp(window_ref.begin() + begin, data_ref.begin(), d_size,
-                          w_size, d_mean.begin(), d_std.begin(), q_mean[begin],
-                          q_std[begin], k);
+      List nn = mass3_cpp(window_ref.begin() + begin, data_ref.begin(), d_size, w_size, d_mean.begin(), d_std.begin(),
+                          q_mean[begin], q_std[begin], k);
       m.unlock();
-      std::vector<double> distance_profile(
-          as<NumericVector>(nn["distance_profile"]).begin(),
-          as<NumericVector>(nn["distance_profile"]).end());
-      std::vector<double> last_product(
-          as<NumericVector>(nn["last_product"]).begin(),
-          as<NumericVector>(nn["last_product"]).end());
+      std::vector<double> distance_profile(as<NumericVector>(nn["distance_profile"]).begin(),
+                                           as<NumericVector>(nn["distance_profile"]).end());
+      std::vector<double> last_product(as<NumericVector>(nn["last_product"]).begin(),
+                                       as<NumericVector>(nn["last_product"]).end());
 
       std::vector<double> matrix_profile(d_mean.size(), R_PosInf);
       std::vector<int> profile_index(d_mean.size(), -1);
@@ -236,9 +226,8 @@ struct StompWorker : public Worker {
         if (i > begin) {
 
           for (uint64_t j = d_mean.size() - 1; j > 0; j--) {
-            last_product[j] =
-                last_product[j - 1] - data_ref[j - 1] * drop_value +
-                data_ref[w_size + j - 1] * window_ref[i + w_size - 1];
+            last_product[j] = last_product[j - 1] - data_ref[j - 1] * drop_value +
+                              data_ref[w_size + j - 1] * window_ref[i + w_size - 1];
           }
           last_product[0] = first_product[i];
         }
@@ -254,10 +243,8 @@ struct StompWorker : public Worker {
           if (skip_location[j] == 0) {
             if (ez == 0 || j < exc_st || j > exc_ed) {
 
-              dp = 2 * (w_size -
-                        (last_product[j] - w_size * d_mean[j] * q_mean[i]) /
-                            (d_std[j] * q_std[i]));
-            } else if(i == begin) {
+              dp = 2 * (w_size - (last_product[j] - w_size * d_mean[j] * q_mean[i]) / (d_std[j] * q_std[i]));
+            } else if (i == begin) {
               distance_profile[j] = R_PosInf;
               continue;
             }
@@ -294,8 +281,7 @@ struct StompWorker : public Worker {
 };
 
 // [[Rcpp::export]]
-List stomp_rcpp_parallel(const NumericVector data_ref,
-                         const NumericVector query_ref, uint32_t window_size,
+List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
                          double ez = 0.5, bool progress = false) {
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
@@ -329,10 +315,9 @@ List stomp_rcpp_parallel(const NumericVector data_ref,
 
   ///// This is needed for JOIN similarity
   List rpre = mass_pre_rcpp(query, data, window_size);
-  List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size,
-                        rpre["window_size"], rpre["data_mean"], rpre["data_sd"],
-                        as<NumericVector>(rpre["query_mean"])[0],
-                        as<NumericVector>(rpre["query_sd"])[0], k);
+  List rnn =
+      mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
+                 rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0], as<NumericVector>(rpre["query_sd"])[0], k);
 
   NumericVector first_product = rnn["last_product"];
 
@@ -340,16 +325,20 @@ List stomp_rcpp_parallel(const NumericVector data_ref,
 
   Progress p(num_queries / 100, progress);
 
-  StompWorker stomp_worker(data, query, pre["window_size"], data_size,
-                           pre["data_mean"], pre["data_sd"], pre["query_mean"],
-                           pre["query_sd"], skip_location, first_product,
-                           exclusion_zone, &p, matrix_profile, profile_index);
+  StompWorker stomp_worker(data, query, pre["window_size"], data_size, pre["data_mean"], pre["data_sd"],
+                           pre["query_mean"], pre["query_sd"], skip_location, first_product, exclusion_zone, &p,
+                           matrix_profile, profile_index);
 
   k = set_k_rcpp(1024, num_queries, window_size);
 
   // call parallelFor to do the work
   try {
+#if RCPP_PARALLEL_USE_TBB
     RcppParallel::parallelFor(0, num_queries, stomp_worker, 2 * k);
+#else
+    RcppParallel2::ttParallelFor(0, num_queries, stomp_worker, 2 * k);
+#endif
+
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results "
@@ -359,7 +348,6 @@ List stomp_rcpp_parallel(const NumericVector data_ref,
   }
 
   return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
-                       Rcpp::Named("profile_index") = profile_index,
-                       Rcpp::Named("partial") = partial,
+                       Rcpp::Named("profile_index") = profile_index, Rcpp::Named("partial") = partial,
                        Rcpp::Named("ez") = ez));
 }

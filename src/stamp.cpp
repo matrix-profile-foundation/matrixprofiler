@@ -13,12 +13,13 @@ using namespace RcppParallel;
 #if RCPP_PARALLEL_USE_TBB
 #include "tbb/mutex.h"
 #else
-#include "tthread/fast_mutex.h"
+#include "rcpp_parallel_fix.h"
+#include "tthread/tinythread.h"
 #endif
 
 // [[Rcpp::export]]
-List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
-                uint32_t window_size, double ez = 0.5, bool progress = false) {
+List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez = 0.5,
+                bool progress = false) {
 
   bool partial = false;
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
@@ -50,7 +51,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
   List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
-  //order = sample(order, num_queries);
+  // order = sample(order, num_queries);
 
   uint32_t k = find_best_k_rcpp(data, query, window_size);
 
@@ -65,13 +66,10 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
       }
 
       List nn =
-          mass3_rcpp(query[Range(i, i + window_size - 1)], data,
-                     pre["data_size"], pre["window_size"], pre["data_mean"],
-                     pre["data_sd"], as<NumericVector>(pre["query_mean"])[i],
-                     as<NumericVector>(pre["query_sd"])[i], k);
+          mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"], pre["data_mean"],
+                     pre["data_sd"], as<NumericVector>(pre["query_mean"])[i], as<NumericVector>(pre["query_sd"])[i], k);
 
-      NumericVector distance_profile =
-          sqrt(as<NumericVector>(nn["distance_profile"]));
+      NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
 
       // apply exclusion zone
       if (exclusion_zone > 0) {
@@ -102,10 +100,8 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref,
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile,
-                       Rcpp::Named("profile_index") = profile_index,
-                       Rcpp::Named("partial") = partial,
-                       Rcpp::Named("ez") = ez));
+  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
+                       Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
 }
 
 struct StampWorker : public Worker {
@@ -126,20 +122,20 @@ struct StampWorker : public Worker {
   RVector<double> mp;
   RVector<int> pi;
 
+#if RCPP_PARALLEL_USE_TBB
   tbb::mutex m;
+#else
+  tthread::mutex m;
+#endif
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  StampWorker(const NumericVector data_ref, const NumericVector window_ref,
-              const uint64_t w_size, const uint64_t d_size,
-              const NumericVector d_mean, const NumericVector d_std,
-              const NumericVector q_mean, const NumericVector q_std,
-              const IntegerVector skip_location, const uint64_t ez, Progress *p,
+  StampWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size,
+              const uint64_t d_size, const NumericVector d_mean, const NumericVector d_std, const NumericVector q_mean,
+              const NumericVector q_std, const IntegerVector skip_location, const uint64_t ez, Progress *p,
               NumericVector mp, IntegerVector pi)
-      : data_ref(data_ref), window_ref(window_ref), w_size(w_size),
-        d_size(d_size), d_mean(d_mean), d_std(d_std), q_mean(q_mean),
-        q_std(q_std), skip_location(skip_location), ez(ez), p(p), mp(mp),
-        pi(pi) {}
+      : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
+        q_mean(q_mean), q_std(q_std), skip_location(skip_location), ez(ez), p(p), mp(mp), pi(pi) {}
 
   ~StampWorker() {}
 
@@ -149,6 +145,13 @@ struct StampWorker : public Worker {
     uint64_t i, j;
     uint64_t start_ez, end_ez;
     double dp;
+
+    uint64_t chunk = (end - begin);
+
+    if (chunk <= w_size) {
+      std::cout << "Chunk size is too small (" << chunk << ") for a window size of " << w_size << std::endl;
+      return;
+    }
 
     FFT::fftw *fft = new FFT::fftw();
 
@@ -194,6 +197,7 @@ struct StampWorker : public Worker {
           jump = (d_size - w_size + 1) /*end*/ - begin;
           if (jump > 1000000) {
             Rcout << "Error on jump" << std::endl;
+            Rcout << "begin: " << begin << " end: " << end << std::endl;
             return;
           }
 
@@ -208,15 +212,13 @@ struct StampWorker : public Worker {
 
         std::vector<std::complex<double>> X = fft->fft(data, false);
         std::vector<std::complex<double>> Z(X.size());
-        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(),
-                       std::multiplies<std::complex<double>>());
+        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
         std::vector<std::complex<double>> z = fft->fft(Z, true);
 
         for (uint64_t i = 0; i < jump; i++) {
           if (skip_location[begin + i] == 0) {
             if (ez == 0 || (begin + i) < start_ez || end_ez < (begin + i)) {
-              dp = 2 * (w_size - (z[k - jump + i].real() -
-                                  w_size * d_mean[begin + i] * q_mean[w]) /
+              dp = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean[w]) /
                                      (d_std[begin + i] * q_std[w]));
               if (dp < mp[begin + i]) {
                 mp[begin + i] = dp;
@@ -237,8 +239,7 @@ struct StampWorker : public Worker {
 };
 
 // [[Rcpp::export]]
-List stamp_rcpp_parallel(const NumericVector data_ref,
-                         const NumericVector query_ref, uint32_t window_size,
+List stamp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
                          double ez = 0.5, bool progress = false) {
 
   uint64_t data_size = data_ref.length();
@@ -274,14 +275,17 @@ List stamp_rcpp_parallel(const NumericVector data_ref,
 
   Progress p(jobs * steps, progress);
 
-  StampWorker stamp_worker(data, query, pre["window_size"], data_size,
-                           pre["data_mean"], pre["data_sd"], pre["query_mean"],
-                           pre["query_sd"], skip_location, exclusion_zone, &p,
-                           matrix_profile, profile_index);
+  StampWorker stamp_worker(data, query, pre["window_size"], data_size, pre["data_mean"], pre["data_sd"],
+                           pre["query_mean"], pre["query_sd"], skip_location, exclusion_zone, &p, matrix_profile,
+                           profile_index);
 
   // call parallelFor to do the work
   try {
+#if RCPP_PARALLEL_USE_TBB
     RcppParallel::parallelFor(0, data.size(), stamp_worker, 2 * k);
+#else
+    RcppParallel2::ttParallelFor(0, data.size(), stamp_worker, 2 * k);
+#endif
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results "
@@ -291,7 +295,6 @@ List stamp_rcpp_parallel(const NumericVector data_ref,
   }
 
   return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
-                       Rcpp::Named("profile_index") = profile_index,
-                       Rcpp::Named("partial") = partial,
+                       Rcpp::Named("profile_index") = profile_index, Rcpp::Named("partial") = partial,
                        Rcpp::Named("ez") = ez));
 }

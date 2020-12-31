@@ -3,7 +3,7 @@ if (!testthat:::on_cran()) {
   library(matrixprofiler)
 
   test_that("MPX Rcpp", {
-    expect_silent(matrixprofiler:::mpx_rcpp(a = motifs_discords_small,
+    expect_silent(matrixprofiler:::mpx_rcpp(motifs_discords_small,
                                              window_size = 200, ez = 0.5,
                                             idxs = TRUE,
                                             euclidean = TRUE,
@@ -11,7 +11,7 @@ if (!testthat:::on_cran()) {
   })
 
   test_that("MPX Rcpp Parallel", {
-    expect_silent(matrixprofiler:::mpx_rcpp_parallel(a = motifs_discords_small,
+    expect_silent(matrixprofiler:::mpx_rcpp_parallel(motifs_discords_small,
                                                      window_size = 200, ez = 0.5,
                                                      idxs = TRUE,
                                                      euclidean = TRUE,
@@ -19,7 +19,7 @@ if (!testthat:::on_cran()) {
   })
 
   test_that("MPXAB Rcpp", {
-    expect_silent(matrixprofiler:::mpxab_rcpp(a = motifs_discords_small, b = rev(motifs_discords_small),
+    expect_silent(matrixprofiler:::mpxab_rcpp(motifs_discords_small, rev(motifs_discords_small),
                                             window_size = 200,
                                             idxs = TRUE,
                                             euclidean = TRUE,
@@ -27,7 +27,7 @@ if (!testthat:::on_cran()) {
   })
 
   test_that("MPXAB Rcpp Parallel", {
-    expect_silent(matrixprofiler:::mpxab_rcpp_parallel(a = motifs_discords_small, b = rev(motifs_discords_small),
+    expect_silent(matrixprofiler:::mpxab_rcpp_parallel(motifs_discords_small, rev(motifs_discords_small),
                                               window_size = 200,
                                               idxs = TRUE,
                                               euclidean = TRUE,
