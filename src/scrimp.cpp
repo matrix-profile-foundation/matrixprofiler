@@ -17,13 +17,6 @@ using namespace RcppParallel;
 #include "tthread/tinythread.h"
 #endif
 
-// template <typename Iterator> void vprint(Iterator begin, Iterator end) {
-//   for (Iterator i = begin; i != end; i++) {
-//     std::cout << *i << " ";
-//   }
-//   std::cout << std::endl;
-// }
-
 // [[Rcpp::export]]
 List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez = 0.5,
                  double pre_scrimp = 0.25, bool progress = false) {
@@ -32,18 +25,19 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
   double exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint32_t data_size = data_ref.length();
   // uint32_t query_size = query_ref.length();
+
   uint32_t matrix_profile_size = data_size - window_size + 1;
   // uint32_t num_queries = query_size - window_size + 1;
 
   // check skip position
-  // IntegerVector skip_location(matrix_profile_size, 0);
+  IntegerVector skip_location(matrix_profile_size, 0);
 
-  // for (uint64_t i = 0; i < matrix_profile_size; i++) {
-  //   NumericVector range = data_ref[Range(i, (i + window_size - 1))];
-  //   if (any(is_na(range) | is_infinite(range))) {
-  //     skip_location[i] = 1;
-  //   }
-  // }
+  for (uint64_t i = 0; i < matrix_profile_size; i++) {
+    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    if (any(is_na(range) | is_infinite(range))) {
+      skip_location[i] = 1;
+    }
+  }
 
   NumericVector data = data_ref;
   NumericVector query = query_ref;
@@ -77,17 +71,16 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
       // initialization
       int64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
       IntegerVector pre_scrimp_idxs = seq_by(0, matrix_profile_size - 1, current_step);
+      Progress ps(pre_scrimp_idxs.size(), progress);
       // compute the matrix profile
       NumericVector dotproduct(matrix_profile_size);
       NumericVector refine_distance(matrix_profile_size, R_PosInf);
 
       uint64_t j = 1;
-
       for (uint64_t &&i : pre_scrimp_idxs) {
 
-        if (j % 10 == 0) {
-          RcppThread::checkUserInterrupt();
-        }
+        RcppThread::checkUserInterrupt();
+        ps.increment();
 
         // compute the distance profile
         nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"], data_mean,
@@ -186,7 +179,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     //// SCRIMP ----
 
-    IntegerVector compute_order = orig_index[orig_index > exclusion_zone]; //////////
+    IntegerVector compute_order = orig_index[orig_index > exclusion_zone];
     // uint64_t ssize = MIN(s_size, order.size());
     // order = sample(order, ssize);
     // compute_order = sample(compute_order, compute_order.size());
@@ -196,76 +189,58 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
     NumericVector dist1(matrix_profile_size, R_PosInf);
     NumericVector dist2(matrix_profile_size, R_PosInf);
 
+    Progress p(compute_order.size(), progress);
+
+    uint64_t j = 1;
     for (uint64_t &&i : compute_order) {
 
-      Rcout << "DEBUG1: " << i << std::endl;
+      RcppThread::checkUserInterrupt();
+      p.increment();
 
-      curlastz[i] = sum(data[Range(0, window_size - 1)] * data[Range(i, i + window_size - 1)]); /////////////////////////
-
-      Rcout << "DEBUG2: " << i << std::endl;
+      curlastz[i] = sum(data[Range(0, window_size - 1)] * data[Range(i, i + window_size - 1)]);
 
       if (i < (matrix_profile_size - 1)) {
-        curlastz[Range(i + 1, matrix_profile_size - 1)] = /////////////////////////
+        curlastz[Range(i + 1, matrix_profile_size - 1)] =
             (NumericVector)cumsum(
-                data[Range(window_size, data_size - i)] * data[Range(i + window_size - 1, data_size - 1)] -
-                data[Range(0, matrix_profile_size - i - 1)] * data[Range(i, matrix_profile_size - 2)]) +
+                data[Range(window_size, data_size - i - 1)] * data[Range(i + window_size, data_size - 1)] -
+                data[Range(0, matrix_profile_size - i - 2)] * data[Range(i, matrix_profile_size - 2)]) +
             curlastz[i];
       }
-
-      Rcout << "DEBUG3" << i << std::endl;
-
-      curdistance[Range(i, matrix_profile_size - 1)] = sqrt(abs( /////////////////////////
+      curdistance[Range(i, matrix_profile_size - 1)] = sqrt(abs(
           2 *
           (window_size -
            (curlastz[Range(i, matrix_profile_size - 1)] - window_size * data_mean[Range(i, matrix_profile_size - 1)] *
-                                                              data_mean[Range(0, matrix_profile_size - i + 1)]) /
-               (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i + 1)]))));
+                                                              data_mean[Range(0, matrix_profile_size - i - 1)]) /
+               (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i - 1)]))));
 
-      //  Rcout << "DEBUG4" << std::endl;
+      dist1[::seq(0, i - 1)] = R_PosInf;
+      dist1[::seq(i, matrix_profile_size - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
 
-      (NumericVector) dist1[Range(0, i - 1)] = R_PosInf; /////////////////////////
+      if (i < (matrix_profile_size - 1)) {
+        dist2[::seq(0, matrix_profile_size - i - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
+      }
 
-      //  Rcout << "DEBUG5" << std::endl;
-      dist1[Range(i, matrix_profile_size - 1)] = curdistance[Range(i, matrix_profile_size - 1)]; /////////////////////////
+      dist2[::seq(matrix_profile_size - i, matrix_profile_size - 1)] = R_PosInf;
 
-      //  Rcout << "DEBUG6" << std::endl;
-
-      dist2[Range(0, matrix_profile_size - i - 1)] = curdistance[Range(i, matrix_profile_size - 1)]; /////////////////////////
-      //  Rcout << "DEBUG7" << std::endl;
-
-      (NumericVector) dist2[Range(matrix_profile_size - i + 1, matrix_profile_size - 1)] = R_PosInf; /////////////////////////
-      //  Rcout << "DEBUG8" << std::endl;
-      LogicalVector loc1 = dist1 < matrix_profile; /////////////////////////
-
-      //  Rcout << "DEBUG9" << std::endl;
-
-      matrix_profile[loc1] = dist1[loc1]; /////////////////////////
-
-      //  Rcout << "DEBUG10" << std::endl;
-
+      LogicalVector loc1 = dist1 < matrix_profile;
+      matrix_profile[loc1] = dist1[loc1];
       profile_index[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
 
-      //  Rcout << "DEBUG11" << std::endl;
-
-      LogicalVector loc2 = dist2 < matrix_profile; /////////////////////////
-
-      //  Rcout << "DEBUG12" << std::endl;
-
-      matrix_profile[loc2] = dist2[loc2]; /////////////////////////
-
-      //  Rcout << "DEBUG13" << std::endl;
+      LogicalVector loc2 = dist2 < matrix_profile;
+      matrix_profile[loc2] = dist2[loc2];
       profile_index[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i - 1);
 
-      //  Rcout << "DEBUG14" << std::endl;
+      j++;
     }
 
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
-    Rcout << "Process terminated by the user successfully, partial results "
-             "were returned.";
+    std::cout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
+
+  // profile_index = profile_index + 1;
 
   return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
                        Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
