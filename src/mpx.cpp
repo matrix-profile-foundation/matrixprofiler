@@ -70,9 +70,10 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, boo
       for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
 
         p.increment();
-
-        if (*diag % 1000 == 0) {
-          Rcpp::checkUserInterrupt();
+        if (p.check_abort()) {
+          partial = true;
+          std::cout << "\nProcess terminated by the user successfully, partial results were returned1." << std::endl;
+          break;
         }
 
         c = inner_product((data_ref[Range(*diag, (*diag + window_size - 1))] - mu[*diag]), ww);
@@ -97,8 +98,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, boo
       }
     } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
-      Rcout << "Process terminated by the user successfully, partial results "
-               "were returned.";
+      Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
     }
 
     // to do ed
@@ -190,7 +190,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
       for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
         p.increment();
 
-        if (*diag % 1000) {
+        if ((*diag % 1000) == 0) {
           Rcpp::checkUserInterrupt();
         }
 
@@ -221,7 +221,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
       for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
         p.increment();
 
-        if (*diag % 1000) {
+        if ((*diag % 1000) == 0) {
           Rcpp::checkUserInterrupt();
         }
 
@@ -247,8 +247,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
       }
     } catch (Rcpp::internal::InterruptedException &ex) {
       partial = true;
-      Rcout << "Process terminated by the user successfully, partial results "
-               "were returned.";
+      std::cout << "Process terminated by the user successfully, partial results were returned." << std::endl;
     }
 
     // to do ed
@@ -317,13 +316,10 @@ struct MatrixProfileP : public Worker {
       for (uint32_t diag = begin; diag < end; diag++) {
 
         if (diag % 10 == 0) {
+          RcppThread::checkUserInterrupt();
           m.lock();
           p->increment();
           m.unlock();
-        }
-
-        if (begin % 50 == 0) {
-          RcppThread::checkUserInterrupt();
         }
 
         for (uint64_t i = 0; i < window_size; i++) {
@@ -410,8 +406,7 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez =
 #endif
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
-      Rcout << "Process terminated by the user successfully, partial results "
-               "were returned.";
+      Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
     } catch (...) {
       ::Rf_error("c++ exception (unknown reason)");
     }
@@ -503,13 +498,10 @@ struct MatrixProfilePAB : public Worker {
         for (uint32_t diag = begin; diag < end; diag++) {
 
           if (diag % 10 == 0) {
+            RcppThread::checkUserInterrupt();
             m.lock();
             p->increment();
             m.unlock();
-          }
-
-          if (begin % 50 == 0) {
-            RcppThread::checkUserInterrupt();
           }
 
           for (uint64_t i = 0; i < window_size; i++) {
@@ -540,13 +532,10 @@ struct MatrixProfilePAB : public Worker {
         for (uint32_t diag = begin; diag < end; diag++) {
 
           if (diag % 10 == 0) {
+            RcppThread::checkUserInterrupt();
             m.lock();
             p->increment();
             m.unlock();
-          }
-
-          if (begin % 50 == 0) {
-            RcppThread::checkUserInterrupt();
           }
 
           for (uint64_t i = 0; i < window_size; i++) {
@@ -656,8 +645,7 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
 #endif
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
-      Rcout << "Process AB terminated by the user successfully, partial "
-               "results were returned.";
+      Rcout << "Process AB terminated by the user successfully, partial results were returned." << std::endl;
     } catch (...) {
       ::Rf_error("c++ exception (unknown reason)");
     }
@@ -673,8 +661,7 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
 #endif
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
-      Rcout << "Process BA terminated by the user successfully, partial "
-               "results were returned.";
+      Rcout << "Process BA terminated by the user successfully, partial results were returned." << std::endl;
     } catch (...) {
       ::Rf_error("c++ exception (unknown reason)");
     }

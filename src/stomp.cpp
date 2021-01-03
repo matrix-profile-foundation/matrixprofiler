@@ -84,11 +84,8 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   try {
     for (int32_t i : order) {
+      RcppThread::checkUserInterrupt();
       p.increment();
-
-      if (i % 100 == 0) {
-        RcppThread::checkUserInterrupt();
-      }
 
       // compute the distance profile
       NumericVector query_window = query[Range(i, (i + window_size - 1))];
@@ -134,8 +131,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
     matrix_profile = sqrt(matrix_profile);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
-    Rcout << "Process terminated by the user successfully, partial results "
-             "were returned.";
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }

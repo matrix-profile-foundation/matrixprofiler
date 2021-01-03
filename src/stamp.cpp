@@ -59,11 +59,8 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   try {
     for (int32_t i : order) {
+      RcppThread::checkUserInterrupt();
       p.increment();
-
-      if (i % 100 == 0) {
-        RcppThread::checkUserInterrupt();
-      }
 
       List nn =
           mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"], pre["data_mean"],
@@ -94,8 +91,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
     }
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
-    Rcout << "Process terminated by the user successfully, partial results "
-             "were returned.";
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
@@ -160,13 +156,10 @@ struct StampWorker : public Worker {
       for (uint64_t w = 0; w < q_mean.size(); w++) {
 
         if (w % w_size == 0) {
+          RcppThread::checkUserInterrupt();
           m.lock();
           p->increment();
           m.unlock();
-        }
-
-        if (w % 100 == 0) {
-          RcppThread::checkUserInterrupt();
         }
 
         // exclusion zone
