@@ -17,6 +17,26 @@ using namespace RcppParallel;
 #include "tthread/tinythread.h"
 #endif
 
+NumericVector diagonal_dist(NumericVector data, uint64_t idx, uint64_t dataLen, uint64_t subLen, uint64_t proLen,
+                            NumericVector dataMu, NumericVector dataSig) {
+  NumericVector ones(proLen - idx + 1, 1);
+  NumericVector xTerm = ones * (data[Range(idx, idx + subLen - 1)] * data[Range(1, subLen)]);
+  NumericVector mTerm = data[Range(idx, proLen - 1)] * data[Range(1, proLen - idx)];
+  NumericVector aTerm = data[Range(idx + subLen, data.size())] * data[Range(subLen + 1, dataLen - idx + 1)];
+
+  if (proLen != idx) {
+    NumericVector cumsum_mterm = cumsum(mTerm);
+    NumericVector cumsum_aterm = cumsum(aTerm);
+    xTerm[Range(2, xTerm.size())] = xTerm[Range(2, xTerm.size())] - cumsum_mterm + cumsum_aterm;
+  }
+
+  NumericVector distProfile = (xTerm - subLen * dataMu[Range(idx, proLen)] * dataMu[Range(1, proLen - idx + 1)]) /
+                              (subLen * dataSig[Range(idx, proLen)] * dataSig[Range(1, proLen - idx + 1)]);
+  distProfile = 2 * subLen * (1 - distProfile);
+
+  return (distProfile);
+}
+
 // [[Rcpp::export]]
 List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez = 0.5,
                  double pre_scrimp = 0.25, bool progress = false) {
@@ -61,15 +81,12 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
   NumericVector query_mean = pre["query_mean"];
   NumericVector query_sd = pre["query_sd"];
 
-  List nn = mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], pre["window_size"], data_mean, data_sd,
-                       query_mean[0], query_sd[0], k);
-
   try {
     //// PRE-SCRIMP ----
 
     if (pre_scrimp > 0) {
       // initialization
-      int64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
+      uint64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
       IntegerVector pre_scrimp_idxs = seq_by(0, matrix_profile_size - 1, current_step);
       Progress ps(pre_scrimp_idxs.size(), progress);
       // compute the matrix profile
@@ -83,13 +100,14 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
         ps.increment();
 
         // compute the distance profile
-        nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"], data_mean,
-                        data_sd, query_mean[i], query_sd[i], k);
+        List nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"],
+                             data_mean, data_sd, query_mean[i], query_sd[i], k);
 
-        NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
+        NumericVector distance_profile = as<NumericVector>(nn["distance_profile"]);
 
         uint64_t exc_st = 0;
         uint64_t exc_ed = 0;
+
         // apply exclusion zone
         if (exclusion_zone > 0) {
           exc_st = MAX(0, i > exclusion_zone ? (i - exclusion_zone) : 0);
@@ -101,6 +119,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         // figure out and store the neareest neighbor
         if (j == 1) {
+
           matrix_profile = distance_profile;
           profile_index.fill(i);
           uint64_t min_idx = which_min(distance_profile);
@@ -117,39 +136,41 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         uint64_t idx_nn = profile_index[i];
         int64_t idx_diff = idx_nn - i;
-        dotproduct[i] = (window_size - (pow(matrix_profile[i], 2) / 2)) * data_sd[i] * data_sd[idx_nn] +
+        dotproduct[i] = (window_size - (matrix_profile[i] / 2)) * data_sd[i] * data_sd[idx_nn] +
                         window_size * data_mean[i] * data_mean[idx_nn];
 
         uint64_t endidx = MIN(matrix_profile_size - 1, (int64_t)i + current_step - 1);
         endidx = MIN((int64_t)endidx, matrix_profile_size - idx_diff - 1);
 
-        // confirmed, sequences asc
-        Range dot_idxs1 = Range((i + 1), endidx);
-        Range dot_idxs2 = Range((i + window_size), (endidx + window_size - 1));
-        Range dot_idxs3 = Range((idx_nn + window_size), (endidx + window_size - 1 + idx_diff));
-        Range dot_idxs4 = Range(i, (endidx - 1));
-        Range dot_idxs5 = Range(idx_nn, (endidx - 1 + idx_diff));
+        if (i < endidx) {
+          // confirmed, sequences asc
+          Range dot_idxs1 = Range((i + 1), endidx);
+          Range dot_idxs2 = Range((i + window_size), (endidx + window_size - 1));
+          Range dot_idxs3 = Range((idx_nn + window_size), (endidx + window_size - 1 + idx_diff));
+          Range dot_idxs4 = Range(i, (endidx - 1));
+          Range dot_idxs5 = Range(idx_nn, (endidx - 1 + idx_diff));
+          dotproduct[dot_idxs1] = (NumericVector)(
+              (NumericVector)(cumsum(data[dot_idxs2] * data[dot_idxs3] - data[dot_idxs4] * data[dot_idxs5])) +
+              dotproduct[i]);
 
-        dotproduct[dot_idxs1] = (NumericVector)(
-            (NumericVector)(cumsum(data[dot_idxs2] * data[dot_idxs3] - data[dot_idxs4] * data[dot_idxs5])) +
-            dotproduct[i]);
+          // confirmed, sequences asc
+          Range ref_idxs1 = Range((idx_nn + 1), (endidx + idx_diff));
+          refine_distance[dot_idxs1] = 
+              2 * (window_size - (dotproduct[dot_idxs1] - data_mean[dot_idxs1] * data_mean[ref_idxs1] * window_size) /
+                                     (data_sd[dot_idxs1] * data_sd[ref_idxs1]));
+        }
 
-        // confirmed, sequences asc
-        Range ref_idxs1 = Range((idx_nn + 1), (endidx + idx_diff));
-        refine_distance[dot_idxs1] = sqrt(
-            abs(2 * (window_size - (dotproduct[dot_idxs1] - data_mean[dot_idxs1] * data_mean[ref_idxs1] * window_size) /
-                                       (data_sd[dot_idxs1] * data_sd[ref_idxs1]))));
+        uint64_t beginidx = ((i + 1) <= current_step) ? 0 : (i + 1 - current_step);
+        if (idx_diff < 0) {
+          beginidx = MAX(beginidx, (uint64_t)abs(idx_diff));
+        }
 
-        int64_t beginidx = MAX(0, (int64_t)i - current_step + 1);
-        beginidx = MAX(beginidx, 1 - idx_diff);
-
-        if (i > 0) {
+        if (i > 0 && i > beginidx) {
           // sequences reversed
           IntegerVector dot_rev_idxs1 = ::seq((i - 1), beginidx);
           IntegerVector dot_rev_idxs2 = ::seq((idx_nn - 1), (beginidx + idx_diff));
           IntegerVector dot_rev_idxs3 = ::seq((i - 1 + window_size), (beginidx + window_size));
           IntegerVector dot_rev_idxs4 = ::seq((idx_nn - 1 + window_size), (beginidx + idx_diff + window_size));
-
           dotproduct[dot_rev_idxs1] = (NumericVector)((NumericVector)cumsum(data[dot_rev_idxs1] * data[dot_rev_idxs2] -
                                                                             data[dot_rev_idxs3] * data[dot_rev_idxs4]) +
                                                       dotproduct[i]);
@@ -157,9 +178,9 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
           Range ref_idxs2 = Range(beginidx, (i - 1));
           Range ref_idxs3 = Range((beginidx + idx_diff), (idx_nn - 1));
 
-          refine_distance[ref_idxs2] = sqrt(abs(
+          refine_distance[ref_idxs2] = 
               2 * (window_size - (dotproduct[ref_idxs2] - data_mean[ref_idxs2] * data_mean[ref_idxs3] * window_size) /
-                                     (data_sd[ref_idxs2] * data_sd[ref_idxs3]))));
+                                     (data_sd[ref_idxs2] * data_sd[ref_idxs3]));
         }
 
         Range upd_idxs1 = Range(beginidx, endidx);
@@ -206,20 +227,20 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
                 data[Range(0, matrix_profile_size - i - 2)] * data[Range(i, matrix_profile_size - 2)]) +
             curlastz[i];
       }
-      curdistance[Range(i, matrix_profile_size - 1)] = sqrt(abs(
+      curdistance[Range(i, matrix_profile_size - 1)] =
           2 *
           (window_size -
            (curlastz[Range(i, matrix_profile_size - 1)] - window_size * data_mean[Range(i, matrix_profile_size - 1)] *
                                                               data_mean[Range(0, matrix_profile_size - i - 1)]) /
-               (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i - 1)]))));
+               (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i - 1)]));
+
+      // curdistance = diagonal_dist(data, i, data_size, window_size, matrix_profile_size,
+      // data_mean, data_sd);
 
       dist1[::seq(0, i - 1)] = R_PosInf;
       dist1[::seq(i, matrix_profile_size - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
 
-      if (i < (matrix_profile_size - 1)) {
-        dist2[::seq(0, matrix_profile_size - i - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
-      }
-
+      dist2[::seq(0, matrix_profile_size - i - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
       dist2[::seq(matrix_profile_size - i, matrix_profile_size - 1)] = R_PosInf;
 
       LogicalVector loc1 = dist1 < matrix_profile;
@@ -228,7 +249,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
       LogicalVector loc2 = dist2 < matrix_profile;
       matrix_profile[loc2] = dist2[loc2];
-      profile_index[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i - 1);
+      profile_index[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
 
       j++;
     }
@@ -240,7 +261,8 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  // profile_index = profile_index + 1;
+  matrix_profile = sqrt(matrix_profile);
+  profile_index = profile_index + 1;
 
   return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
                        Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
