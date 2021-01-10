@@ -66,7 +66,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
           mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"], pre["data_mean"],
                      pre["data_sd"], as<NumericVector>(pre["query_mean"])[i], as<NumericVector>(pre["query_sd"])[i], k);
 
-      NumericVector distance_profile = sqrt(as<NumericVector>(nn["distance_profile"]));
+      NumericVector distance_profile = as<NumericVector>(nn["distance_profile"]);
 
       // apply exclusion zone
       if (exclusion_zone > 0) {
@@ -96,8 +96,9 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
     ::Rf_error("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
-                       Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
+  return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
+                       Rcpp::Named("profile_index") = profile_index, Rcpp::Named("partial") = partial,
+                       Rcpp::Named("ez") = ez));
 }
 
 struct StampWorker : public Worker {

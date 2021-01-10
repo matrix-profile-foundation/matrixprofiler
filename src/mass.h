@@ -6,6 +6,8 @@
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>
 using namespace RcppParallel;
+// [[Rcpp::depends(RcppThread)]]
+#include <RcppThread.h>
 // [[Rcpp::plugins(cpp11)]]
 using namespace Rcpp;
 
@@ -96,7 +98,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
       std::copy(d.begin(), d.begin() + k - w_size + 1, dist_it + j);
       std::copy(z.begin() + w_size - 1, z.begin() + k, last_it + j);
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     std::cout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -131,7 +133,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
         std::copy(z.begin() + w_size - 1, z.begin() + jump, last_it + j);
       }
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     std::cout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");

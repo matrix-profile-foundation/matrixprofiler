@@ -4,6 +4,8 @@
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>
 using namespace RcppParallel;
+// [[Rcpp::depends(RcppThread)]]
+#include <RcppThread.h>
 
 #if RCPP_PARALLEL_USE_TBB
 #include "tbb/mutex.h"
@@ -293,7 +295,7 @@ List muinvn_parallel_rcpp(const NumericVector a, uint32_t w) {
 #else
     RcppParallel2::ttParallelFor(0, mu.length(), muin_worker, 2 * w);
 #endif
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated.\n";
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");

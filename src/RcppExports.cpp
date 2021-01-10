@@ -431,6 +431,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// scrimp_rcpp_parallel
+List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez, bool progress);
+RcppExport SEXP _matrixprofiler_scrimp_rcpp_parallel(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< const NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(scrimp_rcpp_parallel(data_ref, query_ref, window_size, ez, progress));
+    return rcpp_result_gen;
+END_RCPP
+}
 // stamp_rcpp
 List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez, bool progress);
 RcppExport SEXP _matrixprofiler_stamp_rcpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP progressSEXP) {
@@ -697,6 +712,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mpx_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_rcpp_parallel, 6},
     {"_matrixprofiler_mpxab_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_rcpp_parallel, 6},
     {"_matrixprofiler_scrimp_rcpp", (DL_FUNC) &_matrixprofiler_scrimp_rcpp, 6},
+    {"_matrixprofiler_scrimp_rcpp_parallel", (DL_FUNC) &_matrixprofiler_scrimp_rcpp_parallel, 5},
     {"_matrixprofiler_stamp_rcpp", (DL_FUNC) &_matrixprofiler_stamp_rcpp, 5},
     {"_matrixprofiler_stamp_rcpp_parallel", (DL_FUNC) &_matrixprofiler_stamp_rcpp_parallel, 5},
     {"_matrixprofiler_stomp_rcpp", (DL_FUNC) &_matrixprofiler_stomp_rcpp, 5},

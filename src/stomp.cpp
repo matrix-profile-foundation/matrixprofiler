@@ -80,13 +80,17 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   IntegerVector order = Range(0, num_queries - 1);
 
-  Progress p(num_queries, progress);
+  Progress p(100, progress);
+
+  uint32_t num_progress = ceil(order.size() / 100);
 
   try {
     for (int32_t i : order) {
-      RcppThread::checkUserInterrupt();
-      p.increment();
 
+      if ((i % num_progress) == 0) {
+        RcppThread::checkUserInterrupt();
+        p.increment();
+      }
       // compute the distance profile
       NumericVector query_window = query[Range(i, (i + window_size - 1))];
       if (i == 0) {
@@ -155,12 +159,13 @@ struct StompWorker : public Worker {
   const uint64_t ez;
 
   Progress *p;
+  uint64_t num_progress;
 
   RVector<double> mp;
   RVector<int> pi;
 
 #if RCPP_PARALLEL_USE_TBB
-  tbb::mutex m;
+  tbb::spin_mutex m;
 #else
   tthread::mutex m;
 #endif
@@ -170,9 +175,9 @@ struct StompWorker : public Worker {
   StompWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size,
               const uint64_t d_size, const NumericVector d_mean, const NumericVector d_std, const NumericVector q_mean,
               const NumericVector q_std, const IntegerVector skip_location, const NumericVector first_product,
-              const uint64_t ez, Progress *p, NumericVector mp, IntegerVector pi)
+              const uint64_t ez, Progress *p, uint64_t num_progress, NumericVector mp, IntegerVector pi)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(p), mp(mp),
+        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(p), num_progress(num_progress), mp(mp),
         pi(pi) {}
 
   ~StompWorker() {}
@@ -211,7 +216,7 @@ struct StompWorker : public Worker {
 
       for (uint64_t i = begin; i < end; i++) {
 
-        if (i % 100 == 0) {
+        if ((i % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
           m.lock();
           p->increment();
@@ -319,11 +324,13 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
 
   List pre = mass_pre_rcpp(data, query, window_size);
 
-  Progress p(num_queries / 100, progress);
+  uint64_t num_progress = num_queries / 100;
+
+  Progress p(100, progress);
 
   StompWorker stomp_worker(data, query, pre["window_size"], data_size, pre["data_mean"], pre["data_sd"],
                            pre["query_mean"], pre["query_sd"], skip_location, first_product, exclusion_zone, &p,
-                           matrix_profile, profile_index);
+                           num_progress, matrix_profile, profile_index);
 
   k = set_k_rcpp(1024, num_queries, window_size);
 

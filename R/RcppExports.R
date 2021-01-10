@@ -125,6 +125,10 @@ scrimp_rcpp <- function(data_ref, query_ref, window_size, ez = 0.5, pre_scrimp =
     .Call(`_matrixprofiler_scrimp_rcpp`, data_ref, query_ref, window_size, ez, pre_scrimp, progress)
 }
 
+scrimp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez = 0.5, progress = FALSE) {
+    .Call(`_matrixprofiler_scrimp_rcpp_parallel`, data_ref, query_ref, window_size, ez, progress)
+}
+
 stamp_rcpp <- function(data_ref, query_ref, window_size, ez = 0.5, progress = FALSE) {
     .Call(`_matrixprofiler_stamp_rcpp`, data_ref, query_ref, window_size, ez, progress)
 }

@@ -9,5 +9,7 @@ using namespace Rcpp;
 
 List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
                  double pre_scrimp, bool progress);
+List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
+                          bool progress);
 
 #endif // __SCRIMP__

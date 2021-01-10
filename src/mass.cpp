@@ -5,6 +5,8 @@
 #include "windowfunc.h"
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>
+// [[Rcpp::depends(RcppThread)]]
+#include <RcppThread.h>
 using namespace RcppParallel;
 #include <Rcpp/Benchmark/Timer.h>
 #if RCPP_PARALLEL_USE_TBB
@@ -68,7 +70,7 @@ List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_
     last_product = z[range_z];
     distance_profile = as<NumericVector>(sumx2[range_d]) - 2 * last_product + sumy2;
     distance_profile[distance_profile < 0] = 0;
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -95,7 +97,7 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
     last_product = z[Range(window_size - 1, data_size - 1)];
     distance_profile = 2 * (window_size - (last_product - window_size * data_mean * query_mean) / (data_sd * query_sd));
     distance_profile[distance_profile < 0] = 0;
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -201,7 +203,7 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
 #else
       RcppParallel2::ttParallelFor(0, data_size, mass_worker, k);
 #endif
-    } catch (Rcpp::internal::InterruptedException &ex) {
+    } catch (RcppThread::UserInterruptException &ex) {
       Rcout << "Process terminated.\n";
     } catch (...) {
       ::Rf_error("c++ exception (unknown reason)");
@@ -273,7 +275,7 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
       std::copy(d.begin(), d.end(), dist_it + j);
       std::copy(z.begin() + w_size - 1, z.begin() + k, last_it + j);
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -302,7 +304,7 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
         std::copy(z.begin() + w_size - 1, z.begin() + jump, last_it + j);
       }
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -324,7 +326,7 @@ uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size) {
         k = data_size;
       }
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -362,7 +364,7 @@ uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector quer
         break;
       }
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -399,7 +401,7 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
       query_mean = data_avgsd["avg"];
       query_sd = data_avgsd["sd"];
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -430,7 +432,7 @@ List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_r
     } else {
       sumy2 = sumx2;
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
@@ -473,7 +475,7 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
       query_mean = data_avgsd["avg"];
       query_sd = data_avgsd["sd"];
     }
-  } catch (Rcpp::internal::InterruptedException &ex) {
+  } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
