@@ -2,10 +2,12 @@
 
 export("%>%")
 export("%T>%")
+export(dist_profile)
+export(mass)
 export(mass_pre)
-export(mass_pre_abs)
 export(mass_v3)
 export(mpx)
+export(scrimp)
 export(simple_fast)
 export(stamp)
 export(stomp)

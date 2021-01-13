@@ -31,6 +31,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   // check skip position
   LogicalVector skip_location(matrix_profile_size);
 
+  // TODO: data or query?
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
@@ -76,19 +77,20 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
         distance_profile[dp_range] = R_PosInf;
       }
 
-      // distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
-      //     R_PosInf;
-      // if (skip_location[i] ||
-      //     as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
-      //   distance_profile.fill(R_PosInf);
-      // }
-      // distance_profile[skip_location] = R_PosInf;
+      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
+      if (skip_location[i] || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+        distance_profile.fill(R_PosInf);
+      }
+      distance_profile[skip_location] = R_PosInf;
 
       // normal matrix_profile
       LogicalVector idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
-      profile_index[which(idx)] = i + 1;
+      profile_index[which_cpp(idx)] = i + 1;
     }
+
+// matrix_profile <- Re(sqrt(as.complex(matrix_profile)))
+
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;

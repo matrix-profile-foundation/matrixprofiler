@@ -64,6 +64,7 @@ Website: \url{http://www.cs.ucr.edu/~eamonn/MatrixProfile.html}
 }
 \seealso{
 Other matrix profile computations: 
+\code{\link{scrimp}()},
 \code{\link{stamp}()}
 }
 \concept{matrix profile computations}

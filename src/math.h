@@ -19,7 +19,7 @@ IntegerVector seq(uint64_t start, uint64_t end);
 IntegerVector seq_by(uint64_t start, uint64_t end, uint32_t by);
 double std_rcpp(const NumericVector data, const bool na_rm);
 NumericMatrix list_to_matrix(const List x); // unnused?
-IntegerVector which(const LogicalVector x);
+IntegerVector which_cpp(const LogicalVector x);
 NumericVector diff_lag(const NumericVector x, const uint32_t lag); // unnused?
 NumericVector diff2_lag(const NumericVector x, const uint32_t lag, const double v);
 NumericVector fast_movsd_rcpp(const NumericVector data, const uint32_t window_size);

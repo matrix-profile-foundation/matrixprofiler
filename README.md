@@ -1,17 +1,20 @@
 README
 ================
 Francisco Bischoff
-\- 05 Mar 2020
+\- 13 Jan 2021
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<img src="man/figures/logo.png" align="right" style="float:right;" />
+<img src="man/figures/logo.png" align="right" style="float:right;"/>
 
 # Matrix Profile for R
 
 <!-- badges: start -->
+
 [![Packagist](https://img.shields.io/badge/License-Apache--2.0-brightgreen.svg)](https://choosealicense.com/licenses/apache-2.0/)
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+
+[![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg)](https://github.com/matrix-profile-foundation/matrixprofiler/actions)
 <!-- badges: end -->
 
 ## Code of Conduct

@@ -40,7 +40,7 @@ mass_pre <- function(data, query = NULL, window_size) {
     stop("'window_size' must be smaller or equal to 'data' length.")
   }
 
-  data_avgsd <- fast_avg_sd(data, window_size) # precompute moving average and SD
+  data_avgsd <- fast_avg_sd_rcpp(data, window_size) # precompute moving average and SD
   data_mean <- data_avgsd$avg
   data_sd <- data_avgsd$sd
   pad_size <- 2^ceiling(log2(data_size))
@@ -59,7 +59,7 @@ mass_pre <- function(data, query = NULL, window_size) {
       stop("'window_size' must be smaller or equal to 'query' length.")
     }
 
-    query_avgsd <- fast_avg_sd(query, window_size) # precompute moving average and SD
+    query_avgsd <- fast_avg_sd_rcpp(query, window_size) # precompute moving average and SD
     query_mean <- query_avgsd$avg
     query_sd <- query_avgsd$sd
   } else {

@@ -199,14 +199,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// which
-IntegerVector which(const LogicalVector x);
-RcppExport SEXP _matrixprofiler_which(SEXP xSEXP) {
+// which_cpp
+IntegerVector which_cpp(const LogicalVector x);
+RcppExport SEXP _matrixprofiler_which_cpp(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const LogicalVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(which(x));
+    rcpp_result_gen = Rcpp::wrap(which_cpp(x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -694,7 +694,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_seq_by", (DL_FUNC) &_matrixprofiler_seq_by, 3},
     {"_matrixprofiler_std_rcpp", (DL_FUNC) &_matrixprofiler_std_rcpp, 2},
     {"_matrixprofiler_list_to_matrix", (DL_FUNC) &_matrixprofiler_list_to_matrix, 1},
-    {"_matrixprofiler_which", (DL_FUNC) &_matrixprofiler_which, 1},
+    {"_matrixprofiler_which_cpp", (DL_FUNC) &_matrixprofiler_which_cpp, 1},
     {"_matrixprofiler_diff_lag", (DL_FUNC) &_matrixprofiler_diff_lag, 2},
     {"_matrixprofiler_diff2_lag", (DL_FUNC) &_matrixprofiler_diff2_lag, 3},
     {"_matrixprofiler_fast_movsd_rcpp", (DL_FUNC) &_matrixprofiler_fast_movsd_rcpp, 2},

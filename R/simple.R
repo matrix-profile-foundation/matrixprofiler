@@ -124,7 +124,7 @@ simple_fast <- function(..., window_size, exclusion_zone = getOption("tsmp.exclu
   }
 
   ez <- exclusion_zone # store original
-  exclusion_zone <- round(window_size * exclusion_zone + vars()$eps)
+  exclusion_zone <- round(window_size * exclusion_zone + .Machine$double.eps)
 
   # initialization
   matrix_profile_size <- data_size - window_size + 1

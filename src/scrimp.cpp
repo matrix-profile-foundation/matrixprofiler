@@ -165,11 +165,11 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         Range upd_idxs1 = Range(beginidx, endidx);
         Range upd_idxs2 = Range((beginidx + idx_diff), (endidx + idx_diff));
-        IntegerVector update_pos1 = which(refine_distance[upd_idxs1] < matrix_profile[upd_idxs1]);
+        IntegerVector update_pos1 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs1]);
         matrix_profile[(update_pos1 + beginidx)] = refine_distance[(update_pos1 + beginidx)];
         IntegerVector new_idxs = as<IntegerVector>(orig_index[(update_pos1 + beginidx)]) + idx_diff;
         profile_index[(update_pos1 + beginidx)] = new_idxs;
-        IntegerVector update_pos2 = which(refine_distance[upd_idxs1] < matrix_profile[upd_idxs2]);
+        IntegerVector update_pos2 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs2]);
         matrix_profile[(update_pos2 + beginidx + idx_diff)] = refine_distance[(update_pos2 + beginidx)];
         new_idxs = as<IntegerVector>(orig_index[(update_pos2 + beginidx + idx_diff)]) - idx_diff;
         profile_index[(update_pos2 + beginidx + idx_diff)] = new_idxs;

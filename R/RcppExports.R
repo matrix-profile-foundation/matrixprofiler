@@ -53,8 +53,8 @@ list_to_matrix <- function(x) {
     .Call(`_matrixprofiler_list_to_matrix`, x)
 }
 
-which <- function(x) {
-    .Call(`_matrixprofiler_which`, x)
+which_cpp <- function(x) {
+    .Call(`_matrixprofiler_which_cpp`, x)
 }
 
 diff_lag <- function(x, lag = 1L) {

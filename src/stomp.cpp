@@ -129,7 +129,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
       LogicalVector idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
-      profile_index[which(idx)] = i + 1;
+      profile_index[which_cpp(idx)] = i + 1;
     }
 
     matrix_profile = sqrt(matrix_profile);

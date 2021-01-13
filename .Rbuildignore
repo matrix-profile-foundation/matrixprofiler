@@ -29,3 +29,4 @@
 ^matrixprofiler.*\.tgz$
 ^matrixprofiler\.Rcheck$
 ^API$
+^\.github$

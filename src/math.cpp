@@ -81,7 +81,7 @@ NumericMatrix list_to_matrix(const List x) {
 }
 
 // [[Rcpp::export]]
-IntegerVector which(const LogicalVector x) {
+IntegerVector which_cpp(const LogicalVector x) {
 
   int nx = x.size();
   std::vector<int> y;

@@ -43,7 +43,7 @@
 #'
 #' @examples
 #' mp <- stamp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
-#' \donttest{
+#' \dontrun{
 #'
 #' #' # using threads
 #' mp <- stamp_par(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
@@ -56,8 +56,7 @@
 #' mp <- stamp(ref_data, query_data, window_size = 30, s_size = round(nrow(query_data) * 0.1))
 #' }
 #'
-stamp <- function(..., window_size, exclusion_zone = 1 / 2,
-                  verbose = 2, s_size = Inf, weight = NULL) {
+stamp <- function(..., window_size, exclusion_zone = 0.5, verbose = 2) {
   argv <- list(...)
   argc <- length(argv)
   data <- argv[[1]]
@@ -70,32 +69,10 @@ stamp <- function(..., window_size, exclusion_zone = 1 / 2,
     join <- FALSE
   }
 
-  # transform data into matrix
-  if (is.vector(data)) {
-    data <- as.matrix(data)
-  }
-  else if (is.matrix(data)) {
-    if (ncol(data) > nrow(data)) {
-      data <- t(data)
-    }
-  } else {
-    stop("Unknown type of data. Must be: a column matrix or a vector.")
-  }
-
-  if (is.vector(query)) {
-    query <- as.matrix(query)
-  } else if (is.matrix(query)) {
-    if (ncol(query) > nrow(query)) {
-      query <- t(query)
-    }
-  } else {
-    stop("Unknown type of query. Must be: a column matrix or a vector.")
-  }
-
   ez <- exclusion_zone # store original
-  exclusion_zone <- round(window_size * exclusion_zone + 1.490116e-08)
-  data_size <- nrow(data)
-  query_size <- nrow(query)
+  exclusion_zone <- round(window_size * exclusion_zone + .Machine$double.eps)
+  data_size <- length(data)
+  query_size <- length(query)
   matrix_profile_size <- data_size - window_size + 1
   num_queries <- query_size - window_size + 1
 
@@ -124,41 +101,25 @@ stamp <- function(..., window_size, exclusion_zone = 1 / 2,
   query[is.na(query)] <- 0
   query[is.infinite(query)] <- 0
 
-  matrix_profile <- matrix(Inf, matrix_profile_size, 1)
-  profile_index <- matrix(-Inf, matrix_profile_size, 1)
+  matrix_profile <- rep(Inf, matrix_profile_size)
+  profile_index <- rep(-1, matrix_profile_size)
 
-  if (join) {
-    # no RMP and LMP for joins
-    left_matrix_profile <- right_matrix_profile <- NULL
-    left_profile_index <- right_profile_index <- NULL
-  } else {
-    left_matrix_profile <- right_matrix_profile <- matrix_profile
-    left_profile_index <- right_profile_index <- profile_index
-  }
-
-  j <- 1
-  ssize <- min(s_size, num_queries)
   order <- 1:num_queries
-  order <- sample(order, size = ssize)
+  # order <- sample(order)
 
   tictac <- Sys.time()
 
   if (verbose > 1) {
     pb <- progress::progress_bar$new(
       format = "STAMP [:bar] :percent at :tick_rate it/s, elapsed: :elapsed, eta: :eta",
-      clear = FALSE, total = ssize, width = 80
+      clear = FALSE, total = num_queries, width = 80
     )
   }
 
-  if (verbose > 2) {
-    on.exit(beep(sounds[[1]]), TRUE)
-  }
   # anytime must return the result always
   on.exit(return({
     obj <- list(
-      mp = matrix_profile, pi = profile_index,
-      rmp = right_matrix_profile, rpi = right_profile_index,
-      lmp = left_matrix_profile, lpi = left_profile_index,
+      matrix_profile = matrix_profile, profile_index = profile_index,
       w = window_size,
       ez = ez
     )
@@ -169,16 +130,11 @@ stamp <- function(..., window_size, exclusion_zone = 1 / 2,
 
   nn <- NULL
 
+  j <- 1
   for (i in order) {
-    j <- j + 1
+    nn <- dist_profile(data, query, nn, window_size = window_size, index = i, method = "v3")
 
-    if (is.null(weight)) {
-      nn <- dist_profile(data, query, nn, window_size = window_size, index = i)
-    } else {
-      nn <- dist_profile(data, query, nn, window_size = window_size, index = i, method = "weighted", weight = weight)
-    }
-
-    distance_profile <- sqrt(nn$distance_profile)
+    distance_profile <- Re(sqrt(nn$distance_profile))
 
     # apply exclusion zone
     if (exclusion_zone > 0) {
@@ -187,37 +143,35 @@ stamp <- function(..., window_size, exclusion_zone = 1 / 2,
       distance_profile[exc_st:exc_ed] <- Inf
     }
 
-    distance_profile[nn$var$data_sd < 1.490116e-08] <- Inf
-    if (skip_location[i] || any(nn$var$query_sd[i] < 1.490116e-08)) {
+    distance_profile[nn$var$data_sd < sqrt(.Machine$double.eps)] <- Inf
+    if (skip_location[i] || any(nn$var$query_sd[i] < sqrt(.Machine$double.eps))) {
       distance_profile[] <- Inf
     }
     distance_profile[skip_location] <- Inf
 
-    # anytime version
-    if (!join) {
-      # no RMP and LMP for joins
-      # left matrix_profile
-      ind <- (distance_profile[i:matrix_profile_size] < left_matrix_profile[i:matrix_profile_size])
-      ind <- c(rep(FALSE, (i - 1)), ind) # pad left
-      left_matrix_profile[ind] <- distance_profile[ind]
-      left_profile_index[which(ind)] <- i
 
-      # right matrix_profile
-      ind <- (distance_profile[1:i] < right_matrix_profile[1:i])
-      ind <- c(ind, rep(FALSE, matrix_profile_size - i)) # pad right
-      right_matrix_profile[ind] <- distance_profile[ind]
-      right_profile_index[which(ind)] <- i
+
+    if (j == 1) {
+      matrix_profile <- distance_profile
+      profile_index[] <- i
+      min <- which.min(distance_profile)
+      matrix_profile[i] <- distance_profile[min]
+      profile_index[i] <- min
     }
-
-    # normal matrix_profile
-    ind <- (distance_profile < matrix_profile)
-    matrix_profile[ind] <- distance_profile[ind]
-    profile_index[which(ind)] <- i
+    else {
+      # normal matrix_profile
+      ind <- (distance_profile < matrix_profile)
+      matrix_profile[ind] <- distance_profile[ind]
+      profile_index[which(ind)] <- i
+    }
 
     if (verbose > 1) {
       pb$tick()
     }
+    j <- j + 1
   }
+
+  # matrix_profile <- Re(sqrt(as.complex(matrix_profile)))
 
   tictac <- Sys.time() - tictac
 

@@ -85,7 +85,7 @@ scrimp <- function(..., window_size, exclusion_zone = getOption("tsmp.exclusion_
   }
 
   ez <- exclusion_zone # store original
-  exclusion_zone <- round(window_size * exclusion_zone + tsmp:::vars()$eps)
+  exclusion_zone <- round(window_size * exclusion_zone + .Machine$double.eps)
   data_size <- nrow(data)
   query_size <- nrow(query)
 
@@ -133,7 +133,7 @@ scrimp <- function(..., window_size, exclusion_zone = getOption("tsmp.exclusion_
 
   order <- orig_index[orig_index > (exclusion_zone + 1)]
   if (pre_scrimp > 0) {
-    current_step <- floor(window_size * pre_scrimp + tsmp:::vars()$eps)
+    current_step <- floor(window_size * pre_scrimp + .Machine$double.eps)
     pre_scrimp_idxs <- seq(2, matrix_profile_size, by = current_step)
   }
   ssize <- min(s_size, length(order))
@@ -312,8 +312,8 @@ scrimp <- function(..., window_size, exclusion_zone = getOption("tsmp.exclusion_
     # Skip positions
     curdistance[is.na(curdistance)] <- Inf
     skipped_curdistance <- curdistance
-    skipped_curdistance[nn$par$data_sd[i:num_queries] < tsmp:::vars()$eps] <- Inf
-    if (skip_location[i] || any(nn$par$query_sd[i] < tsmp:::vars()$eps)) {
+    skipped_curdistance[nn$par$data_sd[i:num_queries] < .Machine$double.eps] <- Inf
+    if (skip_location[i] || any(nn$par$query_sd[i] < .Machine$double.eps)) {
       skipped_curdistance[] <- Inf
     }
     skipped_curdistance[skip_location[i:num_queries]] <- Inf
