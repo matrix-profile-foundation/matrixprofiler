@@ -29,13 +29,13 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
   uint32_t matrix_profile_size = data_size - window_size + 1;
   // uint32_t num_queries = query_size - window_size + 1;
 
-  // check skip position
-  IntegerVector skip_location(matrix_profile_size, 0);
+  // TODO: check skip position (DBL_EPSILON, etc)
+  LogicalVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
-      skip_location[i] = 1;
+      skip_location[i] = TRUE;
     }
   }
 
@@ -97,9 +97,14 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
         IntegerVector exc_idxs = Range(exc_st, exc_ed);
         distance_profile[exc_idxs] = R_PosInf;
 
+        distance_profile[data_sd < DBL_EPSILON] = R_PosInf;
+        if (skip_location[i] || query_sd[i] < DBL_EPSILON) {
+          distance_profile.fill(R_PosInf);
+        }
+        distance_profile[skip_location] = R_PosInf;
+
         // figure out and store the neareest neighbor
         if (j == 1) {
-
           matrix_profile = distance_profile;
           profile_index.fill(i);
           uint64_t min_idx = which_min(distance_profile);
@@ -163,6 +168,14 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
                                      (data_sd[ref_idxs2] * data_sd[ref_idxs3]));
         }
 
+        LogicalVector rd = (refine_distance < 0);
+
+        if (sum(as<IntegerVector>(rd)) > 0) {
+          Rcout << "Debug: refine_distance < 0" << std::endl;
+        }
+
+        refine_distance[rd] = 0;
+
         Range upd_idxs1 = Range(beginidx, endidx);
         Range upd_idxs2 = Range((beginidx + idx_diff), (endidx + idx_diff));
         IntegerVector update_pos1 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs1]);
@@ -214,6 +227,14 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
            (curlastz[Range(i, matrix_profile_size - 1)] - window_size * data_mean[Range(i, matrix_profile_size - 1)] *
                                                               data_mean[Range(0, matrix_profile_size - i - 1)]) /
                (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i - 1)]));
+
+      LogicalVector cd = (curdistance < 0);
+
+      if (sum(as<IntegerVector>(cd)) > 0) {
+        Rcout << "Debug: curdistance < 0" << std::endl;
+      }
+
+      curdistance[cd] = 0;
 
       dist1[::seq(0, i - 1)] = R_PosInf;
       dist1[::seq(i, matrix_profile_size - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
@@ -270,12 +291,10 @@ struct ScrimpWorker : public Worker {
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
   ScrimpWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size,
-               const uint64_t d_size, const NumericVector d_mean,
-               const NumericVector d_std, const IntegerVector skip_location,
-               Progress *p, NumericVector mp, IntegerVector pi)
-      : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean),
-        d_std(d_std), skip_location(skip_location), p(p),
-        mp(mp), pi(pi) {}
+               const uint64_t d_size, const NumericVector d_mean, const NumericVector d_std,
+               const IntegerVector skip_location, Progress *p, NumericVector mp, IntegerVector pi)
+      : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
+        skip_location(skip_location), p(p), mp(mp), pi(pi) {}
 
   ~ScrimpWorker() {}
 
@@ -320,6 +339,11 @@ struct ScrimpWorker : public Worker {
         for (uint64_t j = i; j <= dp_size - 1; j++) {
           curdistance[j] =
               2 * (w_size - (curlastz[j] - w_size * d_mean[j] * d_mean[j - i]) / (d_std[j] * d_std[j - i]));
+
+          if (curdistance[j] < 0) {
+            curdistance[j] = 0;
+            Rcout << "Debug: curdistance < 0" << std::endl;
+          }
         }
 
         for (uint64_t j = 0; j <= i - 1; j++) {
@@ -365,11 +389,11 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
                           double ez = 0.5, bool progress = false) {
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
-  uint64_t query_size = query_ref.length();
+  // uint64_t query_size = query_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;
   bool partial = false;
 
-  // // check skip position
+  // TODO: check skip position (DBL_EPSILON, etc)
   IntegerVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
@@ -406,8 +430,8 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
 
   Progress p((matrix_profile_size - exclusion_zone - 1) / 10, progress);
 
-  ScrimpWorker scrimp_worker(data, query, window_size, data_size, pre["data_mean"], pre["data_sd"], skip_location, &p, matrix_profile,
-                             profile_index);
+  ScrimpWorker scrimp_worker(data, query, window_size, data_size, pre["data_mean"], pre["data_sd"], skip_location, &p,
+                             matrix_profile, profile_index);
 
   // k = set_k_rcpp(1024, matrix_profile_size - exclusion_zone, window_size);
 

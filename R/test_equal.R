@@ -2,7 +2,7 @@
 #'
 #' Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
 #'
-#' @internal
+#' @keywords internal
 
 test_equal <- function(mpa_obj, mpb_obj, tolerance = .Machine$double.eps) {
   msg <- NULL
@@ -88,7 +88,7 @@ test_equal <- function(mpa_obj, mpb_obj, tolerance = .Machine$double.eps) {
 
     diff_idxs <- (mp_diff > tolerance)
     if (any(diff_idxs)) {
-      msg <- paste(msg, "> Matrix Profile differs\n")
+      msg <- paste(msg, "> ", objb_name, "> ***Matrix Profile differs***\n")
       if (sum(diff_idxs) > 10) {
         msg <- paste(msg, ">> Too much indexes are different\n")
       } else {
@@ -103,7 +103,7 @@ test_equal <- function(mpa_obj, mpb_obj, tolerance = .Machine$double.eps) {
 
     diff_idxs <- (pi_diff > 0.01)
     if (any(diff_idxs)) {
-      msg <- paste(msg, "> Profile Index differs\n")
+      msg <- paste(msg, "> ", objb_name, "> Profile Index differs\n")
       if (sum(diff_idxs) > 10) {
         msg <- paste(msg, ">> Too much indexes are different\n")
       } else {

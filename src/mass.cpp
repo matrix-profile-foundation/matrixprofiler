@@ -203,6 +203,9 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
 #else
       RcppParallel2::ttParallelFor(0, data_size, mass_worker, k);
 #endif
+
+    distance_profile[distance_profile < 0] = 0;
+
     } catch (RcppThread::UserInterruptException &ex) {
       Rcout << "Process terminated.\n";
     } catch (...) {
@@ -304,6 +307,8 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
         std::copy(z.begin() + w_size - 1, z.begin() + jump, last_it + j);
       }
     }
+
+    dist[dist < 0] = 0;
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {

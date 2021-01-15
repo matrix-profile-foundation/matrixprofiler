@@ -35,7 +35,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
-      skip_location[i] = true;
+      skip_location[i] = TRUE;
     }
   }
 
@@ -89,7 +89,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       profile_index[which_cpp(idx)] = i + 1;
     }
 
-// matrix_profile <- Re(sqrt(as.complex(matrix_profile)))
+    // matrix_profile <- Re(sqrt(as.complex(matrix_profile)))
 
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
@@ -211,15 +211,34 @@ struct StampWorker : public Worker {
         std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
         std::vector<std::complex<double>> z = fft->fft(Z, true);
 
+        // for (uint64_t i = 0; i < jump; i++) {
+        //   if (skip_location[begin + i] == 0) {
+        //     if (ez == 0 || (begin + i) < start_ez || end_ez < (begin + i)) {
+        //       dp = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean[w]) /
+        //                              (d_std[begin + i] * q_std[w]));
+        //       if (dp < 0) {
+        //         dp = 0;
+        //       }
+        //       if (dp < mp[begin + i]) {
+        //         mp[begin + i] = dp;
+        //         pi[begin + i] = w + 1;
+        //       }
+        //     }
+        //   }
+        // }
+
         for (uint64_t i = 0; i < jump; i++) {
-          if (skip_location[begin + i] == 0) {
-            if (ez == 0 || (begin + i) < start_ez || end_ez < (begin + i)) {
-              dp = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean[w]) /
-                                     (d_std[begin + i] * q_std[w]));
-              if (dp < mp[begin + i]) {
-                mp[begin + i] = dp;
-                pi[begin + i] = w + 1;
-              }
+          if (skip_location[begin + i] == 1 || d_std[begin + i] < DBL_EPSILON || q_std[w] < DBL_EPSILON) {
+            dp = R_PosInf;
+          } else if (ez == 0 || (begin + i) < start_ez || end_ez < (begin + i)) {
+            dp = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean[w]) /
+                                   (d_std[begin + i] * q_std[w]));
+            if (dp < 0) {
+              dp = 0;
+            }
+            if (dp < mp[begin + i]) {
+              mp[begin + i] = dp;
+              pi[begin + i] = w + 1;
             }
           }
         }

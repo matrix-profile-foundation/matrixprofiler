@@ -16,6 +16,8 @@ using namespace RcppParallel;
 #include "tthread/tinythread.h"
 #endif
 
+// TODO: check skip_locations in mpx
+
 // MPX
 //
 // @param data_ref Time Series
@@ -33,7 +35,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, boo
     // matrix profile using cross correlation,
     uint32_t n = data_ref.length();
 
-    List msd = muinvn_parallel_rcpp(data_ref, window_size);
+    List msd = muinvn_rcpp(data_ref, window_size);
 
     NumericVector mmu = msd["avg"];
     NumericVector ssig = msd["sig"];

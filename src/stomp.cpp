@@ -35,12 +35,12 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   uint32_t num_queries = query_size - window_size + 1;
 
   // check skip position
-  IntegerVector skip_location(matrix_profile_size, 0);
+  LogicalVector skip_location(matrix_profile_size, FALSE);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
-      skip_location[i] = 1;
+      skip_location[i] = TRUE;
     }
   }
 
@@ -105,8 +105,8 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
             2 * (window_size - (last_product - window_size * as<NumericVector>(pre["data_mean"]) *
                                                    as<NumericVector>(pre["query_mean"])[i]) /
                                    (as<NumericVector>(pre["data_sd"]) * as<NumericVector>(pre["query_sd"])[i]));
+        distance_profile[distance_profile < 0] = 0;
       }
-      distance_profile[distance_profile < 0] = 0;
 
       // distance_profile = sqrt(distance_profile);
       drop_value = query_window[0];
@@ -119,13 +119,12 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
         distance_profile[dp_range] = R_PosInf;
       }
 
-      // distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] =
-      //     R_PosInf;
-      // if (skip_location[i] == 1 ||
-      //     as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
-      //   distance_profile.fill(R_PosInf);
-      // }
-      // distance_profile[skip_location] = R_PosInf;
+      distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
+      if (skip_location[i] == TRUE || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+        distance_profile.fill(R_PosInf);
+      }
+
+      distance_profile[skip_location] = R_PosInf;
 
       LogicalVector idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
@@ -177,8 +176,8 @@ struct StompWorker : public Worker {
               const NumericVector q_std, const IntegerVector skip_location, const NumericVector first_product,
               const uint64_t ez, Progress *p, uint64_t num_progress, NumericVector mp, IntegerVector pi)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(p), num_progress(num_progress), mp(mp),
-        pi(pi) {}
+        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(p),
+        num_progress(num_progress), mp(mp), pi(pi) {}
 
   ~StompWorker() {}
 
@@ -239,19 +238,15 @@ struct StompWorker : public Worker {
         }
 
         for (uint64_t j = 0; j < d_mean.size(); j++) {
-          double dp = R_PosInf;
-
-          if (skip_location[j] == 0) {
-            if (ez == 0 || j < exc_st || j > exc_ed) {
-
-              dp = 2 * (w_size - (last_product[j] - w_size * d_mean[j] * q_mean[i]) / (d_std[j] * q_std[i]));
-            } else if (i == begin) {
-              distance_profile[j] = R_PosInf;
-              continue;
-            }
+          if (skip_location[j] == 1 || d_std[j] < DBL_EPSILON || q_std[i] < DBL_EPSILON) {
+            distance_profile[j] = R_PosInf;
+          } else if (ez == 0 || j < exc_st || j > exc_ed) {
+            double dp = 2 * (w_size - (last_product[j] - w_size * d_mean[j] * q_mean[i]) / (d_std[j] * q_std[i]));
+            distance_profile[j] = (dp > 0) ? dp : 0;
+          } else if (i == begin) {
+            distance_profile[j] = R_PosInf;
+            continue;
           }
-
-          distance_profile[j] = (dp > 0) ? dp : 0;
         }
 
         drop_value = window_ref[i];
@@ -272,7 +267,6 @@ struct StompWorker : public Worker {
         }
       }
       m.unlock();
-
     } catch (RcppThread::UserInterruptException &e) {
       Rcout << "Computation interrupted by the user." << std::endl;
       Rcout << "Please wait for other threads to stop." << std::endl;

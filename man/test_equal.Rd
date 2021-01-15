@@ -9,3 +9,4 @@ test_equal(mpa_obj, mpb_obj, tolerance = .Machine$double.eps)
 \description{
 Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
 }
+\keyword{internal}

@@ -2,7 +2,7 @@ Type: Package
 Package: matrixprofiler
 Title: Matrix Profile for R
 Version: 0.1.0.9000
-Authors@R: 
+Authors@R:
     c(person(given = "Francisco",
              family = "Bischoff",
              role = c("aut", "cre"),
@@ -34,48 +34,39 @@ Authors@R:
              email = "michele.linardi@orange.fr",
              comment = c(ORCID = "https://orcid.org/0000-0002-3249-2068")))
 Maintainer: Francisco Bischoff <fbischoff@med.up.pt>
-Description: 
-    This is the core functions needed by the `tsmp` package.
-    The low level and carefully checked mathematical functions are here.
-    These are implementations of the Matrix Profile concept
-    that was created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.
+Description: This is the core functions needed by the `tsmp` package.  The
+    low level and carefully checked mathematical functions are here.
+    These are implementations of the Matrix Profile concept that was
+    created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.
 License: Apache License (>= 2.0)
 URL: https://github.com/matrix-profile-foundation/matrixprofiler
-BugReports: 
+BugReports:
     https://github.com/matrix-profile-foundation/matrixprofiler/issues
-Depends: 
+Depends:
     R (>= 3.2)
 Imports:
-    audio,
     checkmate,
-    doSNOW,
-    foreach,
     magrittr,
-    parallel,
-    progress,
     Rcpp,
-    RcppParallel,
-    RJSONIO,
+    RcppParallel
 Suggests:
     covr,
     gdtools,
     knitr,
-    rmarkdown,
-    raster,
     spelling,
     testthat (>= 2.1.0),
     vdiffr
-LinkingTo: 
+LinkingTo:
     Rcpp (>= 1.0.3),
     RcppParallel (>= 4.4.4),
-    RcppThread,
-    RcppProgress
-VignetteBuilder: 
+    RcppProgress,
+    RcppThread
+VignetteBuilder:
     knitr
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 NeedsCompilation: no
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1.9000
+RoxygenNote: 7.1.1
 SystemRequirements: GNU make

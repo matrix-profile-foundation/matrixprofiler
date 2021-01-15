@@ -30,3 +30,4 @@
 ^matrixprofiler\.Rcheck$
 ^API$
 ^\.github$
+^codecov\.yml$
