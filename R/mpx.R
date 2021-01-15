@@ -15,7 +15,7 @@
 #' \donttest{
 #' mp <- mpx(mp_toy_data$data[1:200, 1], window_size = 30)
 #' }
-
+#'
 mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean", "pearson"), exclusion_zone = getOption("tsmp.exclusion_zone", 1 / 2), progress = TRUE, n_workers = 1) {
 
   # Parse arguments ---------------------------------
