@@ -38,4 +38,5 @@ Fast implementation of MP and MPI for internal purposes, without FFT
 \donttest{
 mp <- mpx(mp_toy_data$data[1:200, 1], window_size = 30)
 }
+
 }

@@ -3,16 +3,11 @@ New package implementing the core functions of `tsmp` package.
 That package will then imports this as a dependency.
 
 ## Test environments
-* Rhub
-  * Windows Server 2008 R2 SP1, R-devel, 32/64 bit
-  * Ubuntu Linux 16.04 LTS, R-release, GCC
-  * Fedora Linux, R-devel, clang, gfortran
-  * Debian Linux, R-devel, GCC ASAN/UBSAN
-* Travis-CI
-  * Ubuntu Linux 14.04.5 LTS, R-oldrel, R-release, R-devel, GCC
-  * Mac OS X 10.13.3, R-oldrel, R-release, xcode 9.4.1
-* Win-builder
-  * R-release, R-devel
+
+* GitHub Actions (ubuntu-16.04): devel, release, oldrel, 3.5, 3.4, 3.3
+* GitHub Actions (windows): release, oldrel
+* GitHub Actions (macOS): release
+* win-builder: devel
 
 ## R CMD check results
 
@@ -32,14 +27,14 @@ That package will then imports this as a dependency.
 * GNU make is a SystemRequirements.
   * Requirement of package RcppParallel. I haven't find a workaround to solve this NOTE.
 
-* Installed size is 7.5Mb. 
+* Installed size is 7.5Mb.
   * This is due to datasets in this package. I believe they are essential to learning all the features
     of this package.
 
 * Uses the superseded package: `doSNOW`
   * `doSNOW` has a property that allows to use progress bar that `parallel` does not.
   * Working in finding a better solution to drop this dependency. Not found yet.
-  
+
 * (possibly) invalid URLs: https://www.cs.unm.edu/~mueen/FastestSimilaritySearch.html
   * Debian: libcurl throws an error on certificate check. Nothing to do about this.
 
