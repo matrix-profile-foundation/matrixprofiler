@@ -24,6 +24,6 @@ matrixprofiler_default_options <- list(
   packageStartupMessage("Welcome to Matrix ProfileR")
 }
 
-.onDetach <- function(libname, pkgname) {
+.onUnload <- function(libpath) {
   unloadNamespace("debugme")
 }

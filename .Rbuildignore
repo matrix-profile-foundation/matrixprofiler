@@ -31,3 +31,4 @@
 ^API$
 ^\.github$
 ^codecov\.yml$
+\.clang-format

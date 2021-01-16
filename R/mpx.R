@@ -7,13 +7,15 @@
 #' @param idx  compute the profile indexes?
 #' @param dist distance measure, Euclidean or Pearson?
 #' @param n_workers threads for multi-threading
+#' @param exclusion_zone and
+#' @param progress and
 #'
 #' @return Returns MP and MPI
 #' @export
 #'
 #' @examples
 #' \donttest{
-#' mp <- mpx(mp_toy_data$data[1:200, 1], window_size = 30)
+#' mp <- mpx(runif(200), window_size = 30)
 #' }
 #'
 mpx <- function(data, window_size, query = NULL, idx = TRUE, dist = c("euclidean", "pearson"), exclusion_zone = getOption("tsmp.exclusion_zone", 1 / 2), progress = TRUE, n_workers = 1) {

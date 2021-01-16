@@ -55,6 +55,7 @@ Suggests:
     knitr,
     spelling,
     testthat (>= 2.1.0),
+    debugme,
     vdiffr
 LinkingTo:
     Rcpp (>= 1.0.3),

@@ -26,6 +26,10 @@ mpx(
 
 \item{dist}{distance measure, Euclidean or Pearson?}
 
+\item{exclusion_zone}{and}
+
+\item{progress}{and}
+
 \item{n_workers}{threads for multi-threading}
 }
 \value{
@@ -36,7 +40,7 @@ Fast implementation of MP and MPI for internal purposes, without FFT
 }
 \examples{
 \donttest{
-mp <- mpx(mp_toy_data$data[1:200, 1], window_size = 30)
+mp <- mpx(runif(200), window_size = 30)
 }
 
 }
