@@ -440,7 +440,7 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
 #if RCPP_PARALLEL_USE_TBB
     RcppParallel::parallelFor(exclusion_zone + 1, matrix_profile_size, scrimp_worker);
 #else
-    RcppParallel2::ttParallelFor(0, num_queries, scrimp_worker, 2 * k);
+    RcppParallel2::ttParallelFor(exclusion_zone + 1, matrix_profile_size, scrimp_worker);
 #endif
 
   } catch (RcppThread::UserInterruptException &e) {
