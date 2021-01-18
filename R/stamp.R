@@ -37,18 +37,8 @@
 #' @references Website: <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>
 #'
 #' @examples
-#' mp <- stamp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
-#' \dontrun{
-#'
-#' #' # using threads
-#' mp <- stamp_par(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
-#'
-#' ref_data <- mp_toy_data$data[, 1]
-#' query_data <- mp_toy_data$data[, 2]
-#' # self similarity
-#' mp <- stamp(ref_data, window_size = 30, s_size = round(nrow(ref_data) * 0.1))
-#' # join similarity
-#' mp <- stamp(ref_data, query_data, window_size = 30, s_size = round(nrow(query_data) * 0.1))
+#' \donttest{
+#' mp <- stamp(runif(200), window_size = 30)
 #' }
 #'
 stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE) {

@@ -36,14 +36,8 @@ solutions. \code{verbose} changes how much information is printed by this functi
 avoid  trivial matches.
 }
 \examples{
-mp <- scrimp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
-\dontrun{
-ref_data <- mp_toy_data$data[, 1]
-query_data <- mp_toy_data$data[, 2]
-# self similarity
-mp <- scrimp(ref_data, window_size = 30, s_size = round(nrow(ref_data) * 0.1))
-# join similarity
-mp <- scrimp(ref_data, query_data, window_size = 30, s_size = round(nrow(query_data) * 0.1))
+\donttest{
+ mp <- scrimp(runif(200), window_size = 30)
 }
 
 }

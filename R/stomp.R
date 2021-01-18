@@ -33,17 +33,8 @@
 #' @references Website: <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>
 #'
 #' @examples
-#' mp <- stomp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
-#' \dontrun{
-#' #' # using threads
-#' mp <- stomp_par(mp_toy_data$data[1:400, 1], window_size = 30, verbose = 0)
-#'
-#' ref_data <- mp_toy_data$data[, 1]
-#' query_data <- mp_toy_data$data[, 2]
-#' # self similarity
-#' mp <- stomp(ref_data, window_size = 30)
-#' # join similarity
-#' mp2 <- stomp(ref_data, query_data, window_size = 30)
+#' \donttest{
+#' mp <- stomp(runif(200), window_size = 30)
 #' }
 #'
 stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE) {
