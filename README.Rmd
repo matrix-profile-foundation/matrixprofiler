@@ -23,8 +23,10 @@ knitr::opts_chunk$set(
 
 [![Packagist](https://img.shields.io/badge/License-Apache--2.0-brightgreen.svg)](https://choosealicense.com/licenses/apache-2.0/) [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 
-[![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg)](https://github.com/matrix-profile-foundation/matrixprofiler/actions)
-[![Codecov test coverage](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/master/graph/badge.svg)](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler?branch=master)
+![pkgdown](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/pkgdown/badge.svg?branch=develop)
+![test-coverage](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/test-coverage/badge.svg?branch=develop)
+![lint](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/lint/badge.svg?branch=develop)
+![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=develop)
 <!-- badges: end -->
 
 ## Code of Conduct
