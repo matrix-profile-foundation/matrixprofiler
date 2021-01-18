@@ -13,16 +13,15 @@ test_equal <- function(mpa_obj, mpb_obj, tolerance = .Machine$double.eps) {
 
   #### Test for lengths ----
   "!DEBUG Test for lengths"
-  # if (!(length(mpa_obj) == length(mpb_obj))) {
-  #   msg <- paste(msg, "Objects length differs,", "a=", length(mpa_obj), "b=", length(mpb_obj), "\n")
-  #   can_compare <- FALSE
-  # }
 
   if (is.null(mpa_obj$matrix_profile) || is.null(mpb_obj$matrix_profile)) {
     msg <- paste(msg, "One of the matrix profiles doesn't exists\n")
     can_compare <- FALSE
   } else if (!(length(mpa_obj$matrix_profile) == length(mpb_obj$matrix_profile))) {
-    msg <- paste(msg, "Matrix Profile lengths differs,", obja_name, "=", length(mpa_obj$matrix_profile), objb_name, "=", length(mpb_obj$matrix_profile), "\n")
+    msg <- paste(
+      msg, "Matrix Profile lengths differs,", obja_name, "=", length(mpa_obj$matrix_profile),
+      objb_name, "=", length(mpb_obj$matrix_profile), "\n"
+    )
     can_compare <- FALSE
   }
 
@@ -30,7 +29,10 @@ test_equal <- function(mpa_obj, mpb_obj, tolerance = .Machine$double.eps) {
     msg <- paste(msg, "One of the matrix profiles doesn't exists\n")
     can_compare <- FALSE
   } else if (!(length(mpa_obj$profile_index) == length(mpb_obj$profile_index))) {
-    msg <- paste(msg, "Profile Indexes lengths differs,", obja_name, "=", length(mpa_obj$profile_index), objb_name, "=", length(mpb_obj$profile_index), "\n")
+    msg <- paste(
+      msg, "Profile Indexes lengths differs,", obja_name, "=", length(mpa_obj$profile_index),
+      objb_name, "=", length(mpb_obj$profile_index), "\n"
+    )
     can_compare <- FALSE
   }
 

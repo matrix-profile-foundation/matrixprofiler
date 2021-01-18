@@ -32,3 +32,5 @@
 ^\.github$
 ^codecov\.yml$
 \.clang-format
+^Makefile$
+^docs/_pkgdown\.yml$

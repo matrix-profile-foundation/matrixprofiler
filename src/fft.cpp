@@ -36,6 +36,10 @@
 #include "fft.h"
 #include <iostream>
 
+#include <Rcpp.h>
+// [[Rcpp::plugins(cpp11)]]
+using namespace Rcpp;
+
 namespace FFT {
 /*  Fast Fourier Transform
 
@@ -184,12 +188,12 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
   if (n > 1) {
     fft_factor(n, &maxf, &maxp);
     if (maxf == 0) {
-      std::cout << "fft factorization error" << std::endl;
+      Rcout << "fft factorization error" << std::endl;
     }
 
     smaxf = maxf;
     if (smaxf > maxsize) {
-      std::cout << "fft too large" << std::endl;
+      Rcout << "fft too large" << std::endl;
     }
 
     work = (double *)std::calloc(4 * smaxf, sizeof(double));
@@ -226,7 +230,7 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
     }
   }
 
-  // std::cout << "cplx 2" << std::endl;
+  // Rcout << "cplx 2" << std::endl;
   return res;
 }
 

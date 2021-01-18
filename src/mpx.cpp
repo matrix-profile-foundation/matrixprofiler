@@ -256,7 +256,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
       }
     } catch (RcppThread::UserInterruptException &ex) {
       partial = true;
-      std::cout << "Process terminated by the user successfully, partial results were returned." << std::endl;
+      Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
     }
 
     // to do ed

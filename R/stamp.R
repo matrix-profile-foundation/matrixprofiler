@@ -1,6 +1,17 @@
-#' Fast implementation of Matrix Profile, without FFT
+#' Anytime univariate STAMP algorithm
 #'
-#' Computes the Matrix Profile and Profile Index for Univariate Time Series.
+#' Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
+#'
+#' @details
+#' The Matrix Profile, has the potential to revolutionize time series data mining because of its
+#' generality, versatility, simplicity and scalability. In particular it has implications for time
+#' series motif discovery, time series joins, shapelet discovery (classification), density
+#' estimation, semantic segmentation, visualization, rule discovery, clustering etc. The anytime
+#' STAMP computes the Matrix Profile and Profile Index in such manner that it can be stopped before
+#' its complete calculation and return the best so far results allowing ultra-fast approximate
+#' solutions. `verbose` changes how much information is printed by this function; `0` means nothing,
+#' `1` means text, `2` adds the progress bar, `3` adds the finish sound. `exclusion_zone` is used to
+#' avoid  trivial matches; if a query data is provided (join similarity), this parameter is ignored.
 #'
 #' @param data Required. Any 1-dimension series of numbers (`matrix`, `vector`, `ts` etc.) (See details).
 #' @param window_size Required. An integer defining the rolling window size.
@@ -8,41 +19,39 @@
 #'   details).
 #' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
 #'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
-#' @param idxs A logical. Specifies if the computation will return the Profile Index or not. Defaults to `TRUE`.
-#' @param distance A string. Currently accepts `euclidean` and `pearson`. Defaults to `euclidean`.
 #' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.
 #' @param progress A logical. If `TRUE` (the default) will show a progress bar. Useful for long computations. (See
 #'   details)
 #'
-#' @details This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform
-#'   (FFT) at least in one part of the process. This algorithm doesn't use FFT and is several times faster. It also
-#'   relies on Ogita's work to better precision computing mean and standard deviation (part of the process). About
-#'   `progress`, it is really recommended to use it as feedback for long computations. It indeed adds some (neglectable)
-#'   overhead, but the benefit of knowing that your computer is still computing is much bigger than the seconds you may
-#'   lose in the final benchmark. About `n_workers`, for Windows systems, this package uses TBB for multithreading, and
-#'   Linux and macOS, use TinyThread++. This may or not raise some issues in the future, so we must be aware of slower
-#'   processing due to different mutexes implementations or even unexpected crashes. The Windows version is usually more
-#'   reliable. The `data` and `query` parameters will be internally converted to a single vector using `as.numeric()`,
-#'   thus, bear in mind that a multidimensional matrix may not work as you expect, but most 1-dimensional data types
-#'   will work normally. If `query` is provided, expect the same pre-procesment done for `data`; in addition,
-#'   `exclusion_zone` will be ignored and set to `0`. Both `data` and `query` doesn't need to have the same size and
-#'   they can be interchanged if both are provided. The difference will be in the returning object. AB-Join returns the
-#'   Matrix Profile 'A' and 'B' i.e., the distance between a rolling window from query to data and from data to query.
-#'
-#' @return Returns a list with the Matrix Profile, Profile Index (if `idxs` is `TRUE`), and some information about the
-#'   settings used to build it.
 #' @export
 #'
 #' @family matrix profile computations
 #'
+#' @describeIn stamp Single thread version.
+#'
+#' @references * Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All
+#'   pairs similarity joins for time series: A unifying view that includes motifs, discords and
+#'   shapelets. Proc - IEEE Int Conf Data Mining, ICDM. 2017;1317-22.
+#' @references * Zhu Y, Imamura M, Nikovski D, Keogh E. Matrix Profile VII: Time Series Chains: A
+#'   New Primitive for Time Series Data Mining. Knowl Inf Syst. 2018 Jun 2;1-27.
+#' @references Website: <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>
+#'
 #' @examples
-#' \donttest{
-#' mp <- mpx(runif(200), window_size = 30)
+#' mp <- stamp(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
+#' \dontrun{
+#'
+#' #' # using threads
+#' mp <- stamp_par(mp_toy_data$data[1:200, 1], window_size = 30, verbose = 0)
+#'
+#' ref_data <- mp_toy_data$data[, 1]
+#' query_data <- mp_toy_data$data[, 2]
+#' # self similarity
+#' mp <- stamp(ref_data, window_size = 30, s_size = round(nrow(ref_data) * 0.1))
+#' # join similarity
+#' mp <- stamp(ref_data, query_data, window_size = 30, s_size = round(nrow(query_data) * 0.1))
 #' }
 #'
-mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TRUE,
-                distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE) {
-
+stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE) {
 
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -55,13 +64,6 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
     checkmate::qassert(query, c("0", "N>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
-  checkmate::qassert(idxs, "B+")
-  distance <- match.arg(distance)
-  if (distance == "euclidean") {
-    dist <- TRUE
-  } else {
-    dist <- FALSE
-  }
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
   checkmate::qassert(progress, "B+")
 
@@ -77,7 +79,6 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
   if (window_size > ceiling(query_size / 2)) {
     stop("Time series is too short relative to desired window size.", call. = FALSE)
   }
-
 
   # Register anytime exit point
   "!DEBUG Register anytime exit point"
@@ -103,22 +104,20 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
           p <- RcppParallel::defaultNumThreads()
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- mpx_rcpp_parallel(
+          result <- stamp_rcpp_parallel(
+            data,
             data,
             window_size,
             ez,
-            as.logical(idxs),
-            as.logical(dist),
             as.logical(progress)
           )
           RcppParallel::setThreadOptions(numThreads = p)
         } else {
-          result <- mpx_rcpp(
+          result <- stamp_rcpp(
+            data,
             data,
             window_size,
             ez,
-            as.logical(idxs),
-            as.logical(dist),
             as.logical(progress)
           )
         }
@@ -138,22 +137,20 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
           p <- RcppParallel::defaultNumThreads()
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- mpxab_rcpp_parallel(
+          result <- stamp_rcpp_parallel(
             data,
             query,
             window_size,
-            as.logical(idxs),
-            as.logical(dist),
+            ez,
             as.logical(progress)
           )
           RcppParallel::setThreadOptions(numThreads = p)
         } else {
-          result <- mpxab_rcpp(
+          result <- stamp_rcpp(
             data,
             query,
             window_size,
-            as.logical(idxs),
-            as.logical(dist),
+            ez,
             as.logical(progress)
           )
         }

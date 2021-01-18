@@ -1,16 +1,5 @@
-matrixprofiler_default_options <- list(
-  matrixprofiler.verbose = 2,
-  matrixprofiler.exclusion_zone = 1 / 2,
-  matrixprofiler.workers = 2
-)
-
+# nolint start
 .onLoad <- function(libname, pkgname) {
-  op <- options()
-  toset <- !(names(matrixprofiler_default_options) %in% names(op))
-  if (any(toset)) {
-    options(matrixprofiler_default_options[toset])
-  }
-
   tryCatch(debugme::debugme(), error = identity)
 
   invisible()
@@ -27,3 +16,4 @@ matrixprofiler_default_options <- list(
 .onUnload <- function(libpath) {
   unloadNamespace("debugme")
 }
+# nolint end

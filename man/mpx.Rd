@@ -2,41 +2,61 @@
 % Please edit documentation in R/mpx.R
 \name{mpx}
 \alias{mpx}
-\title{Fast implementation of MP and MPI for internal purposes, without FFT}
+\title{Fast implementation of Matrix Profile, without FFT}
 \usage{
 mpx(
   data,
   window_size,
   query = NULL,
-  idx = TRUE,
-  dist = c("euclidean", "pearson"),
-  exclusion_zone = getOption("tsmp.exclusion_zone", 1/2),
-  progress = TRUE,
-  n_workers = 1
+  exclusion_zone = 0.5,
+  idxs = TRUE,
+  distance = c("euclidean", "pearson"),
+  n_workers = 1,
+  progress = TRUE
 )
 }
 \arguments{
-\item{data}{a \code{matrix} or a \code{vector}. The time series to analyze.}
+\item{data}{Required. Any 1-dimension series of numbers (\code{matrix}, \code{vector}, \code{ts} etc.) (See details).}
 
-\item{window_size}{window size}
+\item{window_size}{Required. An integer defining the rolling window size.}
 
-\item{query}{query}
+\item{query}{Optional. Another 1-dimension series of numbers for an AB-join similarity. Default is \code{NULL} (See
+details).}
 
-\item{idx}{compute the profile indexes?}
+\item{exclusion_zone}{A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
+trivial matches. Default is \code{0.5}, i.e., half of the \code{window_size}.}
 
-\item{dist}{distance measure, Euclidean or Pearson?}
+\item{idxs}{A logical. Specifies if the computation will return the Profile Index or not. Defaults to \code{TRUE}.}
 
-\item{exclusion_zone}{and}
+\item{distance}{A string. Currently accepts \code{euclidean} and \code{pearson}. Defaults to \code{euclidean}.}
 
-\item{progress}{and}
+\item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.}
 
-\item{n_workers}{threads for multi-threading}
+\item{progress}{A logical. If \code{TRUE} (the default) will show a progress bar. Useful for long computations. (See
+details)}
 }
 \value{
-Returns MP and MPI
+Returns a list with the Matrix Profile, Profile Index (if \code{idxs} is \code{TRUE}), and some information about the
+settings used to build it.
 }
 \description{
-Fast implementation of MP and MPI for internal purposes, without FFT
+Computes the Matrix Profile and Profile Index for Univariate Time Series.
+}
+\details{
+This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform
+(FFT) at least in one part of the process. This algorithm doesn't use FFT and is several times faster. It also
+relies on Ogita's work to better precision computing mean and standard deviation (part of the process). About
+\code{progress}, it is really recommended to use it as feedback for long computations. It indeed adds some (neglectable)
+overhead, but the benefit of knowing that your computer is still computing is much bigger than the seconds you may
+lose in the final benchmark. About \code{n_workers}, for Windows systems, this package uses TBB for multithreading, and
+Linux and macOS, use TinyThread++. This may or not raise some issues in the future, so we must be aware of slower
+processing due to different mutexes implementations or even unexpected crashes. The Windows version is usually more
+reliable. The \code{data} and \code{query} parameters will be internally converted to a single vector using \code{as.numeric()},
+thus, bear in mind that a multidimensional matrix may not work as you expect, but most 1-dimensional data types
+will work normally. If \code{query} is provided, expect the same pre-procesment done for \code{data}; in addition,
+\code{exclusion_zone} will be ignored and set to \code{0}. Both \code{data} and \code{query} doesn't need to have the same size and
+they can be interchanged if both are provided. The difference will be in the returning object. AB-Join returns the
+Matrix Profile 'A' and 'B' i.e., the distance between a rolling window from query to data and from data to query.
 }
 \examples{
 \donttest{
@@ -44,3 +64,10 @@ mp <- mpx(runif(200), window_size = 30)
 }
 
 }
+\seealso{
+Other matrix profile computations: 
+\code{\link{scrimp}()},
+\code{\link{stamp}()},
+\code{\link{stomp}()}
+}
+\concept{matrix profile computations}

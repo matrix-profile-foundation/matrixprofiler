@@ -148,7 +148,7 @@ struct StampWorker : public Worker {
     uint64_t chunk = (end - begin);
 
     if (chunk <= w_size) {
-      std::cout << "Chunk size is too small (" << chunk << ") for a window size of " << w_size << std::endl;
+      Rcout << "Chunk size is too small (" << chunk << ") for a window size of " << w_size << std::endl;
       return;
     }
 

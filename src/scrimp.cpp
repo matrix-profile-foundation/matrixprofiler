@@ -255,7 +255,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
-    std::cout << "Process terminated by the user successfully, partial results were returned." << std::endl;
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }

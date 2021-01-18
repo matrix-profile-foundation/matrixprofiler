@@ -99,7 +99,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
       std::copy(z.begin() + w_size - 1, z.begin() + k, last_it + j);
     }
   } catch (RcppThread::UserInterruptException &ex) {
-    std::cout << "Process terminated." << std::endl;
+    Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
@@ -111,7 +111,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
       uint64_t idx_begin = j;
 
       if ((jump - (w_size - 1) + j) > (uint64_t)p_size) {
-        std::cout << "DEBUG: error." << std::endl;
+        Rcout << "DEBUG: error." << std::endl;
       } else {
         std::vector<double> data_chunk(data_it + j, data_it + d_size);
         std::vector<std::complex<double>> X = fft_rcpp(data_chunk);
@@ -134,7 +134,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
       }
     }
   } catch (RcppThread::UserInterruptException &ex) {
-    std::cout << "Process terminated." << std::endl;
+    Rcout << "Process terminated." << std::endl;
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }

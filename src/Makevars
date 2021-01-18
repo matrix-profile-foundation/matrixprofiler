@@ -1,6 +1,7 @@
 CXX_STD = CXX11
-PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=0 -UNDEBUG
-#-pedantic -Wall -gdwarf-2 -O0 -fdiagnostics-color=always
-# PKG_LIBS += "-L/home/franz/.local/share/renv/cache/v5/R-4.0/x86_64-pc-linux-gnu/RcppParallel/5.0.2/551d50addb18c7b99637aa377a25afc8/RcppParallel/lib -ltbb -ltbbmalloc"
+PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=0
 
-# $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
+strippedLib: $(SHLIB)
+	if test -f "/usr/bin/strip"; then /usr/bin/strip --strip-debug $(SHLIB); fi
+
+.phony: strippedLib

@@ -1,6 +1,5 @@
 #ifndef __FFT__
 #define __FFT__
-
 #include <complex>
 #include <vector>
 
