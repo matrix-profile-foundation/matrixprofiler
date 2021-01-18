@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install cURL and others
-        run: sudo apt-get install libgit2-dev
+        run: sudo apt-get install libgit2-dev libfribidi-dev
 
       - uses: r-lib/actions/setup-r@v1
 
