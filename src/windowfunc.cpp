@@ -478,7 +478,7 @@ NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size,
 
 struct MuinWorker : public Worker {
   // input
-  const RVector<double> data;
+  const RVector<double> data2_sum;
   const RVector<double> mu;
   const uint32_t w_size;
   // output
@@ -486,22 +486,13 @@ struct MuinWorker : public Worker {
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  MuinWorker(const NumericVector data, const NumericVector mu, const uint32_t w_size, NumericVector sig)
-      : data(data), mu(mu), w_size(w_size), sig(sig) {}
+  MuinWorker(const NumericVector data2_sum, const NumericVector mu, const uint32_t w_size, NumericVector sig)
+      : data2_sum(data2_sum), mu(mu), w_size(w_size), sig(sig) {}
 
   // function call operator that work for the specified range (begin/end)
   void operator()(std::size_t begin, std::size_t end) {
-
-    uint32_t j, k;
-    std::vector<double> b(w_size);
-
     for (uint32_t i = begin; i < end; i++) {
-
-      for (j = i, k = 0; j < (i + w_size); j++, k++) {
-        b[k] = data[j] - mu[i];
-      }
-
-      sig[i] = 1 / sqrt(std::inner_product(b.begin(), b.end(), b.begin(), 0.0));
+      sig[i] = 1 / sqrt(data2_sum[i] - mu[i] * mu[i] * w_size);
     }
   }
 };
@@ -515,15 +506,16 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
 
   NumericVector sig(data.length() - window_size + 1);
   NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
 
-  MuinWorker muin_worker(data, mu, window_size, sig);
+  MuinWorker muin_worker(data2_sum, mu, window_size, sig);
 
   // call parallelFor to do the work
   try {
 #if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, mu.length(), muin_worker, 2 * window_size);
+    RcppParallel::parallelFor(0, mu.length(), muin_worker);
 #else
-    RcppParallel2::ttParallelFor(0, mu.length(), muin_worker, 2 * window_size);
+    RcppParallel2::ttParallelFor(0, mu.length(), muin_worker);
 #endif
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated.\n";
@@ -546,12 +538,8 @@ List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
   NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
   NumericVector sig = 1 / sqrt(data2_sum - mu * mu * window_size);
 
-  // for (uint32_t i = 0; i < mu.length(); i++) {
-  //   IntegerVector a_range = Range(i, i + window_size - 1);
-  //   sig[i] = sum_of_squares(as<NumericVector>(data[a_range]) - mu[i]);
-  // }
-
-  // sig = 1 / sqrt(sig);
+  // std is equals to 1 / (sig * sqrt(w))
+  // sig is equals to 1 / (std * sqrt(w))
 
   return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }

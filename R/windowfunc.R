@@ -284,7 +284,7 @@ movmean_std <- function(data, window_size, rcpp = FALSE) {
 }
 
 # DO NOT Handles NA's
-fast_muinvn <- function(data, window_size, rcpp = FALSE, n_workers = 1) {
+muinvn <- function(data, window_size, rcpp = FALSE, n_workers = 1) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
   }
@@ -304,14 +304,10 @@ fast_muinvn <- function(data, window_size, rcpp = FALSE, n_workers = 1) {
   data_mean <- data_sum / window_size
   data2 <- data^2
   data2_sum <- mov_sum(data2, window_size)
-  data_dp <- 1 / sqrt(data2_sum - data_mean^2 * window_size)
+  sig <- 1 / sqrt(data2_sum - data_mean^2 * window_size)
 
+  # std is equals to 1 / (sig * sqrt(w))
+  # sig is equals to 1 / (std * sqrt(w))
 
-  # data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-  # data_mean <- data_sum / window_size
-  # data2 <- data^2
-  # data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-  # data_dp <- 1 / sqrt(data2_sum - data_mean^2 * window_size)
-
-  return(list(avg = data_mean, sig = data_dp))
+  return(list(avg = data_mean, sig = sig))
 }
