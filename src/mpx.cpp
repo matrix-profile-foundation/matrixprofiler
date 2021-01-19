@@ -1,5 +1,6 @@
 #include "mpx.h"
 #include "math.h" // math first to fix OSX error
+#include "windowfunc.h"
 
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
@@ -139,8 +140,8 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     uint32_t a_len = data_ref.length();
     uint32_t b_len = query_ref.length();
 
-    List msd_a = muinvn_parallel_rcpp(data_ref, window_size);
-    List msd_b = muinvn_parallel_rcpp(query_ref, window_size);
+    List msd_a = muinvn_rcpp_parallel(data_ref, window_size);
+    List msd_b = muinvn_rcpp_parallel(query_ref, window_size);
 
     NumericVector mmu_a = msd_a["avg"];
     NumericVector ssig_a = msd_a["sig"];
@@ -383,7 +384,7 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez =
     bool partial = false;
     uint32_t n = data_ref.length();
 
-    List msd = muinvn_parallel_rcpp(data_ref, window_size);
+    List msd = muinvn_rcpp_parallel(data_ref, window_size);
 
     NumericVector mu = msd["avg"];
     NumericVector sig = msd["sig"];
@@ -613,8 +614,8 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     uint32_t a_len = data_ref.length();
     uint32_t b_len = query_ref.length();
 
-    List msd_a = muinvn_parallel_rcpp(data_ref, window_size);
-    List msd_b = muinvn_parallel_rcpp(query_ref, window_size);
+    List msd_a = muinvn_rcpp_parallel(data_ref, window_size);
+    List msd_b = muinvn_rcpp_parallel(query_ref, window_size);
 
     NumericVector mu_a = msd_a["avg"];
     NumericVector sig_a = msd_a["sig"];

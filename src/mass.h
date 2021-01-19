@@ -3,9 +3,6 @@
 
 #include "math.h"
 #include <Rcpp.h>
-// [[Rcpp::depends(RcppParallel)]]
-#include <RcppParallel.h>
-using namespace RcppParallel;
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
 // [[Rcpp::plugins(cpp11)]]
@@ -22,12 +19,6 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
 List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size,
                 uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean,
                 double query_sd, uint32_t k = 4096);
-// template <typename Iterator>
-// List mass3_cpp(const Iterator query_it, const Iterator data_it,
-//                 const uint64_t data_size, const uint32_t window_size,
-//                 const Iterator data_mean_it, const Iterator data_sd_it,
-//                 const double query_mean, const double query_sd, uint32_t k =
-//                 4096);
 List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size,
                          uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
                          double query_mean, double query_sd, uint16_t k = 8192);
@@ -42,10 +33,6 @@ template <typename Iterator>
 List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t data_size, const uint32_t window_size,
                const Iterator data_mean_it, const Iterator data_sd_it, const double query_mean, const double query_sd,
                uint32_t k) {
-  // data_it is the long time series query_it is the query k is the size of
-  //     pieces,
-  //     preferably a power of two data_it is the data,
-  //     query_it is the query
 
   uint32_t w_size = window_size;
   uint64_t d_size = data_size;

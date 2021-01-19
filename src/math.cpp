@@ -1,6 +1,5 @@
 #include "math.h"
 #include "fft.h"
-#include "windowfunc.h"
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>
 using namespace RcppParallel;
@@ -23,7 +22,6 @@ IntegerVector seq(uint64_t start, uint64_t end) {
   return Range(start, end);
 }
 
-//[[Rcpp::export]]
 IntegerVector seq_by(uint64_t start, uint64_t end, uint32_t by) {
 
   uint64_t total_length = ceil((double)end / by);
@@ -47,7 +45,7 @@ double std_rcpp(const NumericVector data, const bool na_rm = false) {
     }
   }
 
-  double result = sqrt(sum(pow((the_data - mean(the_data)), 2)) / the_data.length());
+  double result = sqrt(sum(((the_data - mean(the_data)) * (the_data - mean(the_data)))) / the_data.length());
 
   return (result);
 }
@@ -80,7 +78,6 @@ NumericMatrix list_to_matrix(const List x) {
   return (m);
 }
 
-// [[Rcpp::export]]
 IntegerVector which_cpp(const LogicalVector x) {
 
   int nx = x.size();
@@ -121,56 +118,10 @@ NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1, const dou
 }
 
 //[[Rcpp::export]]
-NumericVector fast_movsd_rcpp(const NumericVector data, const uint32_t window_size) {
-
-  // Improve the numerical analysis by subtracting off the series mean
-  // this has no effect on the standard deviation.
-  NumericVector data_zeromean = data - mean(data);
-
-  NumericVector data_sum =
-      cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
-  NumericVector data_mean = data_sum / window_size;
-
-  NumericVector data2 = pow(data_zeromean, 2);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_sd2 = (data2_sum / window_size) - pow(data_mean, 2); // variance
-  NumericVector data_sd = sqrt(data_sd2);
-
-  return (data_sd);
-}
-
-//[[Rcpp::export]]
-List fast_avg_sd_rcpp(const NumericVector data, const uint32_t window_size) {
-
-  NumericVector mov_sum =
-      cumsum(diff2_lag(data, window_size, sum(as<NumericVector>(data[Range(0, (window_size - 1))]))));
-  NumericVector mov_mean = mov_sum / window_size;
-  NumericVector data2 = pow(data, 2);
-  NumericVector mov2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-
-  // Improve the numerical analysis by subtracting off the series mean
-  // this has no effect on the standard deviation.
-  NumericVector data_zeromean = data - mean(data);
-
-  NumericVector data_sum =
-      cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
-  NumericVector data_mean = data_sum / window_size;
-
-  data2 = pow(data_zeromean, 2);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_sd2 = (data2_sum / window_size) - pow(data_mean, 2); // variance
-  NumericVector data_sd = sqrt(data_sd2);
-  NumericVector data_sig = sqrt(1 / (data_sd2 * window_size));
-
-  return (List::create(Rcpp::Named("avg") = mov_mean, Rcpp::Named("sd") = data_sd, Rcpp::Named("sig") = data_sig,
-                       Rcpp::Named("sum") = mov_sum, Rcpp::Named("sqrsum") = mov2_sum));
-}
-
-//[[Rcpp::export]]
-int32_t mode_rcpp(const NumericVector x) {
+int32_t mode_rcpp(const IntegerVector x) {
 
   // is slower than R implementation...
-  NumericVector ux = unique(x);
+  IntegerVector ux = unique(x);
   int32_t y = ux[which_max(table(match(x, ux)))];
   return y;
 }
@@ -178,13 +129,28 @@ int32_t mode_rcpp(const NumericVector x) {
 //[[Rcpp::export]]
 NumericVector znorm_rcpp(const NumericVector data) {
   double data_mean = mean(data);
-  double data_dev = sqrt(sum(pow((data - data_mean), 2)) / data.length());
+  double data_dev = sqrt(sum(((data - data_mean) * (data - data_mean))) / data.length());
 
   if (data_dev == NA_REAL || data_dev <= 0.01) {
     return (data - data_mean);
   } else {
     return ((data - data_mean) / (data_dev));
   }
+}
+
+//[[Rcpp::export]]
+NumericVector normalize_rcpp(const NumericVector data, double min = 0, double max = 1) {
+  double min_val = ::min(data);
+  double max_val = ::max(data);
+
+  double a = (max - min) / (max_val - min_val);
+  double b = max - a * max_val;
+  NumericVector norm_data = a * data + b;
+
+  norm_data[norm_data < min] = min;
+  norm_data[norm_data > max] = max;
+
+  return(norm_data);
 }
 
 //[[Rcpp::export]]
@@ -233,6 +199,20 @@ NumericVector binary_split_rcpp(const uint32_t n) {
 }
 
 //[[Rcpp::export]]
+NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size) {
+  NumericVector res = (2 * window_size - data*data) / (2 * window_size);
+
+  return (res);
+}
+
+//[[Rcpp::export]]
+NumericVector corr_ed_rcpp(const NumericVector data, uint32_t window_size) {
+  NumericVector res = sqrt(2 * window_size * (1 - ifelse(data > 1, 1, data)));
+
+  return (res);
+}
+
+//[[Rcpp::export]]
 double inner_product(const NumericVector a, const NumericVector b) {
   double res = std::inner_product(a.begin(), a.end(), b.begin(), 0.0);
 
@@ -244,84 +224,6 @@ double sum_of_squares(const NumericVector a) {
   double res = std::inner_product(a.begin(), a.end(), a.begin(), 0.0);
 
   return (res);
-}
-
-struct MuinWorker : public Worker {
-  // input
-  const RVector<double> a;
-  const RVector<double> mu;
-  const uint32_t w_size;
-  // output
-  RVector<double> sig;
-
-  // initialize from Rcpp input and output matrixes (the RMatrix class
-  // can be automatically converted to from the Rcpp matrix type)
-  MuinWorker(const NumericVector a, const NumericVector mu, const uint32_t w_size, NumericVector sig)
-      : a(a), mu(mu), w_size(w_size), sig(sig) {}
-
-  // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) {
-
-    uint32_t j, k;
-    std::vector<double> b(w_size);
-
-    for (uint32_t i = begin; i < end; i++) {
-
-      for (j = i, k = 0; j < (i + w_size); j++, k++) {
-        b[k] = a[j] - mu[i];
-      }
-
-      sig[i] = 1 / sqrt(std::inner_product(b.begin(), b.end(), b.begin(), 0.0));
-    }
-  }
-};
-
-//[[Rcpp::export]]
-List muinvn_parallel_rcpp(const NumericVector a, uint32_t w) {
-  // Functions here are based on the work in
-  // Ogita et al, Accurate Sum and Dot Product
-  // results here are a moving average and stable inverse centered norm based
-  // on Accurate Sum and Dot Product, Ogita et al
-
-  NumericVector sig(a.length() - w + 1);
-  NumericVector mu = movsum_ogita_rcpp(a, w) / w;
-
-  MuinWorker muin_worker(a, mu, w, sig);
-
-  // call parallelFor to do the work
-  try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, mu.length(), muin_worker, 2 * w);
-#else
-    RcppParallel2::ttParallelFor(0, mu.length(), muin_worker, 2 * w);
-#endif
-  } catch (RcppThread::UserInterruptException &ex) {
-    Rcout << "Process terminated.\n";
-  } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
-  }
-
-  return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
-}
-
-//[[Rcpp::export]]
-List muinvn_rcpp(const NumericVector a, uint32_t w) {
-  // Functions here are based on the work in
-  // Ogita et al, Accurate Sum and Dot Product
-  // results here are a moving average and stable inverse centered norm based
-  // on Accurate Sum and Dot Product, Ogita et al
-
-  NumericVector sig(a.length() - w + 1, 0);
-  NumericVector mu = movsum_ogita_rcpp(a, w) / w;
-
-  for (uint32_t i = 0; i < mu.length(); i++) {
-    IntegerVector a_range = Range(i, i + w - 1);
-    sig[i] = sum_of_squares(as<NumericVector>(a[a_range]) - mu[i]);
-  }
-
-  sig = 1 / sqrt(sig);
-
-  return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
 
 // Version compatible with RCPP code

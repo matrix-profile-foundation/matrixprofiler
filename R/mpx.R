@@ -79,7 +79,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
   }
 
 
-  # Register anytime exit point
+  # Register anytime exit point ----------------------
   "!DEBUG Register anytime exit point"
   on.exit(
     if (is.null(result)) {

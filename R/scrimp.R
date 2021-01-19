@@ -63,7 +63,7 @@ scrimp <- function(data, window_size, exclusion_zone = 0.5, n_workers = 1, progr
     stop("Time series is too short relative to desired window size.", call. = FALSE)
   }
 
-  # Register anytime exit point
+  # Register anytime exit point ----------------------
   "!DEBUG Register anytime exit point"
   on.exit(
     if (is.null(result)) {

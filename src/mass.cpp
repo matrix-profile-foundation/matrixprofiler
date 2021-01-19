@@ -32,7 +32,7 @@ List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_
   query = (query_window - query_mean) / query_sd;
 
   double sumwy = sum(query * weight);
-  double sumwy2 = sum(weight * pow(query, 2));
+  double sumwy2 = sum(weight * query * query);
 
   std::reverse_copy(query.begin(), query.end(), rev_query.begin());
   std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
@@ -385,7 +385,7 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();
 
-  List data_avgsd = fast_avg_sd_rcpp(data_ref, window_size); // precompute moving average and SD
+  List data_avgsd = movmean_std_rcpp(data_ref, window_size); // precompute moving average and SD
 
   uint32_t pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
@@ -399,7 +399,7 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
 
   try {
     if (query_size > 0) {
-      List query_avgsd = fast_avg_sd_rcpp(query_ref, window_size); // precompute moving average and SD
+      List query_avgsd = movmean_std_rcpp(query_ref, window_size); // precompute moving average and SD
       query_mean = query_avgsd["avg"];
       query_sd = query_avgsd["sd"];
     } else {
@@ -429,11 +429,11 @@ List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_r
   std::copy(data_ref.begin(), data_ref.end(), data_padded.begin());
 
   ComplexVector data_fft = fft_rcpp(data_padded); // precompute fft of data
-  NumericVector sumx2 = movsum_ogita_rcpp(pow(data_ref, 2), window_size);
+  NumericVector sumx2 = movsum_ogita_rcpp(data_ref * data_ref, window_size);
   NumericVector sumy2;
   try {
     if (query_size > 0) {
-      sumy2 = movsum_ogita_rcpp(pow(query_ref, 2), window_size);
+      sumy2 = movsum_ogita_rcpp(query_ref * query_ref, window_size);
     } else {
       sumy2 = sumx2;
     }
@@ -454,7 +454,7 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();
 
-  List data_avgsd = fast_avg_sd_rcpp(data_ref, window_size); // precompute moving average and SD
+  List data_avgsd = movmean_std_rcpp(data_ref, window_size); // precompute moving average and SD
 
   uint32_t pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
@@ -473,7 +473,7 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
 
   try {
     if (query_size > 0) {
-      List query_avgsd = fast_avg_sd_rcpp(query_ref, window_size); // precompute moving average and SD
+      List query_avgsd = movmean_std_rcpp(query_ref, window_size); // precompute moving average and SD
       query_mean = query_avgsd["avg"];
       query_sd = query_avgsd["sd"];
     } else {
@@ -489,7 +489,7 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
   IntegerVector range_s = Range(window_size - 1, data_size - 1);
 
   NumericVector data_w = Re(fft_rcpp(data_fft_w_fft, true)) / data_fft_w_fft.length();
-  ComplexVector data2_fft = fft_rcpp(pow(data_padded, 2));
+  ComplexVector data2_fft = fft_rcpp(data_padded * data_padded);
   ComplexVector data2_fft_w_fft = data2_fft * w_fft;
   NumericVector data2_w = Re(fft_rcpp(data2_fft_w_fft, true)) / data2_fft_w_fft.length();
   NumericVector sumxw2 = data2_w[range_s];
@@ -498,7 +498,7 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
   NumericVector data_mean = data_avgsd["avg"];
   NumericVector data_sd = data_avgsd["sd"];
 
-  NumericVector data_pre = (sumxw2 - 2 * sumxw * data_mean + sumw * pow(data_mean, 2)) / pow(data_sd, 2);
+  NumericVector data_pre = (sumxw2 - 2 * sumxw * data_mean + sumw * (data_mean * data_mean)) / (data_sd * data_sd);
 
   return (List::create(
       Rcpp::Named("data_fft") = data_fft, Rcpp::Named("data_pre") = data_pre, Rcpp::Named("data_size") = data_size,

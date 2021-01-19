@@ -41,20 +41,12 @@ mass_pre_weighted_rcpp <- function(data_ref, query_ref, window_size, weight) {
     .Call(`_matrixprofiler_mass_pre_weighted_rcpp`, data_ref, query_ref, window_size, weight)
 }
 
-seq_by <- function(start, end, by) {
-    .Call(`_matrixprofiler_seq_by`, start, end, by)
-}
-
 std_rcpp <- function(data, na_rm = FALSE) {
     .Call(`_matrixprofiler_std_rcpp`, data, na_rm)
 }
 
 list_to_matrix <- function(x) {
     .Call(`_matrixprofiler_list_to_matrix`, x)
-}
-
-which_cpp <- function(x) {
-    .Call(`_matrixprofiler_which_cpp`, x)
 }
 
 diff_lag <- function(x, lag = 1L) {
@@ -65,14 +57,6 @@ diff2_lag <- function(x, lag = 1L, v = 0.0) {
     .Call(`_matrixprofiler_diff2_lag`, x, lag, v)
 }
 
-fast_movsd_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_fast_movsd_rcpp`, data, window_size)
-}
-
-fast_avg_sd_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_fast_avg_sd_rcpp`, data, window_size)
-}
-
 mode_rcpp <- function(x) {
     .Call(`_matrixprofiler_mode_rcpp`, x)
 }
@@ -81,8 +65,20 @@ znorm_rcpp <- function(data) {
     .Call(`_matrixprofiler_znorm_rcpp`, data)
 }
 
+normalize_rcpp <- function(data, min = 0, max = 1) {
+    .Call(`_matrixprofiler_normalize_rcpp`, data, min, max)
+}
+
 binary_split_rcpp <- function(n) {
     .Call(`_matrixprofiler_binary_split_rcpp`, n)
+}
+
+ed_corr_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_ed_corr_rcpp`, data, window_size)
+}
+
+corr_ed_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_corr_ed_rcpp`, data, window_size)
 }
 
 inner_product <- function(a, b) {
@@ -91,14 +87,6 @@ inner_product <- function(a, b) {
 
 sum_of_squares <- function(a) {
     .Call(`_matrixprofiler_sum_of_squares`, a)
-}
-
-muinvn_parallel_rcpp <- function(a, w) {
-    .Call(`_matrixprofiler_muinvn_parallel_rcpp`, a, w)
-}
-
-muinvn_rcpp <- function(a, w) {
-    .Call(`_matrixprofiler_muinvn_rcpp`, a, w)
 }
 
 fft_rcpp <- function(z, invert) {
@@ -149,6 +137,14 @@ movmean_rcpp <- function(data, window_size) {
     .Call(`_matrixprofiler_movmean_rcpp`, data, window_size)
 }
 
+movstd_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movstd_rcpp`, data, window_size)
+}
+
+movmean_std_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movmean_std_rcpp`, data, window_size)
+}
+
 movvar_rcpp <- function(data, window_size) {
     .Call(`_matrixprofiler_movvar_rcpp`, data, window_size)
 }
@@ -161,8 +157,8 @@ movsum_rcpp <- function(data, window_size) {
     .Call(`_matrixprofiler_movsum_rcpp`, data, window_size)
 }
 
-movsum_ogita_rcpp <- function(a, w) {
-    .Call(`_matrixprofiler_movsum_ogita_rcpp`, a, w)
+movsum_ogita_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_movsum_ogita_rcpp`, data, window_size)
 }
 
 precision_test_rcpp <- function(d) {
@@ -199,5 +195,13 @@ movvar_weighted_rcpp <- function(data, window_size, eps) {
 
 movvar_fading_rcpp <- function(data, window_size, eps) {
     .Call(`_matrixprofiler_movvar_fading_rcpp`, data, window_size, eps)
+}
+
+muinvn_rcpp_parallel <- function(data, window_size) {
+    .Call(`_matrixprofiler_muinvn_rcpp_parallel`, data, window_size)
+}
+
+muinvn_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_muinvn_rcpp`, data, window_size)
 }
 
