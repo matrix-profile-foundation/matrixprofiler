@@ -1218,30 +1218,3 @@ as.salient <- function(.mp) {
 
   return(.mp)
 }
-
-#' Play sound with `audio`
-#'
-#' @param data sound data provided by this package
-#'
-#' @keywords internal
-#' @noRd
-#'
-beep <- function(data) {
-  if (!(is.null(audio::audio.drivers()) || nrow(audio::audio.drivers()) == 0)) {
-    tryCatch(
-      {
-        audio::play(data)
-      },
-      error = function(cond) {
-        message("Warning: Failed to play audio alert")
-        message(cond)
-      },
-      warning = function(cond) {
-        message("Warning: Something went wrong playing audio alert")
-        message(cond)
-      }
-    )
-  }
-  Sys.sleep(1)
-  invisible()
-}

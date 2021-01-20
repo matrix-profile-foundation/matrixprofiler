@@ -24,8 +24,7 @@ using namespace RcppParallel;
 // @param data_ref Time Series
 // @return data_ref List
 // [[Rcpp::export]]
-List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, bool idxs = true, bool euclidean = true,
-              bool progress = false) {
+List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs, bool euclidean, bool progress) {
 
   uint64_t minlag = round(window_size * ez + DBL_EPSILON) + 1;
 
@@ -128,8 +127,8 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, boo
 }
 
 // [[Rcpp::export]]
-List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs = true,
-                bool euclidean = true, bool progress = false) {
+List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs, bool euclidean,
+                bool progress) {
 
   try {
     uint64_t minlag = 0;
@@ -374,8 +373,8 @@ struct MatrixProfileP : public Worker {
 };
 
 // [[Rcpp::export]]
-List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez = 0.5, bool idxs = true,
-                       bool euclidean = true, bool progress = false) {
+List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, bool idxs, bool euclidean,
+                       bool progress) {
 
   uint64_t minlag = round(window_size * ez + DBL_EPSILON) + 1;
 
@@ -602,10 +601,9 @@ struct MatrixProfilePAB : public Worker {
   }
 };
 
-
 // [[Rcpp::export]]
-List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs = true,
-                         bool euclidean = true, bool progress = false) {
+List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs,
+                         bool euclidean, bool progress) {
 
   try {
     // matrix profile using cross correlation,

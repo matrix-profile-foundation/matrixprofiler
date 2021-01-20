@@ -18,8 +18,8 @@ using namespace RcppParallel;
 #endif
 
 // [[Rcpp::export]]
-List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez = 0.5,
-                 double pre_scrimp = 0.25, bool progress = false) {
+List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
+                 double pre_scrimp, bool progress) {
   // double s_size = R_PosInf;
   bool partial = false;
   uint32_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
@@ -385,8 +385,8 @@ struct ScrimpWorker : public Worker {
 };
 
 // [[Rcpp::export]]
-List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
-                          double ez = 0.5, bool progress = false) {
+List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
+                          bool progress) {
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
   // uint64_t query_size = query_ref.length();

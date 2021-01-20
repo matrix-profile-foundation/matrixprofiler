@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint64_t window_size, double ez,
-                bool progress);
-List stamp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint64_t window_size, double ez,
-                         bool progress);
+List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint64_t window_size, double ez = 0.5,
+                bool progress = false);
+List stamp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint64_t window_size,
+                         double ez = 0.5, bool progress = false);
 
 #endif // __STAMP__

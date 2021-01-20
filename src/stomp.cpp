@@ -25,8 +25,8 @@ using namespace RcppParallel;
 // }
 
 // [[Rcpp::export]]
-List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez = 0.5,
-                bool progress = false) {
+List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
+                bool progress) {
   bool partial = false;
   double exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint32_t data_size = data_ref.length();
@@ -276,8 +276,8 @@ struct StompWorker : public Worker {
 };
 
 // [[Rcpp::export]]
-List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
-                         double ez = 0.5, bool progress = false) {
+List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
+                         bool progress) {
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();

@@ -21,7 +21,7 @@
 #'
 #' @examples
 #'
-mov_mean <- function(data, window_size, type = c("normal", "weighted", "fading"), eps = 0.90) {
+mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
@@ -51,6 +51,7 @@ mov_mean <- function(data, window_size, type = c("normal", "weighted", "fading")
     {
       result <- switch(
         type,
+        ogita = movsum_ogita_rcpp(data, window_size) / window_size,
         normal = movmean_rcpp(data, window_size),
         weighted = movmean_weighted_rcpp(data, window_size, eps),
         fading = movmean_fading_rcpp(data, window_size, eps)
@@ -60,7 +61,7 @@ mov_mean <- function(data, window_size, type = c("normal", "weighted", "fading")
   )
 }
 
-mov_var <- function(data, window_size, type = c("normal", "weighted", "fading"), eps = 0.90) {
+mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
@@ -90,6 +91,7 @@ mov_var <- function(data, window_size, type = c("normal", "weighted", "fading"),
     {
       result <- switch(
         type,
+        ogita = movvar_rcpp(data, window_size),
         normal = movvar2_rcpp(data, window_size),
         weighted = movvar_weighted_rcpp(data, window_size, eps),
         fading = movvar_fading_rcpp(data, window_size, eps)
@@ -217,12 +219,11 @@ mov_min <- function(data, window_size) {
 #'
 #' @examples
 #'
-mov_std <- function(data, window_size, rcpp = FALSE) {
+mov_std <- function(data, window_size, rcpp = TRUE) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
   }
 
-  # Rcpp is slower
   if (rcpp) {
     return(movstd_rcpp(data, window_size))
   }
@@ -251,7 +252,7 @@ mov_std <- function(data, window_size, rcpp = FALSE) {
 #' @return Returns a `list` with `avg` and `sd` `vector`s
 #' @export
 
-movmean_std <- function(data, window_size, rcpp = FALSE) {
+movmean_std <- function(data, window_size, rcpp = TRUE) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
   }
@@ -284,7 +285,7 @@ movmean_std <- function(data, window_size, rcpp = FALSE) {
 }
 
 # DO NOT Handles NA's
-muinvn <- function(data, window_size, rcpp = FALSE, n_workers = 1) {
+muinvn <- function(data, window_size, rcpp = TRUE, n_workers = 1) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
   }

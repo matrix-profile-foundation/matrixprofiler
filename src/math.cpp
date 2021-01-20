@@ -93,29 +93,29 @@ IntegerVector which_cpp(const LogicalVector x) {
   return wrap(y);
 }
 
-//[[Rcpp::export]]
-NumericVector diff_lag(const NumericVector x, const uint32_t lag = 1) {
-  uint32_t n = x.size();
-  NumericVector out(n - lag);
+// //[[Rcpp::export]]
+// NumericVector diff_lag(const NumericVector x, const uint32_t lag = 1) {
+//   uint32_t n = x.size();
+//   NumericVector out(n - lag);
 
-  for (uint32_t i = 0; i < (n - lag); i++) {
-    out[i] = x[i + lag] - x[i];
-  }
-  return out;
-}
+//   for (uint32_t i = 0; i < (n - lag); i++) {
+//     out[i] = x[i + lag] - x[i];
+//   }
+//   return out;
+// }
 
-//[[Rcpp::export]]
-NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1, const double v = 0.0) {
-  uint32_t n = x.size();
-  NumericVector out(n - lag + 1);
+// //[[Rcpp::export]]
+// NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1, const double v = 0.0) {
+//   uint32_t n = x.size();
+//   NumericVector out(n - lag + 1);
 
-  out[0] = v;
+//   out[0] = v;
 
-  for (uint32_t i = 0; i < (n - lag); i++) {
-    out[i + 1] = x[i + lag] - x[i];
-  }
-  return out;
-}
+//   for (uint32_t i = 0; i < (n - lag); i++) {
+//     out[i + 1] = x[i + lag] - x[i];
+//   }
+//   return out;
+// }
 
 //[[Rcpp::export]]
 int32_t mode_rcpp(const IntegerVector x) {
@@ -150,7 +150,7 @@ NumericVector normalize_rcpp(const NumericVector data, double min = 0, double ma
   norm_data[norm_data < min] = min;
   norm_data[norm_data > max] = max;
 
-  return(norm_data);
+  return (norm_data);
 }
 
 //[[Rcpp::export]]
@@ -200,7 +200,7 @@ NumericVector binary_split_rcpp(const uint32_t n) {
 
 //[[Rcpp::export]]
 NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size) {
-  NumericVector res = (2 * window_size - data*data) / (2 * window_size);
+  NumericVector res = (2 * window_size - data * data) / (2 * window_size);
 
   return (res);
 }
@@ -238,6 +238,24 @@ ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
   for (int i = 0; i < n; i++) {
     zz[i].real(z[i].r);
     zz[i].imag(z[i].i);
+  }
+
+  result = wrap(fft->fft(zz, invert));
+  delete (fft);
+
+  return result;
+}
+
+ComplexVector fft_rcpp(const NumericVector z, bool invert) {
+
+  ComplexVector result;
+  int n = z.length();
+  std::vector<std::complex<double>> zz(n);
+  FFT::fftw *fft = new FFT::fftw();
+
+  for (int i = 0; i < n; i++) {
+    zz[i].real(z[i]);
+    zz[i].imag(0.0);
   }
 
   result = wrap(fft->fft(zz, invert));
@@ -301,24 +319,6 @@ std::vector<double> fft_rcpp_real(const std::vector<std::complex<double>> z, boo
   for (int i = 0; i < n; i++) {
     result[i] = result_cplx[i].real();
   }
-
-  return result;
-}
-
-ComplexVector fft_rcpp(const NumericVector z, bool invert) {
-
-  ComplexVector result;
-  int n = z.length();
-  std::vector<std::complex<double>> zz(n);
-  FFT::fftw *fft = new FFT::fftw();
-
-  for (int i = 0; i < n; i++) {
-    zz[i].real(z[i]);
-    zz[i].imag(0.0);
-  }
-
-  result = wrap(fft->fft(zz, invert));
-  delete (fft);
 
   return result;
 }

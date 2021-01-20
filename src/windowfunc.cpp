@@ -55,18 +55,10 @@ NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size)
 //[[Rcpp::export]]
 NumericVector movstd_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  // Improve the numerical analysis by subtracting off the series mean
-  // this has no effect on the standard deviation.
-  NumericVector data_zeromean = data - mean(data);
-
-  NumericVector data_sum =
-      cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
-  NumericVector data_mean = data_sum / window_size;
-
-  NumericVector data2 = (data_zeromean * data_zeromean);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_sd2 = (data2_sum / window_size) - (data_mean * data_mean); // variance
-  NumericVector data_sd = sqrt(data_sd2);
+  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector data_var = (data2_sum / window_size) - (mu * mu);
+  NumericVector data_sd = sqrt(data_var);
 
   return (data_sd);
 }
@@ -74,44 +66,25 @@ NumericVector movstd_rcpp(const NumericVector data, const uint32_t window_size) 
 //[[Rcpp::export]]
 List movmean_std_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  NumericVector mov_sum =
-      cumsum(diff2_lag(data, window_size, sum(as<NumericVector>(data[Range(0, (window_size - 1))]))));
-  NumericVector mov_mean = mov_sum / window_size;
-  NumericVector data2 = (data * data);
-  NumericVector mov2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-
-  // Improve the numerical analysis by subtracting off the series mean
-  // this has no effect on the standard deviation.
-  NumericVector data_zeromean = data - mean(data);
-
-  NumericVector data_sum =
-      cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
+  NumericVector data_sum = movsum_ogita_rcpp(data, window_size);
   NumericVector data_mean = data_sum / window_size;
+  NumericVector data2 = (data * data);
+  NumericVector data2_sum = movsum_ogita_rcpp(data2, window_size);
 
-  data2 = (data_zeromean * data_zeromean);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_sd2 = (data2_sum / window_size) - (data_mean * data_mean); // variance
-  NumericVector data_sd = sqrt(data_sd2);
-  NumericVector data_sig = sqrt(1 / (data_sd2 * window_size));
+  NumericVector data_var = (data2_sum / window_size) - (data_mean * data_mean); // variance
+  NumericVector data_sd = sqrt(data_var);
+  NumericVector data_sig = sqrt(1 / (data_var * window_size));
 
-  return (List::create(Rcpp::Named("avg") = mov_mean, Rcpp::Named("sd") = data_sd, Rcpp::Named("sig") = data_sig,
-                       Rcpp::Named("sum") = mov_sum, Rcpp::Named("sqrsum") = mov2_sum));
+  return (List::create(Rcpp::Named("avg") = data_mean, Rcpp::Named("sd") = data_sd, Rcpp::Named("sig") = data_sig,
+                       Rcpp::Named("sum") = data_sum, Rcpp::Named("sqrsum") = data2_sum));
 }
 
 //[[Rcpp::export]]
 NumericVector movvar_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  // Improve the numerical analysis by subtracting off the series mean
-  // this has no effect on the standard deviation.
-  NumericVector data_zeromean = data - mean(data);
-
-  NumericVector data_sum =
-      cumsum(diff2_lag(data_zeromean, window_size, sum(data_zeromean[Range(0, (window_size - 1))])));
-  NumericVector data_mean = data_sum / window_size;
-
-  NumericVector data2 = (data_zeromean * data_zeromean);
-  NumericVector data2_sum = cumsum(diff2_lag(data2, window_size, sum(data2[Range(0, (window_size - 1))])));
-  NumericVector data_var = (data2_sum / window_size) - (data_mean * data_mean); // variance
+  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector data_var = (data2_sum / window_size) - (mu * mu);
 
   return (data_var);
 }
@@ -463,17 +436,29 @@ NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size,
     data2_sum = data2_sum * alpha + (data[i] * data[i]);
     n = n * alpha + 1;
 
-    // if (i >= window_size) {
-    //   data_sum = data_sum - data[i - window_size] * pow(alpha, window_size -
-    //   1); data2_sum = data2_sum - (data[i - window_size] * data[i - window_size]) * pow(alpha,
-    //   window_size - 1); n = n - 1 * pow(alpha, window_size - 1);
-    // }
-
     if (i >= (window_size - 1)) {
       out[i - (window_size - 1)] = data2_sum / n - ((data_sum * data_sum) / (n * n));
     }
   }
   return (out);
+}
+
+//[[Rcpp::export]]
+List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
+  // Functions here are based on the work in
+  // Ogita et al, Accurate Sum and Dot Product
+  // results here are a moving average and stable inverse centered norm based
+  // on Accurate Sum and Dot Product, Ogita et al
+
+  // NumericVector sig(data.length() - window_size + 1, 0);
+  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector sig = 1 / sqrt(data2_sum - mu * mu * window_size);
+
+  // std is equals to 1 / (sig * sqrt(w))
+  // sig is equals to 1 / (std * sqrt(w))
+
+  return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
 
 struct MuinWorker : public Worker {
@@ -522,24 +507,6 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
-
-  return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
-}
-
-//[[Rcpp::export]]
-List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
-  // Functions here are based on the work in
-  // Ogita et al, Accurate Sum and Dot Product
-  // results here are a moving average and stable inverse centered norm based
-  // on Accurate Sum and Dot Product, Ogita et al
-
-  // NumericVector sig(data.length() - window_size + 1, 0);
-  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
-  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
-  NumericVector sig = 1 / sqrt(data2_sum - mu * mu * window_size);
-
-  // std is equals to 1 / (sig * sqrt(w))
-  // sig is equals to 1 / (std * sqrt(w))
 
   return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }

@@ -20,8 +20,8 @@ IntegerVector seq_by(uint64_t start, uint64_t end, uint32_t by);
 double std_rcpp(const NumericVector data, const bool na_rm);
 NumericMatrix list_to_matrix(const List x); // unnused?
 IntegerVector which_cpp(const LogicalVector x);
-NumericVector diff_lag(const NumericVector x, const uint32_t lag); // unnused?
-NumericVector diff2_lag(const NumericVector x, const uint32_t lag, const double v);
+// NumericVector diff_lag(const NumericVector x, const uint32_t lag); // unnused?
+// NumericVector diff2_lag(const NumericVector x, const uint32_t lag, const double v);
 int32_t mode_rcpp(const IntegerVector x);
 NumericVector znorm_rcpp(const NumericVector data);
 NumericVector normalize_rcpp(const NumericVector data, double min, double max);
