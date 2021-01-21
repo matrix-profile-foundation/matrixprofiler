@@ -86,8 +86,10 @@ jobs:
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
 
-    - name: Install package
-      run: R CMD INSTALL .
+    - name: Build package
+      run: |
+        devtools::load_all()
+      shell: Rscript {0}
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
