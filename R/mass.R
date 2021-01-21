@@ -22,12 +22,8 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "ab
     if (is.null(weights)) {
       stop("The `weights` argument must be provided.", call. = FALSE)
     }
-    if (length(weights) != query_size) {
-      if (is.null(query)) {
-        stop("The `weights` must be the same size as the `data` size.", call. = FALSE)
-      } else {
-        stop("The `weights` must be the same size as the `query` size.", call. = FALSE)
-      }
+    if (length(weights) != window_size) {
+      stop("The `weights` must be the same size as the `window_size`.", call. = FALSE)
     }
     checkmate::qassert(weights, "N+")
   }
@@ -82,7 +78,9 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
     stop("Argument `data` is not the same as computed in `pre_obj`.", call. = FALSE)
   }
 
-  if (length(query) != (length(pre_obj$query_mean) + pre_obj$window_size - 1)) {
+  if (length(query) != (
+    ifelse(pre_obj$type == "absolute", length(pre_obj$sumy2), length(pre_obj$query_mean)) +
+    pre_obj$window_size - 1)) {
     stop("Argument `query` is not the same as computed in `pre_obj`.", call. = FALSE)
   }
 

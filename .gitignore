@@ -43,7 +43,6 @@ vignettes/*.R
 
 # VSCode
 .vscode/
-*.code-workspace
 
 ### R.Bookdown Stack ###
 # R package: bookdown caching files

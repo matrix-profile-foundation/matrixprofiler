@@ -9,10 +9,11 @@ try(
 source("renv/activate.R")
 
 if (interactive()) {
+  suppressMessages(require(testthat))
   suppressMessages(require(devtools))
   suppressMessages(require(usethis))
-  # suppressMessages(require(conflicted))
-  # suppressMessages(prettycode::prettycode())
+  suppressMessages(require(conflicted))
+  # suppressMessages(prettycode::prettycode())w
 
   options(
     warnPartialMatchArgs = FALSE,

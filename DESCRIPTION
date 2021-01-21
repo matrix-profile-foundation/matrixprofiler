@@ -52,8 +52,10 @@ Imports:
 Suggests:
     gdtools,
     knitr,
-    testthat (>= 2.1.0),
-    debugme
+    testthat (>= 3.0.0),
+    debugme,
+    covr,
+    spelling
 LinkingTo:
     Rcpp (>= 1.0.3),
     RcppParallel (>= 4.4.4),
@@ -68,3 +70,5 @@ NeedsCompilation: no
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 SystemRequirements: GNU make
+Config/testthat/edition: 3
+Config/testthat/parallel: true

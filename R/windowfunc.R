@@ -220,26 +220,37 @@ mov_min <- function(data, window_size) {
 #' @examples
 #'
 mov_std <- function(data, window_size, rcpp = TRUE) {
+  # Parse arguments ---------------------------------
+  "!!!DEBUG Parsing Arguments"
+  data <- as.numeric(data)
+  checkmate::qassert(data, "N+")
+  window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
   }
 
-  if (rcpp) {
-    return(movstd_rcpp(data, window_size))
-  }
+  # Computation ------------------------------------
+  "!DEBUG Computation"
+  tryCatch(
+    {
+      if (rcpp) {
+        return(movstd_rcpp(data, window_size))
+      }
 
-  # Improve the numerical analysis by subtracting off the series mean
-  # this has no effect on the standard deviation.
-  data <- data - mean(data)
+      # Improve the numerical analysis by subtracting off the series mean
+      # this has no effect on the standard deviation.
+      data <- data - mean(data)
 
-  data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-  data_mean <- data_sum / window_size
+      data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+      data_mean <- data_sum / window_size
 
-  data2 <- data^2
-  data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-  data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
-  data_sd <- sqrt(data_sd2)
-
+      data2 <- data^2
+      data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
+      data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
+      data_sd <- sqrt(data_sd2)
+    },
+    error = print
+  )
   return(data_sd)
 }
 

@@ -1,6 +1,5 @@
 CCM
 CMD
-Codecov
 Conf
 Funning
 GPUs
@@ -28,6 +27,7 @@ macOS
 multithreading
 mutexes
 neglectable
+pkgdown
 pre
 procesment
 scalability
