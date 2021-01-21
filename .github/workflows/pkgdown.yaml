@@ -3,7 +3,8 @@ on:
     branches:
       - main
       - master
-      - develop
+
+  workflow_dispatch:
 
 name: pkgdown
 
