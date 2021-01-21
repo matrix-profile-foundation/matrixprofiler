@@ -68,4 +68,4 @@ Rplots.pdf
 /revdep/*.html
 
 workspace.RData
-docs
+/docs/

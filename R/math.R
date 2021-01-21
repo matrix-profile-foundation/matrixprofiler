@@ -150,38 +150,113 @@ normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
   return(data)
 }
 
-#' Distance between two matrices
+#' Normalizes data between Zero and One
 #'
-#' Computes the Euclidean distance between rows of two matrices.
+#' @param data a `vector` or a column `matrix` of `numeric`.
 #'
-#' @param x a `matrix`.
-#' @param y a `matrix`.
-#'
-#' @return Returns a `matrix` of size m x n if x is of size m x k and y is of size n x k.
+#' @return Returns the normalized data.
 #' @keywords internal
 #' @noRd
+#'
+zero_one_norm <- function(data) {
+  data <- round(data, 10)
 
-diff2 <- function(x, y) {
-  # Rcpp ?
-  if (!is.numeric(x) || !is.numeric(y)) {
-    stop("`x` and `y` must be numeric vectors or matrices.")
-  }
-  if (is.vector(x)) {
-    dim(x) <- c(1, length(x))
-  }
-  if (is.vector(y)) {
-    dim(y) <- c(1, length(y))
-  }
-  if (ncol(x) != ncol(y)) {
-    stop("`x` and `y` must have the same number of columns.")
-  }
-  m <- nrow(x)
-  n <- nrow(y)
-  xy <- x %*% t(y)
-  xx <- matrix(rep(apply(x * x, 1, sum), n), m, n, byrow = FALSE)
-  yy <- matrix(rep(apply(y * y, 1, sum), m), m, n, byrow = TRUE)
-  sqrt(pmax(xx + yy - 2 * xy, 0))
+  data <- data - min(data[!is.infinite(data) & !is.na(data)])
+  data <- data / max(data[!is.infinite(data) & !is.na(data)])
+
+  return(data)
 }
+
+#' Counts number of zero-crossings
+#'
+#' Count the number of zero-crossings from the supplied time-domain input vector. A simple method is
+#' applied here that can be easily ported to a real-time system that would minimize the number of
+#' if-else conditionals.
+#'
+#' @param data is the input time-domain signal (one dimensional).
+#'
+#' @return Returns the amount of zero-crossings in the input signal.
+#' @author sparafucile17 06/27/04
+#' @references <https://www.dsprelated.com/showcode/179.php>
+#' @keywords internal
+#' @noRd
+#'
+zero_crossings <- function(data) {
+  # initial value
+  count <- 0
+
+  data <- as.matrix(data)
+
+  # error checks
+  if (length(data) == 1) {
+    stop("Input signal must have more than one element.")
+  }
+
+  if ((ncol(data) != 1) && (nrow(data) != 1)) {
+    stop("Input must be one-dimensional.")
+  }
+
+  # force signal to be a vector oriented in the same direction
+  data <- as.vector(data)
+
+  num_samples <- length(data)
+
+  for (i in 2:num_samples) {
+    # Any time you multiply to adjacent values that have a sign difference
+    # the result will always be negative.  When the signs are identical,
+    # the product will always be positive.
+    if ((data[i] * data[i - 1]) < 0) {
+      count <- count + 1
+    }
+  }
+
+  return(count)
+}
+
+#' Computes the complexity index of the data
+#'
+#' @param data a `vector` or a column `matrix` of `numeric`.
+#'
+#' @return Returns the complexity index of the data provided (normally a subset)
+#' @keywords internal
+#' @noRd
+#'
+complexity <- function(data) {
+  return(sqrt(sum(diff(data)^2)))
+}
+
+# #' Distance between two matrices
+# #'
+# #' Computes the Euclidean distance between rows of two matrices.
+# #'
+# #' @param x a `matrix`.
+# #' @param y a `matrix`.
+# #'
+# #' @return Returns a `matrix` of size m x n if x is of size m x k and y is of size n x k.
+# #' @keywords internal
+# #' @noRd
+
+# diff2 <- function(x, y) {
+#   # Rcpp ?
+#   if (!is.numeric(x) || !is.numeric(y)) {
+#     stop("`x` and `y` must be numeric vectors or matrices.")
+#   }
+#   if (is.vector(x)) {
+#     dim(x) <- c(1, length(x))
+#   }
+#   if (is.vector(y)) {
+#     dim(y) <- c(1, length(y))
+#   }
+#   if (ncol(x) != ncol(y)) {
+#     stop("`x` and `y` must have the same number of columns.")
+#   }
+#   m <- nrow(x)
+#   n <- nrow(y)
+#   xy <- x %*% t(y)
+#   xx <- matrix(rep(apply(x * x, 1, sum), n), m, n, byrow = FALSE)
+#   yy <- matrix(rep(apply(y * y, 1, sum), m), m, n, byrow = TRUE)
+#   sqrt(pmax(xx + yy - 2 * xy, 0))
+# }
 
 #' Binary Split algorithm
 #'
@@ -248,30 +323,30 @@ binary_split <- function(n, rcpp = TRUE) {
   return(idxs)
 }
 
-#' Bubble up algorithm
-#'
-#' Bubble up algorithm.
-#'
-#' @param data a vector of values
-#' @param len size of data
-#'
-#' @return Doesnt return. Not used for now
-#' @keywords internal
-#' @noRd
+# #' Bubble up algorithm
+# #'
+# #' Bubble up algorithm.
+# #'
+# #' @param data a vector of values
+# #' @param len size of data
+# #'
+# #' @return Doesnt return. Not used for now
+# #' @keywords internal
+# #' @noRd
 
-bubble_up <- function(data, len) {
-  # Rcpp ?
-  pos <- len
+# bubble_up <- function(data, len) {
+#   # Rcpp ?
+#   pos <- len
 
-  while (pos > 1 && data[pos %/% 2] < data[pos]) {
-    t <- data[pos]
-    data[pos] <- data[pos %/% 2]
-    data[pos %/% 2] <- t
-    pos <- pos %/% 2
-  }
+#   while (pos > 1 && data[pos %/% 2] < data[pos]) {
+#     t <- data[pos]
+#     data[pos] <- data[pos %/% 2]
+#     data[pos %/% 2] <- t
+#     pos <- pos %/% 2
+#   }
 
-  return(data)
-}
+#   return(data)
+# }
 
 #' Piecewise Aggregate Approximation of time series
 #'
@@ -344,156 +419,79 @@ ipaa <- function(data, p) {
   }
 }
 
-#' Get index of the minimum value from a matrix profile and its nearest neighbor
-#'
-#' @param .mp a `MatrixProfile` object.
-#' @param n_dim number of dimensions of the matrix profile
-#' @param valid check for valid numbers
-#'
-#' @return returns a `matrix` with two columns: the minimum and the nearest neighbor
-#' @export
-#'
-#' @examples
-#' w <- 50
-#' data <- mp_gait_data
-#' mp <- tsmp(data, window_size = w, exclusion_zone = 1 / 4, verbose = 0)
-#' min_val <- min_mp_idx(mp)
-min_mp_idx <- function(.mp, n_dim = NULL, valid = TRUE) {
-  if (!is.null(n_dim)) {
-    .mp$mp <- .mp$mp[, n_dim, drop = FALSE]
-    .mp$pi <- .mp$pi[, n_dim, drop = FALSE]
-  }
+# #' Get index of the minimum value from a matrix profile and its nearest neighbor
+# #'
+# #' @param .mp a `MatrixProfile` object.
+# #' @param n_dim number of dimensions of the matrix profile
+# #' @param valid check for valid numbers
+# #'
+# #' @return returns a `matrix` with two columns: the minimum and the nearest neighbor
+# #' @export
+# #'
+# #' @examples
+# #' w <- 50
+# #' data <- mp_gait_data
+# #' mp <- tsmp(data, window_size = w, exclusion_zone = 1 / 4, verbose = 0)
+# #' min_val <- min_mp_idx(mp)
+# min_mp_idx <- function(.mp, n_dim = NULL, valid = TRUE) {
+#   if (!is.null(n_dim)) {
+#     .mp$mp <- .mp$mp[, n_dim, drop = FALSE]
+#     .mp$pi <- .mp$pi[, n_dim, drop = FALSE]
+#   }
 
-  n_dim <- ncol(.mp$mp)
-  mp_size <- nrow(.mp$mp)
-  min <- apply(.mp$mp, 2, which.min) # support for multidimensional matrix profile
+#   n_dim <- ncol(.mp$mp)
+#   mp_size <- nrow(.mp$mp)
+#   min <- apply(.mp$mp, 2, which.min) # support for multidimensional matrix profile
 
-  if (any(min == 1) && any(is.infinite(.mp$mp[1, (min == 1)]))) {
-    return(NA)
-  }
+#   if (any(min == 1) && any(is.infinite(.mp$mp[1, (min == 1)]))) {
+#     return(NA)
+#   }
 
-  nn_min <- NULL
+#   nn_min <- NULL
 
-  for (i in seq_len(n_dim)) {
-    nn_min <- c(nn_min, .mp$pi[min[i], i])
-  }
+#   for (i in seq_len(n_dim)) {
+#     nn_min <- c(nn_min, .mp$pi[min[i], i])
+#   }
 
-  if (valid) {
-    if (all(nn_min > 0 & nn_min <= mp_size) &&
-      all(!is.infinite(diag(.mp$mp[nn_min, ], names = FALSE)))) {
-      return(cbind(min, nn_min, deparse.level = 0))
-    }
+#   if (valid) {
+#     if (all(nn_min > 0 & nn_min <= mp_size) &&
+#       all(!is.infinite(diag(.mp$mp[nn_min, ], names = FALSE)))) {
+#       return(cbind(min, nn_min, deparse.level = 0))
+#     }
 
-    for (i in seq_len(n_dim)) {
-      .mp$mp[min[i], i] <- Inf
-    }
+#     for (i in seq_len(n_dim)) {
+#       .mp$mp[min[i], i] <- Inf
+#     }
 
-    stop <- FALSE
-    while (!stop) {
-      min <- apply(.mp$mp, 2, which.min)
+#     stop <- FALSE
+#     while (!stop) {
+#       min <- apply(.mp$mp, 2, which.min)
 
-      if (any(min == 1) && any(is.infinite(.mp$mp[1, (min == 1)]))) {
-        stop <- TRUE
-      } else {
-        nn_min <- NULL
+#       if (any(min == 1) && any(is.infinite(.mp$mp[1, (min == 1)]))) {
+#         stop <- TRUE
+#       } else {
+#         nn_min <- NULL
 
-        for (i in seq_len(n_dim)) {
-          nn_min <- c(nn_min, .mp$pi[min[i], i])
-        }
+#         for (i in seq_len(n_dim)) {
+#           nn_min <- c(nn_min, .mp$pi[min[i], i])
+#         }
 
-        if (all(nn_min > 0 & nn_min <= mp_size) &&
-          all(!is.infinite(diag(.mp$mp[nn_min, ], names = FALSE)))) {
-          return(cbind(min, nn_min, deparse.level = 0))
-        } else {
-          for (i in seq_len(n_dim)) {
-            .mp$mp[min[i], i] <- Inf
-          }
-        }
-      }
-    }
+#         if (all(nn_min > 0 & nn_min <= mp_size) &&
+#           all(!is.infinite(diag(.mp$mp[nn_min, ], names = FALSE)))) {
+#           return(cbind(min, nn_min, deparse.level = 0))
+#         } else {
+#           for (i in seq_len(n_dim)) {
+#             .mp$mp[min[i], i] <- Inf
+#           }
+#         }
+#       }
+#     }
 
-    return(NA)
-  } else {
-    return(cbind(min, nn_min, deparse.level = 0))
-  }
-}
-
-# AV Aux functions --------------------------------------------------------------------------------
-
-#' Counts number of zero-crossings
-#'
-#' Count the number of zero-crossings from the supplied time-domain input vector. A simple method is
-#' applied here that can be easily ported to a real-time system that would minimize the number of
-#' if-else conditionals.
-#'
-#' @param data is the input time-domain signal (one dimensional).
-#'
-#' @return Returns the amount of zero-crossings in the input signal.
-#' @author sparafucile17 06/27/04
-#' @references <https://www.dsprelated.com/showcode/179.php>
-#' @keywords internal
-#' @noRd
-#'
-zero_crossings <- function(data) {
-  # initial value
-  count <- 0
-
-  data <- as.matrix(data)
-
-  # error checks
-  if (length(data) == 1) {
-    stop("Input signal must have more than one element.")
-  }
-
-  if ((ncol(data) != 1) && (nrow(data) != 1)) {
-    stop("Input must be one-dimensional.")
-  }
-
-  # force signal to be a vector oriented in the same direction
-  data <- as.vector(data)
-
-  num_samples <- length(data)
-
-  for (i in 2:num_samples) {
-    # Any time you multiply to adjacent values that have a sign difference
-    # the result will always be negative.  When the signs are identical,
-    # the product will always be positive.
-    if ((data[i] * data[i - 1]) < 0) {
-      count <- count + 1
-    }
-  }
-
-  return(count)
-}
-
-#' Normalizes data between Zero and One
-#'
-#' @param data a `vector` or a column `matrix` of `numeric`.
-#'
-#' @return Returns the normalized data.
-#' @keywords internal
-#' @noRd
-#'
-zero_one_norm <- function(data) {
-  data <- round(data, 10)
-
-  data <- data - min(data[!is.infinite(data) & !is.na(data)])
-  data <- data / max(data[!is.infinite(data) & !is.na(data)])
-
-  return(data)
-}
-
-#' Computes the complexity index of the data
-#'
-#' @param data a `vector` or a column `matrix` of `numeric`.
-#'
-#' @return Returns the complexity index of the data provided (normally a subset)
-#' @keywords internal
-#' @noRd
-#'
-complexity <- function(data) {
-  return(sqrt(sum(diff(data)^2)))
-}
+#     return(NA)
+#   } else {
+#     return(cbind(min, nn_min, deparse.level = 0))
+#   }
+# }
 
 # Misc -------------------------------------------------------------------------------------------
 #' Set/changes the data included in TSMP object.

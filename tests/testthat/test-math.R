@@ -17,6 +17,9 @@ if (!testthat:::on_cran()) {
     test_mode <- mode(data_mode)
     data_znorm <- znorm(motifs_discords_small)
     data_normalized <- normalize(motifs_discords_small, 1, 5)
+    data_norm_zone <- zero_one_norm(motifs_discords_small)
+    zeroc <- zero_crossings(motifs_discords_small) # Counts number of zero-crossings
+    data_complex <- complexity(motifs_discords_small) # Computes the complexity index of the data
     split <- binary_split(50)
     paa_obj <- paa(motifs_discords_small, 5)
     ipaa_obj <- ipaa(paa_obj, 5)

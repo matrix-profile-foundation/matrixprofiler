@@ -12,5 +12,3 @@ exclusions: list(
     "dev/make.R",
     "R/RcppExports.R"
   )
-
-

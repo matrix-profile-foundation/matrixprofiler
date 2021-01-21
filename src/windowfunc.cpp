@@ -274,7 +274,8 @@ NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
 
   return out;
 }
-// ONLINE ALGORITHMS
+
+// #### ONLINE ALGORITHMS --------
 
 //[[Rcpp::export]]
 NumericVector movmean_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps) {

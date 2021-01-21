@@ -1,9 +1,13 @@
-try(
-  silent(source(file.path(
-    Sys.getenv(if (.Platform$OS.type == "windows") "USERPROFILE" else "HOME"),
-    ".vscode-R", "init.R"
-  ))),
-  silent = TRUE
+try(silent(source(file.path(
+  Sys.getenv(if (.Platform$OS.type == "windows") {
+    "USERPROFILE"
+  } else {
+    "HOME"
+  }),
+  ".vscode-R",
+  "init.R"
+))),
+silent = TRUE
 )
 
 source("renv/activate.R")
@@ -13,7 +17,7 @@ if (interactive()) {
   suppressMessages(require(devtools))
   suppressMessages(require(usethis))
   suppressMessages(require(conflicted))
-  # suppressMessages(prettycode::prettycode())w
+  # suppressMessages(prettycode::prettycode())
 
   options(
     warnPartialMatchArgs = FALSE,
@@ -22,10 +26,17 @@ if (interactive()) {
     usethis.protocol = "https"
   )
 
-  prompt::set_prompt(function(...) {
-    paste0(
-      "[", prompt::git_branch(), prompt::git_dirty(), prompt::git_arrows(), "] ",
-      prompt::prompt_runtime()
-    )
+
+  suppressMessages(if (requireNamespace("prompt")) {
+    prompt::set_prompt(function(...) {
+      paste0(
+        "[",
+        prompt::git_branch(),
+        prompt::git_dirty(),
+        prompt::git_arrows(),
+        "] ",
+        prompt::prompt_runtime()
+      )
+    })
   })
 }

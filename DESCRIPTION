@@ -38,7 +38,7 @@ Description: This is the core functions needed by the `tsmp` package.  The
     low level and carefully checked mathematical functions are here.
     These are implementations of the Matrix Profile concept that was
     created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.
-License: Apache License (>= 2.0)
+License: GPL-3
 URL: https://github.com/matrix-profile-foundation/matrixprofiler
 BugReports:
     https://github.com/matrix-profile-foundation/matrixprofiler/issues
