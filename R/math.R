@@ -53,7 +53,8 @@ corr_ed <- function(x, w, rcpp = TRUE) {
 #' @keywords internal
 #' @noRd
 #'
-std <- function(data, na.rm = FALSE, rcpp = TRUE) {
+
+std <- function(data, na.rm = FALSE, rcpp = TRUE) { # nolint
 
   # Rcpp is faster
   if (rcpp) {
@@ -292,7 +293,7 @@ paa <- function(data, p) {
   if (len == paa_size) {
     return(data)
   } else {
-    if((len %% p) > 0) {
+    if ((len %% p) > 0) {
       pad <- p - (len %% p)
       paa_data <- c(paa_data, rep.int(NA, pad))
     }
@@ -614,6 +615,8 @@ remove_class <- function(x, class) {
   return(x)
 }
 
+# nolint start
+
 #' Convert a TSMP object into another if possible
 #'
 #' The base Classes are `MatrixProfile` and `MultiMatrixProfile`, but as other functions are used,
@@ -784,3 +787,5 @@ as.salient <- function(.mp) {
 
   return(.mp)
 }
+
+# nolint end
