@@ -60,7 +60,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        install.packages(c("remotes"))
+        install.packages(c("remotes", "devtools"))
         remotes::install_deps(dependencies = TRUE)
       shell: Rscript {0}
 
@@ -88,7 +88,7 @@ jobs:
 
     - name: Build package
       run: |
-        devtools::load_all()
+        pkgbuild::compile_dll()
       shell: Rscript {0}
 
     - name: Perform CodeQL Analysis
