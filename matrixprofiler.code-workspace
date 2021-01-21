@@ -110,7 +110,8 @@
     "r.debugger.trackTerminals": true,
     "r.debugger.timeouts.terminate": 1000,
     "files.exclude": {
-      "**/.Rproj.user": true
+      "**/.Rproj.user": true,
+      "**/R/RcppExports.R": true
     },
     "editor.tabSize": 2,
     "editor.tabCompletion": "on",
