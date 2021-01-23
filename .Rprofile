@@ -24,6 +24,7 @@ if (interactive()) {
     warnPartialMatchDollar = FALSE,
     warnPartialMatchAttr = FALSE,
     usethis.protocol = "https"
+    # error = recover
   )
 
 

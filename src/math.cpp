@@ -154,9 +154,9 @@ NumericVector normalize_rcpp(const NumericVector data, double min = 0, double ma
 }
 
 //[[Rcpp::export]]
-NumericVector binary_split_rcpp(const uint32_t n) {
+IntegerVector binary_split_rcpp(const uint32_t n) {
 
-  NumericVector idxs(n);
+  IntegerVector idxs(n);
 
   idxs[0] = 1; // We always begin by explore the first integer
   // After exploring the first integer, we begin splitting the interval 2:n

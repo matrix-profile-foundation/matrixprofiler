@@ -142,6 +142,13 @@
       "Repository": "CRAN",
       "Hash": "0f22be39ec1d141fd03683c06f3a6e67"
     },
+    "conflicted": {
+      "Package": "conflicted",
+      "Version": "1.0.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "43c5107cc96f47043a56736768ecc59d"
+    },
     "covr": {
       "Package": "covr",
       "Version": "3.5.1",

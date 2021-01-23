@@ -222,7 +222,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // binary_split_rcpp
-NumericVector binary_split_rcpp(const uint32_t n);
+IntegerVector binary_split_rcpp(const uint32_t n);
 RcppExport SEXP _matrixprofiler_binary_split_rcpp(SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

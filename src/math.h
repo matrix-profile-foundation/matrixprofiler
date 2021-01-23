@@ -25,7 +25,7 @@ IntegerVector which_cpp(const LogicalVector x);
 int32_t mode_rcpp(const IntegerVector x);
 NumericVector znorm_rcpp(const NumericVector data);
 NumericVector normalize_rcpp(const NumericVector data, double min, double max);
-NumericVector binary_split_rcpp(const uint32_t n);
+IntegerVector binary_split_rcpp(const uint32_t n);
 NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size);
 NumericVector corr_ed_rcpp(const NumericVector data, uint32_t window_size);
 double inner_product(const NumericVector a, const NumericVector b);
