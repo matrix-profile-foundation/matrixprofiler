@@ -2,6 +2,9 @@
 
 export("%>%")
 export("%T>%")
+export(mov_mean)
+export(mov_std)
+export(movmean_std)
 export(mpx)
 export(scrimp)
 export(stamp)

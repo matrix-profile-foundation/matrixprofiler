@@ -1,5 +1,4 @@
 if (!testthat:::on_cran()) {
-
   stamp_res <- NULL
   stamp_res_par <- NA
 

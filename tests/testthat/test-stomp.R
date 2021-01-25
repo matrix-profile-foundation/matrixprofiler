@@ -1,5 +1,4 @@
 if (!testthat:::on_cran()) {
-
   stomp_res <- NULL
   stomp_res_par <- NA
 

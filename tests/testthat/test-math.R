@@ -1,5 +1,4 @@
 if (!testthat:::on_cran()) {
-
   test_that("Conversion between Euclidean Distance and Correlation are equal.", {
     set.seed(2021)
     corr <- runif(1000)

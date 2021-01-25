@@ -1,5 +1,4 @@
 if (!testthat:::on_cran()) {
-
   mpx_res <- NULL
   mpx_res_par <- NA
   mpxab_res <- NULL

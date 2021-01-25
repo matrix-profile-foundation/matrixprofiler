@@ -1,5 +1,4 @@
 if (!testthat:::on_cran()) {
-
   scrimp_res <- NULL
   scrimp_res_par <- NA
 

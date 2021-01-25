@@ -37,7 +37,7 @@ avoid  trivial matches.
 }
 \examples{
 \donttest{
- mp <- scrimp(runif(200), window_size = 30)
+mp <- scrimp(runif(200), window_size = 30)
 }
 
 }

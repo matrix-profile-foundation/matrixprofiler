@@ -1,5 +1,4 @@
 if (!testthat:::on_cran()) {
-
   stamp_res <- stamp(
     data = motifs_discords_small, window_size = 150, exclusion_zone = 0.5,
     progress = FALSE
@@ -24,7 +23,7 @@ if (!testthat:::on_cran()) {
     data = motifs_discords_small, window_size = 150, exclusion_zone = 0.5,
     n_workers = 2, progress = FALSE
   )
-  mpx_res <-  mpx(
+  mpx_res <- mpx(
     data = motifs_discords_small,
     window_size = 150, exclusion_zone = 0.5,
     idxs = TRUE, distance = "euclidean", progress = FALSE

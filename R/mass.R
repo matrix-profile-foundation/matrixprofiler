@@ -80,7 +80,7 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
 
   if (length(query) != (
     ifelse(pre_obj$type == "absolute", length(pre_obj$sumy2), length(pre_obj$query_mean)) +
-    pre_obj$window_size - 1)) {
+      pre_obj$window_size - 1)) {
     stop("Argument `query` is not the same as computed in `pre_obj`.", call. = FALSE)
   }
 
