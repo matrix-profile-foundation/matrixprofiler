@@ -20,7 +20,8 @@ using namespace RcppParallel;
 //[[Rcpp::export]]
 List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
                         uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
-                        double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight) {
+                        double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight,
+                        const bool normalized) {
   NumericVector distance_profile;
   NumericVector last_product;
 
@@ -29,7 +30,11 @@ List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_
   NumericVector rev_weight(data_fft.length());
 
   // normalized query
-  query = (query_window - query_mean) / query_sd;
+  if (normalized) {
+    query = (query_window - query_mean) / query_sd;
+  } else {
+    query = query_window;
+  }
 
   double sumwy = sum(query * weight);
   double sumwy2 = sum(weight * query * query);
@@ -38,7 +43,7 @@ List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_
   std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
 
   ComplexVector prod = data_fft * fft_rcpp(rev_weight * rev_query);
-  NumericVector data_queryw = Re(fft_rcpp(prod, true)) / prod.length();
+  NumericVector data_queryw = Re(fft_rcpp(prod, true));
 
   IntegerVector range_d = Range(window_size - 1, data_size - 1);
 
@@ -63,7 +68,7 @@ List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_
 
     // compute the product
     ComplexVector prod = data_fft * fft_rcpp(rev_query);
-    NumericVector z = Re(fft_rcpp(prod, true)) / prod.length();
+    NumericVector z = Re(fft_rcpp(prod, true));
     // compute the distance profile
     IntegerVector range_z = Range(window_size - 1, data_size - 1);
     IntegerVector range_d = Range(0, data_size - window_size);
@@ -85,6 +90,12 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
                 double query_sd) {
   NumericVector distance_profile;
   NumericVector last_product;
+  double q_mean, q_std = 0;
+
+  // compute query_window stats -- O(d_size)
+  q_mean = query_mean;
+  q_std = query_sd;
+
   // pre-process query for fft
   try {
     NumericVector rev_query(data_fft.length()); // use data_fft because is padded to a power of 2
@@ -92,10 +103,11 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
 
     // compute the product
     ComplexVector prod = data_fft * fft_rcpp(rev_query);
-    NumericVector z = Re(fft_rcpp(prod, true)) / prod.length();
+    NumericVector z = Re(fft_rcpp(prod, true));
     // compute the distance profile
     last_product = z[Range(window_size - 1, data_size - 1)];
-    distance_profile = 2 * (window_size - (last_product - window_size * data_mean * query_mean) / (data_sd * query_sd));
+
+    distance_profile = 2 * (window_size - (last_product - window_size * data_mean * q_mean) / (data_sd * q_std));
     distance_profile[distance_profile < 0] = 0;
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
@@ -124,10 +136,11 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   NumericVector::iterator last_it = last.begin();
 
   k = set_k_rcpp(k, d_size, w_size);
+  double q_mean, q_std = 0;
 
   // compute query_window stats -- O(d_size)
-  double q_mean = query_mean;
-  double q_std = query_sd;
+  q_mean = query_mean;
+  q_std = query_sd;
 
   // compute data stats -- O(d_size)
   NumericVector d_mean = data_mean;
@@ -488,10 +501,10 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
 
   IntegerVector range_s = Range(window_size - 1, data_size - 1);
 
-  NumericVector data_w = Re(fft_rcpp(data_fft_w_fft, true)) / data_fft_w_fft.length();
+  NumericVector data_w = Re(fft_rcpp(data_fft_w_fft, true));
   ComplexVector data2_fft = fft_rcpp(data_padded * data_padded);
   ComplexVector data2_fft_w_fft = data2_fft * w_fft;
-  NumericVector data2_w = Re(fft_rcpp(data2_fft_w_fft, true)) / data2_fft_w_fft.length();
+  NumericVector data2_w = Re(fft_rcpp(data2_fft_w_fft, true));
   NumericVector sumxw2 = data2_w[range_s];
   NumericVector sumxw = data_w[range_s];
 

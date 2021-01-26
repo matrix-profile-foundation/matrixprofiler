@@ -1,5 +1,5 @@
 if (!testthat:::on_cran()) {
-  test_that("Mass Pre normalized", {
+  test_that("Mass normalized", {
     expect_silent({
       pre_obj_norm <- mass_pre(data = motifs_discords_small, type = "normalized", window_size = 100)
     })
@@ -10,9 +10,18 @@ if (!testthat:::on_cran()) {
     expect_snapshot_value(res_norm, style = "serialize")
   })
 
-  # TODO: check abs and weighted output
+  test_that("Mass Non-normalized", {
+    expect_silent({
+      pre_obj_non <- mass_pre(data = motifs_discords_small, type = "non_normalized", window_size = 100)
+    })
+    expect_silent({
+      res_non <- mass(pre_obj_non, data = motifs_discords_small, index = 100)
+    })
+    expect_type(res_non, "list")
+    expect_snapshot_value(res_non, style = "serialize")
+  })
 
-  test_that("Mass Pre absolute", {
+  test_that("Mass Absolute", {
     expect_silent({
       pre_obj_abs <- mass_pre(data = motifs_discords_small, type = "absolute", window_size = 100)
     })
@@ -23,7 +32,7 @@ if (!testthat:::on_cran()) {
     expect_snapshot_value(res_abs, style = "serialize")
   })
 
-  test_that("Mass Pre weighted", {
+  test_that("Mass Weighted", {
     expect_silent({
       pre_obj_weights <- mass_pre(
         data = motifs_discords_small, type = "weighted", window_size = 100,

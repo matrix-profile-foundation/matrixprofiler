@@ -10,7 +10,8 @@ using namespace Rcpp;
 
 List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
                         uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
-                        double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight);
+                        double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight,
+                        const bool normalized = true);
 List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
                         uint32_t window_size, const NumericVector sumx2, double sumy2);
 List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint64_t data_size,

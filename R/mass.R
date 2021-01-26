@@ -1,5 +1,5 @@
 
-mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "absolute", "weighted"),
+mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "non_normalized", "absolute", "weighted"),
                      weights = NULL) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -12,12 +12,6 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "ab
   }
   type <- match.arg(type)
 
-  query_size <- ifelse(is.null(query), length(data),
-    ifelse(length(data) > length(query), length(query),
-      length(data)
-    )
-  )
-
   if (type == "weighted") {
     if (is.null(weights)) {
       stop("The `weights` argument must be provided.", call. = FALSE)
@@ -26,10 +20,6 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "ab
       stop("The `weights` must be the same size as the `window_size`.", call. = FALSE)
     }
     checkmate::qassert(weights, "N+")
-  }
-
-  if (window_size > ceiling(query_size / 2)) {
-    stop("Time series is too short relative to desired window size.", call. = FALSE)
   }
 
   # Register anytime exit point ----------------------
@@ -56,6 +46,7 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "ab
       result <- switch(
         type,
         normalized = mass_pre_rcpp(data, query, window_size),
+        non_normalized = mass_pre_weighted_rcpp(data, query, window_size, rep(1, window_size)),
         absolute = mass_pre_abs_rcpp(data, query, window_size),
         weighted = mass_pre_weighted_rcpp(data, query, window_size, weights)
       )
@@ -66,7 +57,7 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "ab
 
 mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2"), n_workers = 1) {
   checkmate::qassert(pre_obj, "L+")
-  type <- match.arg(pre_obj$type, c("normalized", "absolute", "weighted"))
+  type <- match.arg(pre_obj$type, c("normalized", "non_normalized", "absolute", "weighted"))
   version <- match.arg(version)
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
@@ -132,6 +123,11 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
             pre_obj$query_sd[index]
           )
         },
+        non_normalized = mass_weighted_rcpp(
+          pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
+          as.integer(pre_obj$window_size), pre_obj$data_mean, pre_obj$data_sd,
+          pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, rep(1, pre_obj$window_size), FALSE
+        ),
         absolute = mass_absolute_rcpp(
           pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
           as.integer(pre_obj$window_size), pre_obj$sumx2, pre_obj$sumy2[index]
@@ -139,7 +135,7 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
         weighted = mass_weighted_rcpp(
           pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
           as.integer(pre_obj$window_size), pre_obj$data_mean, pre_obj$data_sd,
-          pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, pre_obj$weight
+          pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, pre_obj$weight, TRUE
         )
       )
     },
