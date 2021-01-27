@@ -13,7 +13,7 @@ if (!testthat:::on_cran()) {
     expect_silent(mov_mean_weighted <- mov_mean(
       data = motifs_discords_small, window_size = 150, type = "weighted"
     ))
-    expect_snapshot_value(mov_mean_weighted, style = "serialize")
+    expect_snapshot_value(round(mov_mean_weighted, 8), style = "json2")
 
     expect_silent(mov_mean_fading <- mov_mean(
       data = motifs_discords_small, window_size = 150, type = "fading"
@@ -37,7 +37,7 @@ if (!testthat:::on_cran()) {
     expect_silent(mov_var_weighted <- mov_var(
       data = motifs_discords_small, window_size = 150, type = "weighted"
     ))
-    expect_snapshot_value(mov_var_weighted, style = "serialize")
+    expect_snapshot_value(round(mov_var_weighted, 8), style = "json2")
 
     expect_silent(mov_var_fading <- mov_var(
       data = motifs_discords_small, window_size = 150, type = "fading"
@@ -61,7 +61,7 @@ if (!testthat:::on_cran()) {
     expect_silent(mov_sum_weighted <- mov_sum(
       data = motifs_discords_small, window_size = 150, type = "weighted"
     ))
-    expect_snapshot_value(mov_sum_weighted, style = "serialize")
+    expect_snapshot_value(round(mov_sum_weighted, 8), style = "json2")
 
     expect_silent(mov_sum_fading <- mov_sum(
       data = motifs_discords_small, window_size = 150, type = "fading"
@@ -93,7 +93,6 @@ if (!testthat:::on_cran()) {
       data = motifs_discords_small, window_size = 150, rcpp = FALSE
     ))
     expect_equal(mov_std_res, mov_std_res_r)
-    # expect_snapshot_value(mov_std_res, style = "serialize")
   })
 
   test_that("movmean_std", {
@@ -104,7 +103,6 @@ if (!testthat:::on_cran()) {
       data = motifs_discords_small, window_size = 150, rcpp = FALSE
     ))
     expect_equal(movmean_std, movmean_std_r)
-    # expect_snapshot_value(movmean_std, style = "serialize")
   })
 
   test_that("muinvn", {

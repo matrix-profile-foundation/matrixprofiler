@@ -126,6 +126,17 @@
       "--no-restore",
       "--encoding=UTF8"
     ],
-    "r.rterm.windows": "C:/Program Files/R/R-4.0.3/bin/x64/R.exe"
-  }
+    "r.rterm.windows": "C:/Program Files/R/R-4.0.3/bin/x64/R.exe",
+    "r.rpath.linux": "/usr/lib/R/bin/R",
+    "r.rterm.linux": "/usr/lib/R/bin/R"
+  },
+  "extensions": {
+    "recommendations": [
+      "ikuyadeu.r"
+    ]
+  },
+  "recommendations": [
+    "ikuyadeu.r",
+    "gabrielgrinberg.auto-run-command"
+  ]
 }
