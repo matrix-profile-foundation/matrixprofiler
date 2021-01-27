@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Anytime univariate SCRIMP++ algorithm — scrimp • matrixprofiler</title>
+<title>Fast implementation of moving average — mov_mean • matrixprofiler</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,10 +46,8 @@
 
 
 
-<meta property="og:title" content="Anytime univariate SCRIMP++ algorithm — scrimp" />
-<meta property="og:description" content="Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
-DISCLAIMER: This algorithm still in development by its authors.
-Join similarity, RMP and LMP not implemented yet." />
+<meta property="og:title" content="Fast implementation of moving average — mov_mean" />
+<meta property="og:description" content="This function does not handle NA values" />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -121,72 +119,45 @@ Join similarity, RMP and LMP not implemented yet." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Anytime univariate SCRIMP++ algorithm</h1>
-    <small class="dont-index">Source: <a href='https://github.com/matrix-profile-foundation/matrixprofiler/blob/master/R/scrimp.R'><code>R/scrimp.R</code></a></small>
-    <div class="hidden name"><code>scrimp.Rd</code></div>
+    <h1>Fast implementation of moving average</h1>
+    <small class="dont-index">Source: <a href='https://github.com/matrix-profile-foundation/matrixprofiler/blob/master/R/windowfunc.R'><code>R/windowfunc.R</code></a></small>
+    <div class="hidden name"><code>mov_mean.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
-DISCLAIMER: This algorithm still in development by its authors.
-Join similarity, RMP and LMP not implemented yet.</p>
+    <p>This function does not handle NA values</p>
     </div>
 
-    <pre class="usage"><span class='fu'>scrimp</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>window_size</span>, exclusion_zone <span class='op'>=</span> <span class='fl'>0.5</span>, n_workers <span class='op'>=</span> <span class='fl'>1</span>, progress <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>mov_mean</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  <span class='va'>window_size</span>,
+  type <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"ogita"</span>, <span class='st'>"normal"</span>, <span class='st'>"weighted"</span>, <span class='st'>"fading"</span><span class='op'>)</span>,
+  eps <span class='op'>=</span> <span class='fl'>0.9</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>data</th>
-      <td><p>Required. Any 1-dimension series of numbers (<code>matrix</code>, <code>vector</code>, <code>ts</code> etc.) (See details).</p></td>
+      <td><p>a <code>vector</code> or a column <code>matrix</code> of <code>numeric</code>.</p></td>
     </tr>
     <tr>
       <th>window_size</th>
-      <td><p>Required. An integer defining the rolling window size.</p></td>
+      <td><p>moving sd window size</p></td>
     </tr>
     <tr>
-      <th>exclusion_zone</th>
-      <td><p>A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
-trivial matches. Default is <code>0.5</code>, i.e., half of the <code>window_size</code>.</p></td>
-    </tr>
-    <tr>
-      <th>n_workers</th>
-      <td><p>An integer. The number of threads using for computing. Defaults to <code>1</code>.</p></td>
-    </tr>
-    <tr>
-      <th>progress</th>
-      <td><p>A logical. If <code>TRUE</code> (the default) will show a progress bar. Useful for long computations. (See
-details)</p></td>
+      <th>rcpp</th>
+      <td><p>a <code>logical</code>. Uses rcpp implementation.</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>The Matrix Profile, has the potential to revolutionize time series data mining because of its
-generality, versatility, simplicity and scalability. In particular it has implications for time
-series motif discovery, time series joins, shapelet discovery (classification), density
-estimation, semantic segmentation, visualization, rule discovery, clustering etc. The anytime
-SCRIMP computes the Matrix Profile and Profile Index in such manner that it can be stopped before
-its complete calculation and return the best so far results allowing ultra-fast approximate
-solutions. <code>verbose</code> changes how much information is printed by this function; <code>0</code> means nothing,
-<code>1</code> means text, <code>2</code> adds the progress bar, <code>3</code> adds the finish sound. <code>exclusion_zone</code> is used to
-avoid  trivial matches.</p>
-    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
-
-    <p>Website: <a href='http://www.cs.ucr.edu/~eamonn/MatrixProfile.html'>http://www.cs.ucr.edu/~eamonn/MatrixProfile.html</a></p>
-    <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
-
-    <div class='dont-index'><p>Other matrix profile computations: 
-<code><a href='mpx.html'>mpx</a>()</code>,
-<code><a href='stamp.html'>stamp</a>()</code>,
-<code><a href='stomp.html'>stomp</a>()</code></p></div>
+    <p>Returns a <code>vector</code> with the moving average</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'># \donttest{</span>
-<span class='va'>mp</span> <span class='op'>&lt;-</span> <span class='fu'>scrimp</span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/stats/Uniform.html'>runif</a></span><span class='op'>(</span><span class='fl'>200</span><span class='op'>)</span>, window_size <span class='op'>=</span> <span class='fl'>30</span><span class='op'>)</span>
-<span class='co'># }</span>
-
+    <pre class="examples"><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
