@@ -1,7 +1,7 @@
 README
 ================
 Francisco Bischoff
-\- 20 Jan 2021
+\- 27 Jan 2021
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -11,13 +11,12 @@ Francisco Bischoff
 
 <!-- badges: start -->
 
-[![Packagist](https://img.shields.io/badge/License-Apache--2.0-brightgreen.svg)](https://choosealicense.com/licenses/apache-2.0/)
-[![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
-
-![pkgdown](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/pkgdown/badge.svg?branch=develop)
-![test-coverage](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/test-coverage/badge.svg?branch=develop)
+[![License](https://img.shields.io/badge/License-GPL--3.0-brightgreen.svg)](https://choosealicense.com/licenses/gpl-3.0/)
+[![lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#maturing)
+[![codecov](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/master/graph/badge.svg?token=w7AmbwhNvn)](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler)
 ![lint](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/lint/badge.svg?branch=develop)
 ![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=develop)
+![CodeQL](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg)
 <!-- badges: end -->
 
 ## Code of Conduct
