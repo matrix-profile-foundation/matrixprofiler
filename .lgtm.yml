@@ -1,3 +1,9 @@
+queries:
+  - exclude: csharp/*
+  - exclude: go/*
+  - exclude: java/*
+  - exclude: javascript/*
+  - exclude: python/*
 extraction:
   cpp:
     prepare:
