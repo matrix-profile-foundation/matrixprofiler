@@ -1,5 +1,5 @@
-NEWS
-================
+# NEWS
+
 Francisco Bischoff
 \- 27 Jan 2021
 
@@ -7,4 +7,4 @@ Francisco Bischoff
 
 # matrixprofiler 0.1.0
 
-  - The beginning
+- The beginning

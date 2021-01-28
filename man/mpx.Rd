@@ -65,7 +65,7 @@ mp <- mpx(runif(200), window_size = 30)
 
 }
 \seealso{
-Other matrix profile computations: 
+Other matrix profile computations:
 \code{\link{scrimp}()},
 \code{\link{stamp}()},
 \code{\link{stomp}()}

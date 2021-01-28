@@ -22,7 +22,7 @@
       "intelliSenseMode": "gcc-x64"
     },
     {
-      "name": "Ubuntu20",
+      "name": "Ubuntu16+",
       "includePath": [
         "/usr/share/R/include/**",
         "${workspaceFolder}/src/**",
