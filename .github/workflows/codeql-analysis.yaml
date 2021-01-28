@@ -9,8 +9,6 @@
 # the `language` matrix defined below to confirm you have the correct set of
 # supported CodeQL languages.
 #
-name: "CodeQL"
-
 on:
   push:
     branches:
@@ -25,6 +23,8 @@ on:
   #   branches: [ master ]
   # schedule:
   #   - cron: '44 7 * * 6'
+
+name: CodeQL
 
 jobs:
   analyze:

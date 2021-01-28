@@ -14,7 +14,7 @@ on:
 
   workflow_dispatch:
 
-name: lint
+name: Lint
 
 jobs:
   lint:

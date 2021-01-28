@@ -14,7 +14,7 @@ on:
 
   workflow_dispatch:
 
-name: test-coverage
+name: Covr
 
 jobs:
   test-coverage:
