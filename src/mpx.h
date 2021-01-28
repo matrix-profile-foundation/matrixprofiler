@@ -2,14 +2,18 @@
 #define __MPX__
 
 #include <Rcpp.h>
-#include <RcppParallel.h>
+
+// [[Rcpp::plugins(cpp11)]]
 
 using namespace Rcpp;
-using namespace RcppParallel;
 
-List mpx_rcpp(NumericVector a, uint16_t w, uint16_t minlag, bool idxs, bool euclidean);
-List mpxab_rcpp(NumericVector a, NumericVector b, uint16_t w, bool idxs, bool euclidean);
-List mpx_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs, bool euclidean);
-List mpxab_rcpp_parallel(NumericVector a, uint16_t w, uint16_t minlag, bool idxs, bool euclidean);
+List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, bool idxs = true, bool euclidean = true,
+              bool progress = false);
+List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs = true,
+                bool euclidean = true, bool progress = false);
+List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez = 0.5, bool idxs = true,
+                       bool euclidean = true, bool progress = false);
+List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs = true,
+                         bool euclidean = true, bool progress = false);
 
 #endif // __MPX__

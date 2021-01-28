@@ -1,2 +1,7 @@
 CXX_STD = CXX11
-PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
+PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=0
+
+strippedLib: $(SHLIB)
+	if test -f "/usr/bin/strip"; then /usr/bin/strip --strip-debug $(SHLIB); fi
+
+.phony: strippedLib

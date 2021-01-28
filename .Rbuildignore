@@ -1,5 +1,8 @@
 ^renv$
 ^renv\.lock$
+^\.vscode$
+^\.editorconfig$
+^.*\.code-workspace$
 ^.*\.Rout$
 ^.*\.Rproj$
 ^.*\.yml$
@@ -27,3 +30,8 @@
 ^matrixprofiler.*\.tgz$
 ^matrixprofiler\.Rcheck$
 ^API$
+^\.github$
+^codecov\.yml$
+\.clang-format
+^Makefile$
+^docs/_pkgdown\.yml$

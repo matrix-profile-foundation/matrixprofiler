@@ -1,1 +1,16 @@
 # API for matrixprofiler package
+
+## Exported functions
+
+mov_mean(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9)
+mov_std(data, window_size, rcpp = TRUE)
+movmean_std(data, window_size, rcpp = TRUE)
+mpx(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TRUE, distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE)
+scrimp(data, window_size, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
+stamp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
+stomp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
+
+## Reexported objects
+
+magrittr::%>%
+magrittr::%T>%
