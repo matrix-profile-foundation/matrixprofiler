@@ -146,9 +146,6 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   NumericVector d_mean = data_mean;
   NumericVector d_std = data_sd;
 
-  // k = 4096; // assume k > w_size
-  // k = pow2(nextpow2(sqrt(d_size)));
-
   NumericVector rev_query(k);
   std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
   ComplexVector Y = fft_rcpp(rev_query);
@@ -181,7 +178,7 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
-  // j = j + jump;
+
   jump = d_size - j;
 
   try {

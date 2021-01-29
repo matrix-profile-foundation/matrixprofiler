@@ -6,7 +6,14 @@
 \usage{
 test_equal(mpa_obj, mpb_obj, tolerance = .Machine$double.eps)
 }
+\arguments{
+\item{mpa_obj}{First object}
+
+\item{mpb_obj}{Second object}
+
+\item{tolerance}{tolerance}
+}
 \description{
-Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
+Compute if two Matrix Profiles and Profile Indexes are similar. Used only for internal purposes.
 }
 \keyword{internal}

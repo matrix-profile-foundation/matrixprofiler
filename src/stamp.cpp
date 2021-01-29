@@ -52,7 +52,6 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
-  // order = sample(order, num_queries);
 
   uint32_t k = find_best_k_rcpp(data, query, window_size);
 
@@ -88,8 +87,6 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       matrix_profile[idx] = distance_profile[idx];
       profile_index[which_cpp(idx)] = i + 1;
     }
-
-    // matrix_profile <- Re(sqrt(as.complex(matrix_profile)))
 
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
@@ -210,22 +207,6 @@ struct StampWorker : public Worker {
         std::vector<std::complex<double>> Z(X.size());
         std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
         std::vector<std::complex<double>> z = fft->fft(Z, true);
-
-        // for (uint64_t i = 0; i < jump; i++) {
-        //   if (skip_location[begin + i] == 0) {
-        //     if (ez == 0 || (begin + i) < start_ez || end_ez < (begin + i)) {
-        //       dp = 2 * (w_size - (z[k - jump + i].real() - w_size * d_mean[begin + i] * q_mean[w]) /
-        //                              (d_std[begin + i] * q_std[w]));
-        //       if (dp < 0) {
-        //         dp = 0;
-        //       }
-        //       if (dp < mp[begin + i]) {
-        //         mp[begin + i] = dp;
-        //         pi[begin + i] = w + 1;
-        //       }
-        //     }
-        //   }
-        // }
 
         for (uint64_t i = 0; i < jump; i++) {
           if (skip_location[begin + i] == 1 || d_std[begin + i] < DBL_EPSILON || q_std[w] < DBL_EPSILON) {

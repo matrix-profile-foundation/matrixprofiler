@@ -5,10 +5,10 @@
       "includePath": [
         "C:/Program Files/R/R-4.0.3/include/**",
         "${workspaceFolder}/src/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-w64-mingw32/Rcpp/include/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-w64-mingw32/RcppParallel/include/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-w64-mingw32/RcppProgress/include/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-w64-mingw32/RcppThread/include/**"
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/Rcpp/include/**",
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/RcppParallel/include/**",
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/RcppProgress/include/**",
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/RcppThread/include/**"
       ],
       "defines": [
         "UNICODE",
@@ -26,10 +26,10 @@
       "includePath": [
         "/usr/share/R/include/**",
         "${workspaceFolder}/src/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-pc-linux-gnu/Rcpp/include/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-pc-linux-gnu/RcppParallel/include/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-pc-linux-gnu/RcppProgress/include/**",
-        "${workspaceFolder}/renv/library/4.0/x86_64-pc-linux-gnu/RcppThread/include/**"
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-pc-linux-gnu/Rcpp/include/**",
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-pc-linux-gnu/RcppParallel/include/**",
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-pc-linux-gnu/RcppProgress/include/**",
+        "${workspaceFolder}/renv/library/R-4.0/x86_64-pc-linux-gnu/RcppThread/include/**"
       ],
       "defines": [
         "UNICODE",

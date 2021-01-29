@@ -48,7 +48,8 @@ Imports:
     checkmate,
     magrittr,
     Rcpp,
-    RcppParallel
+    RcppParallel,
+    RcppThread
 Suggests:
     gdtools,
     knitr,

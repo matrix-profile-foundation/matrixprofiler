@@ -211,11 +211,6 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
       res[i] = std::complex<double>(cplx[i].r, cplx[i].i) / f;
     }
 
-    // for(i = 0; i < 20; i++)
-    //   nfac[i] = -1;
-    //
-    // old_n = m_fac = kt = maxf = maxp = -1;
-
     if (work != nullptr) {
       std::free(work);
       work = nullptr;
@@ -230,7 +225,6 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
     }
   }
 
-  // Rcout << "cplx 2" << std::endl;
   return res;
 }
 

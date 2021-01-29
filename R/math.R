@@ -11,8 +11,10 @@
 
 #' Converts euclidean distances into correlation values
 #'
-#' @param x a `vector` or a column `matrix` of `numeric`.
+#' @param x a `vector` of `numeric`.
 #' @param w the window size
+#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
+#'   or not be slower.
 #'
 #' @return Returns the converted values
 #'
@@ -42,9 +44,33 @@ corr_ed <- function(x, w, rcpp = TRUE) {
   }
 }
 
+#' Calculates the mode of a vector
+#'
+#' @inheritParams ed_corr
+#'
+#' @return the mode
+#' @keywords internal
+#' @noRd
+
+mode <- function(x, rcpp = FALSE) {
+  x <- as.integer(x)
+
+  # Rcpp is not faster
+  if (rcpp) {
+    return(mode_rcpp(x))
+  }
+
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+
 #' Population SD, as R always calculate with n-1 (sample), here we fix it
 #'
-#' @inheritParams fast_movsd
+#' @param data A `vector` of `numeric`.
+#' @param na.rm A logical. If `TRUE` remove the `NA` values from the computation.
+#' @param rcpp A logical. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
+#'   or not be slower.
 #'
 #' @return Returns the corrected standard deviation from sample to population
 #' @keywords internal
@@ -67,29 +93,9 @@ std <- function(data, na.rm = FALSE, rcpp = TRUE) { # nolint
   return(sqrt((length(data) - 1) / length(data)) * sdx)
 }
 
-#' Calculates the mode of a vector
-#'
-#' @param x
-#'
-#' @return the mode
-#' @keywords internal
-#' @noRd
-
-mode <- function(x, rcpp = FALSE) {
-  x <- as.integer(x)
-
-  # Rcpp is not faster
-  if (rcpp) {
-    return(mode_rcpp(x))
-  }
-
-  ux <- unique(x)
-  ux[which.max(tabulate(match(x, ux)))]
-}
-
 #' Normalizes data for mean Zero and Standard Deviation One
 #'
-#' @inheritParams fast_movsd
+#' @inheritParams std
 #'
 #' @return Returns the normalized data
 #' @keywords internal
@@ -115,9 +121,11 @@ znorm <- function(data, rcpp = TRUE) {
 #' Normalizes data to be between min and max
 #'
 #'
-#' @param data a `vector` or a column `matrix` of `numeric`.
-#' @param min the minimum value
-#' @param max the maximum value
+#' @param min_lim A number
+#' @param max_lim A number
+#' @param rcpp A logical. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
+#'   or not be slower.
+#' @param data A `vector` or a column `matrix` of `numeric`.
 #'
 #' @return Returns the normalized data
 #' @keywords internal
@@ -149,7 +157,7 @@ normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
 
 #' Normalizes data between Zero and One
 #'
-#' @param data a `vector` or a column `matrix` of `numeric`.
+#' @param data a `vector` of `numeric`.
 #'
 #' @return Returns the normalized data.
 #' @keywords internal
@@ -170,7 +178,7 @@ zero_one_norm <- function(data) {
 #' applied here that can be easily ported to a real-time system that would minimize the number of
 #' if-else conditionals.
 #'
-#' @param data is the input time-domain signal (one dimensional).
+#' @param data a `vector` of `numeric`.
 #'
 #' @return Returns the amount of zero-crossings in the input signal.
 #' @author sparafucile17 06/27/04
@@ -212,7 +220,7 @@ zero_crossings <- function(data) {
 
 #' Computes the complexity index of the data
 #'
-#' @param data a `vector` or a column `matrix` of `numeric`.
+#' @param data a `vector` of `numeric`
 #'
 #' @return Returns the complexity index of the data provided (normally a subset)
 #' @keywords internal
@@ -222,44 +230,13 @@ complexity <- function(data) {
   return(sqrt(sum(diff(data)^2)))
 }
 
-# #' Distance between two matrices
-# #'
-# #' Computes the Euclidean distance between rows of two matrices.
-# #'
-# #' @param x a `matrix`.
-# #' @param y a `matrix`.
-# #'
-# #' @return Returns a `matrix` of size m x n if x is of size m x k and y is of size n x k.
-# #' @keywords internal
-# #' @noRd
-
-# diff2 <- function(x, y) {
-#   # Rcpp ?
-#   if (!is.numeric(x) || !is.numeric(y)) {
-#     stop("`x` and `y` must be numeric vectors or matrices.")
-#   }
-#   if (is.vector(x)) {
-#     dim(x) <- c(1, length(x))
-#   }
-#   if (is.vector(y)) {
-#     dim(y) <- c(1, length(y))
-#   }
-#   if (ncol(x) != ncol(y)) {
-#     stop("`x` and `y` must have the same number of columns.")
-#   }
-#   m <- nrow(x)
-#   n <- nrow(y)
-#   xy <- x %*% t(y)
-#   xx <- matrix(rep(apply(x * x, 1, sum), n), m, n, byrow = FALSE)
-#   yy <- matrix(rep(apply(y * y, 1, sum), m), m, n, byrow = TRUE)
-#   sqrt(pmax(xx + yy - 2 * xy, 0))
-# }
-
 #' Binary Split algorithm
 #'
 #' Creates a vector with the indexes of binary split.
 #'
 #' @param n size of the vector
+#' @param rcpp A logical. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
+#'   or not be slower.
 #'
 #' @return Returns a `vector` with the binary split indexes
 #' @keywords internal
@@ -321,34 +298,9 @@ binary_split <- function(n, rcpp = TRUE) {
   return(as.integer(idxs))
 }
 
-# #' Bubble up algorithm
-# #'
-# #' Bubble up algorithm.
-# #'
-# #' @param data a vector of values
-# #' @param len size of data
-# #'
-# #' @return Doesnt return. Not used for now
-# #' @keywords internal
-# #' @noRd
-
-# bubble_up <- function(data, len) {
-#   # Rcpp ?
-#   pos <- len
-
-#   while (pos > 1 && data[pos %/% 2] < data[pos]) {
-#     t <- data[pos]
-#     data[pos] <- data[pos %/% 2]
-#     data[pos %/% 2] <- t
-#     pos <- pos %/% 2
-#   }
-
-#   return(data)
-# }
-
 #' Piecewise Aggregate Approximation of time series
 #'
-#' @param data time series
+#' @param data a `vector` of `numeric`
 #' @param p factor of PAA reduction (2 == half of size)
 #'
 #' @return PAA result
@@ -382,7 +334,7 @@ paa <- function(data, p) {
 
 #' Resample data to the original size, with interpolation
 #'
-#' @param data time series
+#' @param data a `vector` of `numeric`
 #' @param p factor of PAA reduction (2 == half of size)
 #'
 #' @keywords internal
