@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • matrixprofiler</title>
+<title>Matrix Profile for R — matrixprofiler • matrixprofiler</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -46,7 +46,9 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Matrix Profile for R — matrixprofiler" />
+<meta property="og:description" content="This package is derived from the former package tsmp. It is intended to make a clear separation of what is the
+Matrix Profile computation and what are the data mining process we can do using Matrix Profile." />
 <meta property="og:image" content="/logo.png" />
 
 
@@ -66,7 +68,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -116,66 +118,48 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Matrix Profile for R</h1>
+    <small class="dont-index">Source: <a href='https://github.com/matrix-profile-foundation/matrixprofiler/blob/master/R/matrixprofiler-package.R'><code>R/matrixprofiler-package.R</code></a></small>
+    <div class="hidden name"><code>matrixprofiler.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    <p>This package is derived from the former package <code>tsmp</code>. It is intended to make a clear separation of what is the
+Matrix Profile computation and what are the data mining process we can do using Matrix Profile.</p>
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="mass.html">mass()</a></code> <code><a href="mass.html">mass_pre()</a></code> </p>
-        </td>
-        <td><p>Computes the Distance between the 'data' and the 'query'.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="matrixprofiler.html">matrixprofiler</a></code> </p>
-        </td>
-        <td><p>Matrix Profile for R</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="motifs_discords_small.html">motifs_discords_small</a></code> </p>
-        </td>
-        <td><p>Just a synthetic dataset for testing</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="mp_algos.html">stamp()</a></code> <code><a href="mp_algos.html">stomp()</a></code> <code><a href="mp_algos.html">scrimp()</a></code> <code><a href="mp_algos.html">mpx()</a></code> </p>
-        </td>
-        <td><p>Matrix Profile Computation</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="windowfunc.html">mov_mean()</a></code> <code><a href="windowfunc.html">mov_var()</a></code> <code><a href="windowfunc.html">mov_sum()</a></code> <code><a href="windowfunc.html">mov_max()</a></code> <code><a href="windowfunc.html">mov_min()</a></code> <code><a href="windowfunc.html">mov_std()</a></code> <code><a href="windowfunc.html">movmean_std()</a></code> <code><a href="windowfunc.html">muinvn()</a></code> </p>
-        </td>
-        <td><p>Several moving window functions</p></td>
-      </tr>
-    </tbody>
-    </table>
+
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>The Matrix Profile, has the potential to revolutionize time series data mining because of its generality,
+versatility, simplicity and scalability. In particular it has implications for time series motif discovery, time
+series joins, shapelet discovery (classification), density estimation, semantic segmentation, visualization, rule
+discovery, clustering etc.</p>
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    
+<ul>
+<li><p>Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All pairs similarity joins
+for time series: A unifying view that includes motifs, discords and shapelets. Proc - IEEE Int Conf Data Mining,
+ICDM. 2017;1317-22.</p></li>
+</ul>
+
+<ul>
+<li><p>Zhu Y, Imamura m, Nikovski D, Keogh E. Matrix Profile VII: Time Series Chains: A New Primitive for Time
+Series Data Mining. Knowl Inf Syst. 2018 Jun 2;1-27.</p></li>
+</ul>
+
+<ul>
+<li><p>Zhu Y, Zimmerman Z, Senobari NS, Yeh CM, Funning G. Matrix Profile II : Exploiting a Novel Algorithm
+and GPUs to Break the One Hundred Million Barrier for Time Series Motifs and Joins. Icdm. 2016 Jan 22;54(1):739-48.</p></li>
+</ul>
+
+<p>Website: <a href='http://www.cs.ucr.edu/~eamonn/MatrixProfile.html'>http://www.cs.ucr.edu/~eamonn/MatrixProfile.html</a></p>
+
   </div>
-
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>

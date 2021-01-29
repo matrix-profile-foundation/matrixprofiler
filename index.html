@@ -83,15 +83,146 @@
 <div id="readme" class="section level1">
 <div class="page-header"><h1 class="hasAnchor">
 <a href="#readme" class="anchor"></a>README</h1></div>
-<p>Francisco Bischoff - 27 Jan 2021</p>
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-<p><img src="reference/figures/logo.png" align="right" style="float:right;"></p>
+<p>Francisco Bischoff</p>
+<ul>
+<li>29 Jan 2021</li>
+</ul>
+<!-- README.md is generated from README.Rmd. Please edit that file --><p><img src="reference/figures/logo.png" align="right" style="float:right;"></p>
 </div>
 <div id="matrix-profile-for-r" class="section level1">
 <h1 class="hasAnchor">
 <a href="#matrix-profile-for-r" class="anchor"></a>Matrix Profile for R</h1>
 <!-- badges: start -->
-<p><a href="https://choosealicense.com/licenses/gpl-3.0/"><img src="https://img.shields.io/badge/License-GPL--3.0-brightgreen.svg" alt="License"></a> <a href="https://www.tidyverse.org/lifecycle/#maturing"><img src="https://img.shields.io/badge/lifecycle-stable-brightgreen.svg" alt="lifecycle"></a> <a href="https://codecov.io/gh/matrix-profile-foundation/matrixprofiler"><img src="https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/master/graph/badge.svg?token=w7AmbwhNvn" alt="codecov"></a> <img src="https://github.com/matrix-profile-foundation/matrixprofiler/workflows/lint/badge.svg?branch=develop" alt="lint"><img src="https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=develop" alt="R-CMD-check"><img src="https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg" alt="CodeQL"><!-- badges: end --></p>
+
+
+
+<!-- badges: end -->
+<div id="overview" class="section level2">
+<h2 class="hasAnchor">
+<a href="#overview" class="anchor"></a>Overview</h2>
+<p>R Functions implementing UCR Matrix Profile Algorithm (<a href="http://www.cs.ucr.edu/~eamonn/MatrixProfile.html" class="uri">http://www.cs.ucr.edu/~eamonn/MatrixProfile.html</a>).</p>
+<p>This package will keep all core functions that will allow you to use the Matrix Profile concept as a toolkit.</p>
+<p>This package provides (almost all) algorithms to build a Matrix Profile.</p>
+<p>The package <code>tsmp</code> will still be developed as “how we do data mining with Matrix Profile”, keeping all slow stuff to be handled by this optimized package.</p>
+<p>This will not be covered here, as it is a <code>tsmp</code> purpose:</p>
+<ul>
+<li>Algorithms for MOTIF search for Unidimensional and Multidimensional Matrix Profiles.</li>
+<li>Algorithm for Chains search for Unidimensional Matrix Profile.</li>
+<li>Algorithms for Semantic Segmentation (FLUSS) and Weakly Labeled data (SDTS).</li>
+<li>Algorithm for Salient Subsections detection allowing MDS plotting.</li>
+<li>Basic plotting for all outputs generated here.</li>
+</ul>
+<p>You can find the current <code>tsmp</code> package here: <a href="https://CRAN.R-project.org/package=tsmp" class="uri">https://CRAN.R-project.org/package=tsmp</a></p>
+</div>
+<div id="installation" class="section level2">
+<h2 class="hasAnchor">
+<a href="#installation" class="anchor"></a>Installation</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="co"># Install the released version from CRAN</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html">install.packages</a></span><span class="op">(</span><span class="st">"matrixprofiler"</span><span class="op">)</span>
+<span class="co"># Or the development version from GitHub:</span>
+<span class="co"># install.packages("devtools")</span>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"matrix-profile-foundation/matrixprofiler"</span><span class="op">)</span></code></pre></div>
+</div>
+<div id="currently-available-features" class="section level2">
+<h2 class="hasAnchor">
+<a href="#currently-available-features" class="anchor"></a>Currently available Features</h2>
+<ul>
+<li>STAMP (single and multi-thread versions)</li>
+<li>STOMP (single and multi-thread versions)</li>
+<li>SCRIMP (single and multi-thread versions, not for AB-joins yet)</li>
+<li>MPX (single and multi-thread versions)</li>
+<li>Misc:
+<ul>
+<li>MASS v2.0</li>
+<li>MASS v3.0</li>
+<li>MASS extensions: UN (Unnormalized Query)</li>
+<li>MASS extensions: WQ (Weighted Query)</li>
+<li>MASS extensions: ABS (Absolute Query and Data)</li>
+<li>Window functions like mov_mean() and others.</li>
+</ul>
+</li>
+</ul>
+</div>
+<div id="on-roadmap" class="section level2">
+<h2 class="hasAnchor">
+<a href="#on-roadmap" class="anchor"></a>On Roadmap</h2>
+<ul>
+<li>STOMPi (On-line version)</li>
+<li>Multivariate STOMP (mSTOMP)</li>
+<li>SiMPle-Fast (Fast Similarity Matrix Profile for Music Analysis and Exploration)</li>
+<li>Exact Detection of Variable Length Motifs (VALMOD) (maybe will stay on <code>tsmp</code> package)</li>
+<li>MPdist: Matrix Profile Distance</li>
+<li>MASS extensions: ADP (Approximate Distance Profile, with PAA) (maybe)</li>
+<li>MASS extensions: QwG (Query with Gap)</li>
+</ul>
+</div>
+<div id="will-stay-on-tsmp-package" class="section level2">
+<h2 class="hasAnchor">
+<a href="#will-stay-on-tsmp-package" class="anchor"></a>Will stay on TSMP package</h2>
+<ul>
+<li>Time Series Chains</li>
+<li>Multivariate MOTIF Search (from mSTOMP)</li>
+<li>Salient Subsequences search for Multidimensional Space</li>
+<li>Scalable Dictionary learning for Time Series (SDTS) prediction</li>
+<li>FLUSS (Fast Low-cost Unipotent Semantic Segmentation)</li>
+<li>FLOSS (Fast Low-cost On-line Unipotent Semantic Segmentation)</li>
+<li>Annotation vectors (e.g., Stop-word MOTIF bias, Actionability bias)</li>
+<li>FLUSS Arc Plot and SiMPle Arc Plot</li>
+<li>Time Series Snippets</li>
+<li>Subsetting Matrix Profiles (<code><a href="https://rdrr.io/r/utils/head.html">head()</a></code>, <code><a href="https://rdrr.io/r/utils/head.html">tail()</a></code>, <code><a href="https://rdrr.io/r/base/Extract.html">[</a></code>, etc.)</li>
+</ul>
+</div>
+<div id="other-projects-with-matrix-profile" class="section level2">
+<h2 class="hasAnchor">
+<a href="#other-projects-with-matrix-profile" class="anchor"></a>Other projects with Matrix Profile</h2>
+<ul>
+<li>Python: <a href="https://github.com/target/matrixprofile-ts" class="uri">https://github.com/target/matrixprofile-ts</a>
+</li>
+<li>Python: <a href="https://github.com/ZiyaoWei/pyMatrixProfile" class="uri">https://github.com/ZiyaoWei/pyMatrixProfile</a>
+</li>
+<li>Python: <a href="https://github.com/jbeleno/owlpy" class="uri">https://github.com/jbeleno/owlpy</a>
+</li>
+<li>Python: <a href="https://github.com/javidlakha/matrix-profile" class="uri">https://github.com/javidlakha/matrix-profile</a>
+</li>
+<li>Python: <a href="https://github.com/shapelets/khiva-python" class="uri">https://github.com/shapelets/khiva-python</a>
+</li>
+<li>R: <a href="https://github.com/shapelets/khiva-r" class="uri">https://github.com/shapelets/khiva-r</a>
+</li>
+<li>Matlab: <a href="https://github.com/shapelets/khiva-matlab" class="uri">https://github.com/shapelets/khiva-matlab</a>
+</li>
+<li>Java: <a href="https://github.com/shapelets/khiva-java" class="uri">https://github.com/shapelets/khiva-java</a>
+</li>
+<li>Java: <a href="https://github.com/ensozos/Matrix-Profile" class="uri">https://github.com/ensozos/Matrix-Profile</a>
+</li>
+<li>Kotlin: <a href="https://github.com/shapelets/khiva-kotlin" class="uri">https://github.com/shapelets/khiva-kotlin</a>
+</li>
+<li>C++ (CUDA and OPENCL): <a href="https://github.com/shapelets/khiva" class="uri">https://github.com/shapelets/khiva</a>
+</li>
+<li>CUDA: <a href="https://github.com/zpzim/STOMPSelfJoin" class="uri">https://github.com/zpzim/STOMPSelfJoin</a>
+</li>
+<li>CUDA: <a href="https://github.com/zpzim/SCAMP" class="uri">https://github.com/zpzim/SCAMP</a>
+</li>
+</ul>
+</div>
+<div id="matrix-profile-foundation" class="section level2">
+<h2 class="hasAnchor">
+<a href="#matrix-profile-foundation" class="anchor"></a>Matrix Profile Foundation</h2>
+<p>Our next step unifying the Matrix Profile implementation in several programming languages.</p>
+<p>Visit: <a href="https://matrixprofile.org">Matrix Profile Foundation</a></p>
+</div>
+<div id="benchmarks" class="section level2">
+<h2 class="hasAnchor">
+<a href="#benchmarks" class="anchor"></a>Benchmarks</h2>
+<p>Will be available soon. See the benchmarks of <code>tsmp</code> package. They will be ashamed.</p>
+</div>
+<div id="package-dependencies" class="section level2">
+<h2 class="hasAnchor">
+<a href="#package-dependencies" class="anchor"></a>Package dependencies</h2>
+<center>
+<p><img src="reference/figures/dependency_plot-1.png"><!-- --></p>
+</center>
+</div>
 <div id="code-of-conduct" class="section level2">
 <h2 class="hasAnchor">
 <a href="#code-of-conduct" class="anchor"></a>Code of Conduct</h2>
@@ -134,7 +265,19 @@
 </ul>
 </div>
 
-  </div>
+  <div class="dev-status">
+<h2>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://choosealicense.com/licenses/gpl-3.0/"><img src="https://img.shields.io/badge/License-GPL--3.0-green.svg" alt="License"></a></li>
+<li><a href="https://www.tidyverse.org/lifecycle/#maturing"><img src="https://img.shields.io/badge/lifecycle-stable-green.svg" alt="lifecycle"></a></li>
+<li><a href="https://github.com/jimhester/lintr"><img src="https://github.com/matrix-profile-foundation/matrixprofiler/workflows/Lint/badge.svg?branch=develop" alt="Lint"></a></li>
+<li><a href="https://r-pkgs.org/r-cmd-check.html"><img src="https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=develop" alt="R-CMD-check"></a></li>
+<li><a href="https://codecov.io/gh/matrix-profile-foundation/matrixprofiler"><img src="https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/master/graph/badge.svg?token=w7AmbwhNvn" alt="codecov"></a></li>
+<li><a href="https://github.com/github/codeql-action/"><img src="https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg" alt="CodeQL"></a></li>
+<li><a href="https://lgtm.com/projects/g/matrix-profile-foundation/matrixprofiler/context:cpp"><img src="https://img.shields.io/lgtm/grade/cpp/g/matrix-profile-foundation/matrixprofiler.svg?logo=lgtm&amp;logoWidth=18" alt="Language grade: C/C++"></a></li>
+</ul>
+</div>
+</div>
 </div>
 
 
