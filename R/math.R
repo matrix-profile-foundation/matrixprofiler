@@ -13,8 +13,8 @@
 #'
 #' @param x a `vector` of `numeric`.
 #' @param w the window size
-#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
-#'   or not be slower.
+#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation,
+#' that may or not be slower.
 #'
 #' @return Returns the converted values
 #'

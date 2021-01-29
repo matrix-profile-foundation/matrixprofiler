@@ -268,8 +268,8 @@ mov_min <- function(data, window_size) {
 
 #' Fast implementation of moving standard deviation
 #'
-#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
-#'   or not be slower.
+#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation,
+#' that may or not be slower.
 #'
 #' @return `mov_std()` returns a `vector` with moving `sd`.
 #' @export
