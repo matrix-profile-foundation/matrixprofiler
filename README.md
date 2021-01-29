@@ -12,12 +12,12 @@ Francisco Bischoff
 <!-- badges: start -->
 
 [![License](https://img.shields.io/badge/License-GPL--3.0-green.svg)](https://choosealicense.com/licenses/gpl-3.0/)
-[![lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://www.tidyverse.org/lifecycle/#maturing)
+[![lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 
 [![Lint](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/Lint/badge.svg?branch=develop)](https://github.com/jimhester/lintr)
 [![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=develop)](https://r-pkgs.org/r-cmd-check.html)
 
-[![codecov](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/master/graph/badge.svg?token=w7AmbwhNvn)](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler)
+[![codecov](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/develop/graph/badge.svg?token=w7AmbwhNvn)](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler)
 [![CodeQL](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg)](https://github.com/github/codeql-action/)
 [![Language grade:
 C/C++](https://img.shields.io/lgtm/grade/cpp/g/matrix-profile-foundation/matrixprofiler.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/matrix-profile-foundation/matrixprofiler/context:cpp)
@@ -105,7 +105,7 @@ devtools::install_github("matrix-profile-foundation/matrixprofiler")
 
 -   Python: <https://github.com/target/matrixprofile-ts>
 -   Python: <https://github.com/ZiyaoWei/pyMatrixProfile>
--   Python: <https://github.com/jbeleno/owlpy>
+-   Python: <https://github.com/juanbeleno/owlpy>
 -   Python: <https://github.com/javidlakha/matrix-profile>
 -   Python: <https://github.com/shapelets/khiva-python>
 -   R: <https://github.com/shapelets/khiva-r>

@@ -70,5 +70,4 @@ pre <- mass_pre(motifs_discords_small, 50)
 dist_profile <- mass(pre, motifs_discords_small)
 pre <- mass_pre(motifs_discords_small, 50)
 dist_profile <- mass(pre, motifs_discords_small)
-
 }

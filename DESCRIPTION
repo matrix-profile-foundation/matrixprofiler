@@ -52,7 +52,6 @@ Imports:
     RcppThread (>= 0.5.0)
 Suggests:
     gdtools (>= 0.2.0),
-    knitr (>= 1.2),
     testthat (>= 3.0.0),
     debugme (>= 1.0.0),
     covr (>= 3.4.0),
@@ -62,8 +61,6 @@ LinkingTo:
     RcppParallel (>= 4.4.4),
     RcppProgress (>= 0.4.0),
     RcppThread (>= 0.5.0)
-VignetteBuilder:
-    knitr (>= 1.2)
 Encoding: UTF-8
 Language: en-US
 LazyData: true

@@ -51,8 +51,8 @@ muinvn(data, window_size, rcpp = TRUE, n_workers = 1)
 
 \item{eps}{A \code{numeric}. Used only for fading algorithms (See details), otherwise has no effect.}
 
-\item{rcpp}{A \code{logical}. If \code{TRUE} will use the Rcpp implementation, otherwise will use the R implementation, that may
-or not be slower.}
+\item{rcpp}{A \code{logical}. If \code{TRUE} will use the Rcpp implementation, otherwise will use the R implementation,
+that may or not be slower.}
 
 \item{n_workers}{An \code{integer}. The number of threads using for computing. Defaults to \code{1}.}
 }
