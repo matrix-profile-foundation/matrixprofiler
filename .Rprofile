@@ -10,7 +10,7 @@ try(silent(source(file.path(
 silent = TRUE
 )
 
-source("renv/activate.R")
+source("renv/activate.R") # nolint
 
 if (interactive()) {
   suppressMessages(require(testthat))

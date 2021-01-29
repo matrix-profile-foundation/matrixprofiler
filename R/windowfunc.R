@@ -2,25 +2,51 @@
 
 # Supports:
 #               NA/NaN  -Inf/Inf  Edge  Rcpp
-# movmin          Unk     Unk      No   Yes
-# movmax          Unk     Unk      No   Yes
-# fast_movsd      No      Unk      No   No
-# fast_movavg     No      Unk      No   No
-# fast_avg_sd     No      Unk      No   No
+# mov_mean       No       Unk      No   Yes
+# mov_var        No       Unk      No   Yes
+# mov_sum        No       Unk      No   Yes
+# mov_max        No       Unk      No   Yes
+# mov_min        No       Unk      No   Yes
+# mov_std        No       Unk      No   Yes
+# movmean_std    No       Unk      No   Yes
+# muinvn         No       Unk      No   Yes
 
-#' Fast implementation of moving average
+#' Several moving window functions
 #'
-#' This function does not handle NA values
+#' These functions do not handle NA values
 #'
-#' @param data a `vector` or a column `matrix` of `numeric`.
-#' @param window_size moving sd window size
-#' @param rcpp a `logical`. Uses rcpp implementation.
+#' @param data A `vector` or a column `matrix` of `numeric`.
+#' @param window_size An `integer`. The size of the rolling window.
+#' @param type A `string`. Select between several algorithms. Default is `ogita` (See details).
+#' @param eps A `numeric`. Used only for fading algorithms (See details), otherwise has no effect.
 #'
-#' @return Returns a `vector` with the moving average
+#' @details
+#' Some functions may use different algorithms to compute the results.
+#' The available types are:
+#' 1. **ogita**: This is the default. It uses the Ogita *et al.*, Accurate Sum, and Dot Product for precision. It is not
+#' the fastest algorithm, but the time spent vs. guarantee of precision worth it.
+#' 2. **normal**: This uses the `cumsum` method that is faster, but unreliable in some situations (I have to find the
+#' references, but is true).
+#' 3. **weighted**: This uses Rodrigues P., *et al.* algorithm that uses a weighted window for online purposes. The
+#' `eps` argument controls the factor. (The function is not online yet)
+#' 4. **fading**: This also uses Rodrigues P., *et al.* algorithm that in this case, uses a fading factor, also for
+#' online purposes. he `eps` argument controls the factor. (The function is not online yet)
+#'
+#' @details
+#' Another important detail is that the *standard deviation* we use for all computations is the *population* (i.e.:
+#' divided by `n`), not the *sample* (i.e.: divided by `n - 1`). That is why we also provide the internally the
+#' `:::std()` function that computes the *population*, differently from `stats::sd()` that is the *sample* kind. Further
+#' more, `movmean_std()` shall be used when you need both results in one computation. This is faster than call
+#' `mov_mean()` followed by `mov_std()`. Finally, `muinvn()` is kept like that for historical reasons, as it is the
+#' function used by `mpx()`. It returns the `sig` (stable inverse centered norm) instead of `std` (`sig` is equals to
+#' `1 / (std * sqrt(window_size))`).
+#'
+#' @return `mov_mean()` returns a `vector` with moving `avg`.
 #' @export
-#'
+#' @rdname windowfunc
+#' @order 1
 #' @examples
-#'
+#' mov <- mov_mean(motifs_discords_small, 50)
 mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -61,6 +87,15 @@ mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", 
   )
 }
 
+#' Fast implementation of moving variance
+#'
+#' @return `mov_var()` returns a `vector` with moving `var`.
+#'
+#' @export
+#' @rdname windowfunc
+#' @order 2
+#' @examples
+#' mov <- mov_var(motifs_discords_small, 50)
 mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -101,6 +136,14 @@ mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   )
 }
 
+#' Fast implementation of moving sum
+#'
+#' @return `mov_sum()` returns a `vector` with moving `sum`.
+#' @export
+#' @rdname windowfunc
+#' @order 3
+#' @examples
+#' mov <- mov_sum(motifs_discords_small, 50)
 mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -141,6 +184,15 @@ mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   )
 }
 
+#' Fast implementation of moving max
+#'
+#' @return `mov_max()` returns a `vector` with moving `max`.
+#'
+#' @export
+#' @rdname windowfunc
+#' @order 4
+#' @examples
+#' mov <- mov_max(motifs_discords_small, 50)
 mov_max <- function(data, window_size) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -173,6 +225,14 @@ mov_max <- function(data, window_size) {
   )
 }
 
+#' Fast implementation of moving min
+#'
+#' @return `mov_min()` returns a `vector` with moving `min`.
+#' @export
+#' @rdname windowfunc
+#' @order 5
+#' @examples
+#' mov <- mov_min(motifs_discords_small, 50)
 mov_min <- function(data, window_size) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -208,17 +268,15 @@ mov_min <- function(data, window_size) {
 
 #' Fast implementation of moving standard deviation
 #'
-#' This function does not handle NA values
+#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation,
+#' that may or not be slower.
 #'
-#' @param data a `vector` or a column `matrix` of `numeric`.
-#' @param window_size moving sd window size
-#' @param rcpp a `logical`. Uses rcpp implementation.
-#'
-#' @return Returns a `vector` with the moving standard deviation
+#' @return `mov_std()` returns a `vector` with moving `sd`.
 #' @export
-#'
+#' @rdname windowfunc
+#' @order 6
 #' @examples
-#'
+#' mov <- mov_std(motifs_discords_small, 50)
 mov_std <- function(data, window_size, rcpp = TRUE) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -256,13 +314,12 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
 
 #' Fast implementation of moving average and moving standard deviation
 #'
-#' This function does not handle NA values
-#'
-#' @inheritParams fast_movsd
-#'
-#' @return Returns a `list` with `avg` and `sd` `vector`s
+#' @return `movmean_std()` returns a `list` with `vectors` of the moving `avg`, `sd`, `sig`, `sum` and `sqrsum`.
 #' @export
-
+#' @rdname windowfunc
+#' @order 7
+#' @examples
+#' mov <- movmean_std(motifs_discords_small, 50)
 movmean_std <- function(data, window_size, rcpp = TRUE) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
@@ -295,7 +352,16 @@ movmean_std <- function(data, window_size, rcpp = TRUE) {
   return(list(avg = mov_mean, sd = data_sd, sig = data_sig, sum = mov_sum, sqrsum = mov2_sum))
 }
 
-# DO NOT Handles NA's
+#' Fast implementation of moving average and moving sigma
+#'
+#' @param n_workers An `integer`. The number of threads using for computing. Defaults to `1`.
+#'
+#' @return `muinvn()` returns a `list` with `vectors` of moving `avg` and `sig`.
+#' @export
+#' @rdname windowfunc
+#' @order 8
+#' @examples
+#' mov <- muinvn(motifs_discords_small, 50)
 muinvn <- function(data, window_size, rcpp = TRUE, n_workers = 1) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")

@@ -45,24 +45,25 @@ BugReports:
 Depends:
     R (>= 3.6)
 Imports:
-    checkmate,
-    magrittr,
-    Rcpp,
-    RcppParallel
+    checkmate (>= 2.0.0),
+    magrittr (>= 2.0.0),
+    Rcpp  (>= 1.0.3),
+    RcppParallel (>= 4.4.4),
+    RcppThread (>= 0.5.0)
 Suggests:
-    gdtools,
-    knitr,
+    gdtools (>= 0.2.0),
+    knitr (>= 1.2),
     testthat (>= 3.0.0),
-    debugme,
-    covr,
-    spelling
+    debugme (>= 1.0.0),
+    covr (>= 3.4.0),
+    spelling (>= 2.0.0)
 LinkingTo:
     Rcpp (>= 1.0.3),
     RcppParallel (>= 4.4.4),
-    RcppProgress,
-    RcppThread
+    RcppProgress (>= 0.4.0),
+    RcppThread (>= 0.5.0)
 VignetteBuilder:
-    knitr
+    knitr (>= 1.2)
 Encoding: UTF-8
 Language: en-US
 LazyData: true

@@ -1,6 +1,10 @@
 #' Test similarity
 #'
-#' Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
+#' Compute if two Matrix Profiles and Profile Indexes are similar. Used only for internal purposes.
+#'
+#' @param mpa_obj First object
+#' @param mpb_obj Second object
+#' @param tolerance tolerance
 #'
 #' @keywords internal
 

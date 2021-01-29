@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 
 name: Commands
+
 jobs:
   document:
     if: startsWith(github.event.comment.body, '/document')

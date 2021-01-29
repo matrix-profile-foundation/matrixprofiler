@@ -17,13 +17,6 @@ using namespace RcppParallel;
 #include "tthread/tinythread.h"
 #endif
 
-// template <typename Iterator> void vprint(Iterator begin, Iterator end) {
-//   for (Iterator i = begin; i != end; i++) {
-//     Rcout << *i << " ";
-//   }
-//   Rcout << std::endl;
-// }
-
 // [[Rcpp::export]]
 List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
                 bool progress) {

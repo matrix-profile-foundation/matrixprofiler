@@ -93,30 +93,6 @@ IntegerVector which_cpp(const LogicalVector x) {
   return wrap(y);
 }
 
-// //[[Rcpp::export]]
-// NumericVector diff_lag(const NumericVector x, const uint32_t lag = 1) {
-//   uint32_t n = x.size();
-//   NumericVector out(n - lag);
-
-//   for (uint32_t i = 0; i < (n - lag); i++) {
-//     out[i] = x[i + lag] - x[i];
-//   }
-//   return out;
-// }
-
-// //[[Rcpp::export]]
-// NumericVector diff2_lag(const NumericVector x, const uint32_t lag = 1, const double v = 0.0) {
-//   uint32_t n = x.size();
-//   NumericVector out(n - lag + 1);
-
-//   out[0] = v;
-
-//   for (uint32_t i = 0; i < (n - lag); i++) {
-//     out[i + 1] = x[i + lag] - x[i];
-//   }
-//   return out;
-// }
-
 //[[Rcpp::export]]
 int32_t mode_rcpp(const IntegerVector x) {
 
