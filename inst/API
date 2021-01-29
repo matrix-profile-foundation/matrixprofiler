@@ -2,10 +2,17 @@
 
 ## Exported functions
 
+mass(pre_obj, data, query = data, index = 1, version = c("v3", "v2"), n_workers = 1)
+mass_pre(data, window_size, query = NULL, type = c("normalized", "non_normalized", "absolute", "weighted"), weights = NULL)
+mov_max(data, window_size)
 mov_mean(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9)
+mov_min(data, window_size)
 mov_std(data, window_size, rcpp = TRUE)
+mov_sum(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9)
+mov_var(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9)
 movmean_std(data, window_size, rcpp = TRUE)
 mpx(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TRUE, distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE)
+muinvn(data, window_size, rcpp = TRUE, n_workers = 1)
 scrimp(data, window_size, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
 stamp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
 stomp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)

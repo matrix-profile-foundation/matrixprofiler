@@ -211,11 +211,6 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
       res[i] = std::complex<double>(cplx[i].r, cplx[i].i) / f;
     }
 
-    // for(i = 0; i < 20; i++)
-    //   nfac[i] = -1;
-    //
-    // old_n = m_fac = kt = maxf = maxp = -1;
-
     if (work != nullptr) {
       std::free(work);
       work = nullptr;
@@ -230,7 +225,6 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
     }
   }
 
-  // Rcout << "cplx 2" << std::endl;
   return res;
 }
 
@@ -383,7 +377,11 @@ int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, dou
 }
 
 void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, double *at, double *ck,
-                 double *bt, double *sk, int *np, int *nfac) {
+                 double *bt, double *sk, int *np, int *nfac) { // lgtm [cpp/use-of-goto]
+
+  // this function uses multiple forward and backward goto statements
+  // for performance purpose. And yes, can be hard to understand, as LGTM QL say, so I disabled the alert.
+
   /* called from  fft_work() */
 
   /* Design BUG:  One purpose of fft_factor() would be to compute

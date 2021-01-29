@@ -1,45 +1,26 @@
-#' Fast implementation of Matrix Profile, without FFT
+#' Matrix Profile Computation
 #'
-#' Computes the Matrix Profile and Profile Index for Univariate Time Series.
+#' MPX is by far the fastest implementation with the caveat that is not anytime as STAMP or SCRIMP.
 #'
-#' @param data Required. Any 1-dimension series of numbers (`matrix`, `vector`, `ts` etc.) (See details).
-#' @param window_size Required. An integer defining the rolling window size.
-#' @param query Optional. Another 1-dimension series of numbers for an AB-join similarity. Default is `NULL` (See
-#'   details).
-#' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
-#'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
-#' @param idxs A logical. Specifies if the computation will return the Profile Index or not. Defaults to `TRUE`.
-#' @param distance A string. Currently accepts `euclidean` and `pearson`. Defaults to `euclidean`.
-#' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.
-#' @param progress A logical. If `TRUE` (the default) will show a progress bar. Useful for long computations. (See
-#'   details)
+#' @param idxs (`mpx()` only) A logical. Specifies if the computation will return the Profile Index or not. Defaults to
+#'   `TRUE`.
+#' @param distance (`mpx()` only) A string. Currently accepts `euclidean` and `pearson`. Defaults to `euclidean`.
 #'
-#' @details This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform
-#'   (FFT) at least in one part of the process. This algorithm doesn't use FFT and is several times faster. It also
-#'   relies on Ogita's work to better precision computing mean and standard deviation (part of the process). About
-#'   `progress`, it is really recommended to use it as feedback for long computations. It indeed adds some (neglectable)
-#'   overhead, but the benefit of knowing that your computer is still computing is much bigger than the seconds you may
-#'   lose in the final benchmark. About `n_workers`, for Windows systems, this package uses TBB for multithreading, and
-#'   Linux and macOS, use TinyThread++. This may or not raise some issues in the future, so we must be aware of slower
-#'   processing due to different mutexes implementations or even unexpected crashes. The Windows version is usually more
-#'   reliable. The `data` and `query` parameters will be internally converted to a single vector using `as.numeric()`,
-#'   thus, bear in mind that a multidimensional matrix may not work as you expect, but most 1-dimensional data types
-#'   will work normally. If `query` is provided, expect the same pre-procesment done for `data`; in addition,
-#'   `exclusion_zone` will be ignored and set to `0`. Both `data` and `query` doesn't need to have the same size and
-#'   they can be interchanged if both are provided. The difference will be in the returning object. AB-Join returns the
-#'   Matrix Profile 'A' and 'B' i.e., the distance between a rolling window from query to data and from data to query.
+#' @details ## mpx
+#' This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
+#' least in one part of the process. This algorithm doesn't use FFT at all and is several times faster. It also relies
+#' on Ogita's work for better precision computing mean and standard deviation (part of the process).
 #'
-#' @return Returns a list with the Matrix Profile, Profile Index (if `idxs` is `TRUE`), and some information about the
-#'   settings used to build it.
+#' @seealso `mpxab()` for the forward and reverse join-similarity.
+#'
+#' @details # This document
+#' Last updated on `r Sys.Date()` using R version `r getRversion()`.
+#'
 #' @export
-#'
-#' @family matrix profile computations
-#'
+#' @rdname mp_algos
+#' @order 4
 #' @examples
-#' \donttest{
-#' mp <- mpx(runif(200), window_size = 30)
-#' }
-#'
+#' mp <- mpx(motifs_discords_small, 50)
 mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TRUE,
                 distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE) {
 

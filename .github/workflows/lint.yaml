@@ -4,6 +4,7 @@ on:
       - main
       - master
       - develop
+      - release/*
 
   pull_request:
     branches:
@@ -13,7 +14,7 @@ on:
 
   workflow_dispatch:
 
-name: lint
+name: Lint
 
 jobs:
   lint:

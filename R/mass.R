@@ -1,4 +1,27 @@
-
+#' Precomputes several values used on MASS
+#'
+#' @param window_size Required. An integer defining the rolling window size.
+#' @param type This changes how the MASS algorithm will compare the rolling window and the data. (See details).
+#' @param weights Optional. It is used when the `type` is `weighted`, and has to be the same size as the `window_size`.
+#'
+#' @details
+#' There are currently four ways to compare the window with the data:
+#'
+#' 1. **normalized**: this normalizes the data and the query window. This is the most frequently used.
+#' 2. **non_normalized**: this won't normalize the query window. The data still being normalized.
+#' 3. **absolute**: this won't normalize both the data and the query window.
+#' 4. **weighted**: this normalizes the data and query window, and also apply a weight vector on the query.
+#'
+#' @return
+#' `mass_pre()` returns a `list` with several precomputations to be used on MASS later. **Attention** use this before
+#' `mass()`.
+#' @export
+#' @rdname mass
+#' @order 2
+#'
+#' @examples
+#' pre <- mass_pre(motifs_discords_small, 50)
+#' dist_profile <- mass(pre, motifs_discords_small)
 mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "non_normalized", "absolute", "weighted"),
                      weights = NULL) {
   # Parse arguments ---------------------------------
@@ -55,6 +78,31 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "no
   )
 }
 
+#' Computes the Distance between the 'data' and the 'query'.
+#'
+#' This algorithm will use a rolling window, to computes the distance thorough the whole data. This means that the
+#' minimum distance found is the *motif* and the maximum distance is the *discord* on that time series. **Attention**
+#' you need first to create an object using `mass_pre()`. Read below.
+#'
+#' @param pre_obj Required. This is the object resulting from `mass_pre()`. The is no *MASS* without a *pre*.
+#' @param data Required. Any 1-dimension series of numbers (`matrix`, `vector`, `ts` etc.)
+#' @param query Optional. Accepts the same types as `data` and is used for join-similarity. Defaults to `data` for
+#'   self-similarity. **IMPORTANT** Use the same data used on `mass_pre()`.
+#' @param index An `integer`. This is the index of the rolling window that will be used. Must be between `1` and
+#'   `length(data) - window_size + 1`.
+#' @param version A `string`. Chooses the version of MASS what will be used. Ignored if `mass_pre()` is not the
+#'   "normalized" type.
+#' @param n_workers An `integer` The number of threads using for computing. Defaults to `1`.
+#'
+#' @return
+#' `mass()` returns a `list` with the `distance_profile` and the `last_product` that is only useful for computing the
+#' Matrix Profile.
+#' @export
+#' @rdname mass
+#' @order 1
+#' @examples
+#' pre <- mass_pre(motifs_discords_small, 50)
+#' dist_profile <- mass(pre, motifs_discords_small)
 mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2"), n_workers = 1) {
   checkmate::qassert(pre_obj, "L+")
   type <- match.arg(pre_obj$type, c("normalized", "non_normalized", "absolute", "weighted"))
@@ -63,7 +111,7 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
   checkmate::qassert(data, "N+")
   query <- as.numeric(query)
   checkmate::qassert(query, "N+")
-  index <- as.integer(checkmate::qassert(index, "X+"))
+  index <- as.integer(checkmate::qassert(index, "X+(0,)"))
 
   if (length(data) != pre_obj$data_size) {
     stop("Argument `data` is not the same as computed in `pre_obj`.", call. = FALSE)

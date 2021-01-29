@@ -21,8 +21,7 @@
     "C_Cpp.intelliSenseEngineFallback": "Enabled",
     "cmake.configureOnOpen": false,
     "spellright.language": [
-      "en",
-      "pt"
+      "en"
     ],
     "spellright.documentTypes": [
       "markdown",
@@ -120,7 +119,7 @@
     "files.trimTrailingWhitespace": true,
     "r.alwaysUseActiveTerminal": true,
     "r.bracketedPaste": true,
-    "r.rpath.windows": "C:\\Program Files\\R\\R-4.0.3\\bin\\x64\\R.exe",
+    "r.rpath.windows": "C:/Program Files/R/R-4.0.3/bin/x64/R.exe",
     "r.rterm.option": [
       "--no-save",
       "--no-restore",
@@ -130,5 +129,6 @@
     "r.rpath.linux": "/usr/lib/R/bin/R",
     "r.rterm.linux": "/usr/lib/R/bin/R",
     "taskExplorer.exclude": "**/renv/**",
+    "spellright.notificationClass": "warning",
   }
 }

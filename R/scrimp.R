@@ -1,39 +1,20 @@
-#' Anytime univariate SCRIMP++ algorithm
+#' Matrix Profile Computation
 #'
-#' Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
-#' DISCLAIMER: This algorithm still in development by its authors.
-#' Join similarity, RMP and LMP not implemented yet.
+#' SCRIMP is a faster implementation, like STOMP, but has the ability to return anytime results as STAMP.
 #'
-#' @details
-#' The Matrix Profile, has the potential to revolutionize time series data mining because of its
-#' generality, versatility, simplicity and scalability. In particular it has implications for time
-#' series motif discovery, time series joins, shapelet discovery (classification), density
-#' estimation, semantic segmentation, visualization, rule discovery, clustering etc. The anytime
-#' SCRIMP computes the Matrix Profile and Profile Index in such manner that it can be stopped before
-#' its complete calculation and return the best so far results allowing ultra-fast approximate
-#' solutions. `verbose` changes how much information is printed by this function; `0` means nothing,
-#' `1` means text, `2` adds the progress bar, `3` adds the finish sound. `exclusion_zone` is used to
-#' avoid  trivial matches.
-#'
-#' @param data Required. Any 1-dimension series of numbers (`matrix`, `vector`, `ts` etc.) (See details).
-#' @param window_size Required. An integer defining the rolling window size.
-#' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
-#'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
-#' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.
-#' @param progress A logical. If `TRUE` (the default) will show a progress bar. Useful for long computations. (See
-#'   details)
-#'
-#' @export
+#' @details ## scrimp
+#' The SCRIMP algorithm was the anytime solution for stomp. It is as fast as stomp but allows the user to cancel the
+#' computation and get an approximation of the final result. This implementation uses the SCRIMP++ code. This means
+#' that, at first, it will compute the pre-scrimp (a very fast and good approximation), and continue improving with
+#' scrimp. The exception is if you use multithreading, that skips the pre-scrimp stage.
 #'
 #' @family matrix profile computations
-#'
-#' @references Website: <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>
-#'
+
+#' @export
+#' @rdname mp_algos
+#' @order 3
 #' @examples
-#' \donttest{
-#' mp <- scrimp(runif(200), window_size = 30)
-#' }
-#'
+#' mp <- scrimp(motifs_discords_small, 50)
 scrimp <- function(data, window_size, exclusion_zone = 0.5, n_workers = 1, progress = TRUE) {
 
   # Parse arguments ---------------------------------

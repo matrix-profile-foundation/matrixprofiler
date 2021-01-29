@@ -195,10 +195,6 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     IntegerVector compute_order = orig_index[orig_index > exclusion_zone];
 
-    // uint64_t ssize = MIN(s_size, order.size());
-    // order = sample(order, ssize);
-    // compute_order = sample(compute_order, compute_order.size());
-
     NumericVector curlastz(matrix_profile_size);
     NumericVector curdistance(matrix_profile_size);
     NumericVector dist1(matrix_profile_size, R_PosInf);
@@ -414,16 +410,6 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector profile_index(matrix_profile_size, -1);
 
-  // uint64_t k = set_k_rcpp(256, data_size, window_size);
-
-  // ///// This is needed for JOIN similarity
-  // List rpre = mass_pre_rcpp(query, data, window_size);
-  // List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size,
-  //                       rpre["window_size"], rpre["data_mean"],
-  //                       rpre["data_sd"],
-  //                       as<NumericVector>(rpre["query_mean"])[0],
-  //                       as<NumericVector>(rpre["query_sd"])[0], k);
-
   // NumericVector first_product = rnn["last_product"];
 
   List pre = mass_pre_rcpp(data, query, window_size);
@@ -432,8 +418,6 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
 
   ScrimpWorker scrimp_worker(data, query, window_size, data_size, pre["data_mean"], pre["data_sd"], skip_location, &p,
                              matrix_profile, profile_index);
-
-  // k = set_k_rcpp(1024, matrix_profile_size - exclusion_zone, window_size);
 
   // call parallelFor to do the work
   try {
