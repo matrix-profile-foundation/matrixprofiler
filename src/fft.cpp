@@ -376,8 +376,8 @@ int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, dou
   return 1;
 }
 
-void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, double *at, double *ck,
-                 double *bt, double *sk, int *np, int *nfac) { // lgtm [cpp/use-of-goto]
+void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, // lgtm [cpp/use-of-goto]
+                 double *at, double *ck, double *bt, double *sk, int *np, int *nfac) {
 
   // this function uses multiple forward and backward goto statements
   // for performance purpose. And yes, can be hard to understand, as LGTM QL say, so I disabled the alert.
