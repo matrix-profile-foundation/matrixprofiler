@@ -27,6 +27,11 @@
       "markdown",
       "latex"
     ],
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/renv/library/**": true
+    },
     "files.associations": {
       "array": "cpp",
       "atomic": "cpp",
@@ -126,8 +131,8 @@
       "--encoding=UTF8"
     ],
     "r.rterm.windows": "C:/Program Files/R/R-4.0.3/bin/x64/R.exe",
-    "r.rpath.linux": "/usr/lib/R/bin/R",
-    "r.rterm.linux": "/usr/lib/R/bin/R",
+    "r.rpath.linux": "/usr/bin/R",
+    "r.rterm.linux": "/usr/bin/R",
     "taskExplorer.exclude": "**/renv/**",
     "spellright.notificationClass": "warning",
   }
