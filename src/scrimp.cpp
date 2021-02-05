@@ -1,6 +1,6 @@
+#include "math.h" // math first to fix OSX error
 #include "scrimp.h"
 #include "mass.h"
-#include "math.h"
 #include <numeric>
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>

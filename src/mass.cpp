@@ -1,7 +1,6 @@
+#include "math.h" // math first to fix OSX error
 #include "mass.h"
-
 #include "fft.h"
-#include "math.h"
 #include "windowfunc.h"
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>

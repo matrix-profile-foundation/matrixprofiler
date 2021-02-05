@@ -11,8 +11,8 @@
 // movmin          Unk     Unk      No
 // movmax          Unk     Unk      No
 
-#include "windowfunc.h"
 #include "math.h" // math first to fix OSX error
+#include "windowfunc.h"
 
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>

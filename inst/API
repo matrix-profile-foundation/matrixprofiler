@@ -16,8 +16,3 @@ muinvn(data, window_size, rcpp = TRUE, n_workers = 1)
 scrimp(data, window_size, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
 stamp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
 stomp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE)
-
-## Reexported objects
-
-magrittr::%>%
-magrittr::%T>%

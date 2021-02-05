@@ -35,4 +35,5 @@ ComplexVector fft_rcpp(const NumericVector z, bool invert = false);
 std::vector<std::complex<double>> fft_rcpp(const std::vector<double> z, bool invert = false);
 std::vector<std::complex<double>> fft_rcpp(const std::vector<std::complex<double>> z, bool invert = false);
 std::vector<double> fft_rcpp_real(const std::vector<std::complex<double>> z, bool invert = false);
+
 #endif // __MATH__

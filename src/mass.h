@@ -1,7 +1,6 @@
 #ifndef __MASS__
 #define __MASS__
 
-#include "math.h"
 #include <Rcpp.h>
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
@@ -30,6 +29,10 @@ List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_r
 List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
                             const NumericVector weight);
 
+// redeclaration for MacOS compilation
+std::vector<std::complex<double>> fft_rcpp(const std::vector<double> z, bool invert);
+std::vector<double> fft_rcpp_real(const std::vector<std::complex<double>> z, bool invert);
+
 template <typename Iterator>
 List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t data_size, const uint32_t window_size,
                const Iterator data_mean_it, const Iterator data_sd_it, const double query_mean, const double query_sd,
@@ -57,7 +60,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
   std::vector<double> rev_query(k);
   std::reverse_copy(query_it, query_it + w_size, rev_query.begin());
 
-  std::vector<std::complex<double>> Y = fft_rcpp(rev_query);
+  std::vector<std::complex<double>> Y = fft_rcpp(rev_query, false);
 
   uint64_t j = 0;
   uint64_t jump = k - w_size + 1;
@@ -72,7 +75,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
       uint64_t idx_begin = j;
 
       std::vector<double> data_chunk(data_it + j, data_it + j + k);
-      std::vector<std::complex<double>> X = fft_rcpp(data_chunk);
+      std::vector<std::complex<double>> X = fft_rcpp(data_chunk, false);
 
       std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
 
@@ -102,9 +105,9 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
         Rcout << "DEBUG: error." << std::endl;
       } else {
         std::vector<double> data_chunk(data_it + j, data_it + d_size);
-        std::vector<std::complex<double>> X = fft_rcpp(data_chunk);
+        std::vector<std::complex<double>> X = fft_rcpp(data_chunk, false);
         std::vector<double> rev_query_chunk(rev_query.begin(), rev_query.begin() + jump);
-        Y = fft_rcpp(rev_query_chunk);
+        Y = fft_rcpp(rev_query_chunk, false);
 
         Z = std::vector<std::complex<double>>(Y.size());
 
