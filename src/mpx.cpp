@@ -66,7 +66,8 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs
 
     NumericVector ww = (data_ref[Range(0, window_size - 1)] - mmu[0]);
 
-    uint64_t num_progress = ceil(seq_diag.size() / 100);
+    uint64_t num_progress =
+        ceil((double)seq_diag.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 
@@ -191,7 +192,8 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
 
     NumericVector ww = (query_ref[Range(0, window_size - 1)] - mmu_b[0]);
 
-    uint64_t num_progress = ceil((profile_len_a + profile_len_b - 2 * minlag) / 100);
+    uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * minlag) /
+                                 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 
@@ -647,7 +649,8 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     NumericVector ww_a = (data_ref[Range(0, window_size - 1)] - mu_a[0]);
     NumericVector ww_b = (query_ref[Range(0, window_size - 1)] - mu_b[0]);
 
-    uint64_t num_progress = ceil((profile_len_a + profile_len_b - 2 * minlag) / 100);
+    uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * minlag) /
+                                 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 

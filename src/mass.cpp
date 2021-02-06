@@ -331,7 +331,7 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
 uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size) {
   try {
     if (k > data_size) {
-      k = pow(2, ceil(log2(sqrt(data_size))));
+      k = pow(2, ceil(log2(sqrt((double)data_size)))); // added double inside sqrt to avoid ambiguity on Solaris
     }
 
     if (k <= window_size) {
@@ -353,7 +353,7 @@ uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size) {
 uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size) {
   uint64_t data_size = data_ref.length();
   uint32_t k = set_k_rcpp(window_size, data_size, window_size); // Set baseline
-  uint64_t best_time = pow(2, 50);
+  uint64_t best_time = (int)pow((double)2, (double)50); // added double inside sqrt to avoid ambiguity on Solaris
   uint32_t best_k = k;
   List pre = mass_pre_rcpp(data_ref, query_ref, window_size);
   Timer timer;
