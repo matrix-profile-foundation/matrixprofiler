@@ -11,4 +11,4 @@ Francisco Bischoff
 -   This package will keep all core functions that will allow you to use
     the Matrix Profile concept as a toolkit.
 -   It will be the main dependency of the already available package
-    `tsmp`.
+    'tsmp'.

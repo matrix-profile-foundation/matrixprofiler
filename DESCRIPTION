@@ -49,10 +49,8 @@ Imports:
     Rcpp  (>= 1.0.3),
     RcppParallel (>= 4.4.4)
 Suggests:
-    gdtools (>= 0.2.0),
     testthat (>= 3.0.0),
     debugme (>= 1.0.0),
-    covr (>= 3.4.0),
     spelling (>= 2.0.0)
 LinkingTo:
     Rcpp (>= 1.0.3),
