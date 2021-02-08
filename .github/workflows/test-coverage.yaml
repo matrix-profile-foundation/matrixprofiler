@@ -3,13 +3,12 @@ on:
     branches:
       - main
       - master
-      - develop
+      - release/*
 
   pull_request:
     branches:
       - main
       - master
-      - develop
 
   workflow_dispatch:
 

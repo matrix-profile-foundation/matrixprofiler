@@ -1,7 +1,7 @@
 README
 ================
 Francisco Bischoff
-- 05 Feb 2021
+- 07 Feb 2021
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -126,8 +126,7 @@ Visit: [Matrix Profile Foundation](https://matrixprofile.org)
 
 ## Benchmarks
 
-Will be available soon. See the benchmarks of `tsmp` package. They will
-be ashamed.
+Available at [RPubs](https://rpubs.com/franzbischoff/matrixprofiler).
 
 ## Package dependencies
 
