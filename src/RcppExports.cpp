@@ -668,6 +668,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// zero_crossing_rcpp
+IntegerVector zero_crossing_rcpp(const NumericVector data, const uint32_t window_size);
+RcppExport SEXP _matrixprofiler_zero_crossing_rcpp(SEXP dataSEXP, SEXP window_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< const uint32_t >::type window_size(window_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(zero_crossing_rcpp(data, window_size));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mass_weighted_rcpp", (DL_FUNC) &_matrixprofiler_mass_weighted_rcpp, 11},
@@ -719,6 +731,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_movvar_fading_rcpp", (DL_FUNC) &_matrixprofiler_movvar_fading_rcpp, 3},
     {"_matrixprofiler_muinvn_rcpp", (DL_FUNC) &_matrixprofiler_muinvn_rcpp, 2},
     {"_matrixprofiler_muinvn_rcpp_parallel", (DL_FUNC) &_matrixprofiler_muinvn_rcpp_parallel, 2},
+    {"_matrixprofiler_zero_crossing_rcpp", (DL_FUNC) &_matrixprofiler_zero_crossing_rcpp, 2},
     {NULL, NULL, 0}
 };
 

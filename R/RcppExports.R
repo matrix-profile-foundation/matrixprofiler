@@ -57,7 +57,7 @@ znorm_rcpp <- function(data) {
     .Call(`_matrixprofiler_znorm_rcpp`, data)
 }
 
-normalize_rcpp <- function(data, min = 0, max = 1) {
+normalize_rcpp <- function(data, min, max) {
     .Call(`_matrixprofiler_normalize_rcpp`, data, min, max)
 }
 
@@ -195,5 +195,9 @@ muinvn_rcpp <- function(data, window_size) {
 
 muinvn_rcpp_parallel <- function(data, window_size) {
     .Call(`_matrixprofiler_muinvn_rcpp_parallel`, data, window_size)
+}
+
+zero_crossing_rcpp <- function(data, window_size) {
+    .Call(`_matrixprofiler_zero_crossing_rcpp`, data, window_size)
 }
 

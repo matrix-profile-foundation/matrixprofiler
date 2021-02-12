@@ -511,3 +511,42 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
 
   return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
+
+// Counts number of zero-crossings
+//
+// Count the number of zero-crossings from the supplied time-domain input vector. A simple method is
+// applied here that can be easily ported to a real-time system that would minimize the number of
+// if-else conditionals.
+//
+// @param data a `vector` of `numeric`.
+//
+// @return Returns the amount of zero-crossings in the input signal.
+// @author sparafucile17 06/27/04
+// @references <https://www.dsprelated.com/showcode/179.php>
+// @keywords internal
+// @noRd
+
+//[[Rcpp::export]]
+IntegerVector zero_crossing_rcpp(const NumericVector data, const uint32_t window_size) {
+
+  uint32_t profile_size = data.size() - window_size + 1;
+  NumericVector norm_data = znorm_rcpp(data);
+  IntegerVector crossings(profile_size);
+
+  for (uint64_t j = 0; j < profile_size; j++) {
+    uint32_t count = 0;
+
+    for (uint32_t i = j + 1; i < (j + window_size - 1); i++) {
+      // Any time you multiply to adjacent values that have a sign difference
+      // the result will always be negative.  When the signs are identical,
+      // the product will always be positive.
+      if ((norm_data[i] * norm_data[i - 1]) < 0) {
+        count++;
+      }
+    }
+
+    crossings[j] = count;
+  }
+
+  return (crossings);
+}

@@ -278,7 +278,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
 
   /* extract 3^2, 5^2, ... */
   kchanged = 0;
-  sqrtk = (int)sqrt((double)k); // added double inside sqrt to avoid ambiguity on Solaris
+  sqrtk = sqrt((double)k); // added double inside sqrt to avoid ambiguity on Solaris
   for (j = 3; j <= sqrtk; j += 2) {
     jj = j * j;
     while (k % jj == 0) {
@@ -288,7 +288,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
     }
     if (kchanged) {
       kchanged = 0;
-      sqrtk = (int)sqrt((double)k);
+      sqrtk = sqrt((double)k);
     }
   }
 

@@ -17,7 +17,7 @@ using namespace RcppParallel;
 #include "tthread/tinythread.h"
 #endif
 
-// TODO: check skip_locations in mpx
+// FIXME: check skip_locations in mpx
 
 // MPX
 //

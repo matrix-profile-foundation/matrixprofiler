@@ -102,6 +102,15 @@ int32_t mode_rcpp(const IntegerVector x) {
   return y;
 }
 
+// Normalizes data for mean Zero and Standard Deviation One
+//
+// @inheritParams std
+//
+// @return Returns the normalized data
+// @keywords internal
+// @noRd
+//
+
 //[[Rcpp::export]]
 NumericVector znorm_rcpp(const NumericVector data) {
   double data_mean = mean(data);
@@ -115,7 +124,7 @@ NumericVector znorm_rcpp(const NumericVector data) {
 }
 
 //[[Rcpp::export]]
-NumericVector normalize_rcpp(const NumericVector data, double min = 0, double max = 1) {
+NumericVector normalize_rcpp(const NumericVector data, double min, double max) {
   double min_val = ::min(data);
   double max_val = ::max(data);
 

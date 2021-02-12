@@ -2,7 +2,6 @@ CXX_STD = CXX11
 PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=1
 PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
 
-
 # use strip -S instead of strip --strip-debug for MacOS compatibility
 strippedLib: $(SHLIB)
 	if test -f "/usr/bin/strip"; then /usr/bin/strip -S $(SHLIB); fi
