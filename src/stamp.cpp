@@ -1,7 +1,7 @@
+#include "math.h" // math first to fix OSX error
 #include "stamp.h"
 #include "fft.h"
 #include "mass.h"
-#include "math.h" // math first to fix OSX error
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]

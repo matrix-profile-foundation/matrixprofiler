@@ -29,9 +29,8 @@ That package will then import this as a dependency.
 
 - Last known issue:
   "runtime error: -inf is outside the range of representable values of type 'int'"
-  
-  - Hope it is fixed.
 
+  - Now I'm sure it's fixed
 
 ## Old comments
 

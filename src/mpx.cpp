@@ -1,5 +1,5 @@
-#include "mpx.h"
 #include "math.h" // math first to fix OSX error
+#include "mpx.h"
 #include "windowfunc.h"
 
 // [[Rcpp::depends(RcppProgress)]]

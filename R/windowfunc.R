@@ -398,7 +398,6 @@ muinvn <- function(data, window_size, rcpp = TRUE, n_workers = 1) {
 #' @order 9
 #' @examples
 #' zero_cross <- zero_crossing(motifs_discords_small, 50)
-
 zero_crossing <- function(data, window_size) {
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
