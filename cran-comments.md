@@ -27,6 +27,14 @@ That package will then import this as a dependency.
 
 ## Last CRAN comments
 
+- Last known issue:
+  "runtime error: -inf is outside the range of representable values of type 'int'"
+  
+  - Hope it is fixed.
+
+
+## Old comments
+
 - Please use only undirected quotation marks in the description text.
   e.g. `tsmp` --> 'tsmp' (fixed)
 

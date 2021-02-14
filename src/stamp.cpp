@@ -1,7 +1,7 @@
-#include "math.h" // math first to fix OSX error
 #include "stamp.h"
 #include "fft.h"
 #include "mass.h"
+#include "math.h" // math first to fix OSX error
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
@@ -48,7 +48,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   query[is_infinite(query)] = 0;
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, R_NegInf);
+  IntegerVector profile_index(matrix_profile_size, -1);
   List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
@@ -261,7 +261,7 @@ List stamp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
   query[is_infinite(query)] = 0;
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, R_NegInf);
+  IntegerVector profile_index(matrix_profile_size, -1);
   List pre = mass_pre_rcpp(data, query, window_size);
 
   uint64_t k = set_k_rcpp(window_size, data_size, window_size);

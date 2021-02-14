@@ -1,5 +1,5 @@
-#include "math.h" // math first to fix OSX error
 #include "mpx.h"
+#include "math.h" // math first to fix OSX error
 #include "windowfunc.h"
 
 // [[Rcpp::depends(RcppProgress)]]
@@ -46,7 +46,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs
     IntegerVector seq_diag = Range(minlag, profile_len - 1);
 
     NumericVector mmp(profile_len, -1.0);
-    IntegerVector mmpi(profile_len, R_NaN); // TODO: SANITIZE?
+    IntegerVector mmpi(profile_len, -1);
 
     double *mp = &mmp[0];
     int *mpi = &mmpi[0];
@@ -156,7 +156,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     IntegerVector seq_diag = Range(minlag, profile_len_a - 1);
 
     NumericVector mmp_a(profile_len_a, -1.0);
-    IntegerVector mmpi_a(profile_len_a, R_NaN);
+    IntegerVector mmpi_a(profile_len_a, -1);
 
     double *mp_a = &mmp_a[0];
     int *mpi_a = &mmpi_a[0];
@@ -164,7 +164,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     uint32_t profile_len_b = b_len - window_size + 1;
 
     NumericVector mmp_b(profile_len_b, -1.0);
-    IntegerVector mmpi_b(profile_len_b, R_NaN);
+    IntegerVector mmpi_b(profile_len_b, -1);
 
     double *mp_b = &mmp_b[0];
     int *mpi_b = &mmpi_b[0];
@@ -392,7 +392,7 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, 
 
     uint32_t profile_len = n - window_size + 1;
     NumericVector mp(profile_len, -1.0);
-    IntegerVector mpi(profile_len, R_NaN);
+    IntegerVector mpi(profile_len, -1);
 
     // differentials have 0 as their first entry. This simplifies index
     // calculations slightly and allows us to avoid special "first line"
@@ -628,8 +628,8 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     NumericVector mp_a(profile_len_a, -1.0);
     NumericVector mp_b(profile_len_b, -1.0);
 
-    IntegerVector mpi_a(profile_len_a, R_NaN);
-    IntegerVector mpi_b(profile_len_b, R_NaN);
+    IntegerVector mpi_a(profile_len_a, -1);
+    IntegerVector mpi_b(profile_len_b, -1);
 
     // differentials have 0 as their first entry. This simplifies index
     // calculations slightly and allows us to avoid special "first line"
