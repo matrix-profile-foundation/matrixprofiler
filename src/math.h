@@ -18,7 +18,7 @@ using namespace Rcpp;
 IntegerVector seq(uint64_t start, uint64_t end);
 IntegerVector seq_by(uint64_t start, uint64_t end, uint32_t by);
 double std_rcpp(const NumericVector data, const bool na_rm);
-NumericMatrix list_to_matrix(const List x); // unnused?
+NumericMatrix list_to_matrix(const List x); // unused?
 IntegerVector which_cpp(const LogicalVector x);
 int32_t mode_rcpp(const IntegerVector x);
 NumericVector znorm_rcpp(const NumericVector data);

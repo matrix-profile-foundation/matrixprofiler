@@ -1,7 +1,7 @@
-#include "math.h" // math first to fix OSX error
 #include "stamp.h"
 #include "fft.h"
 #include "mass.h"
+#include "math.h" // math first to fix OSX error
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
@@ -70,7 +70,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
       // apply exclusion zone
       if (exclusion_zone > 0) {
-        uint64_t exc_st = MAX(0, (int32_t)(i - exclusion_zone));
+        uint64_t exc_st = MAX(0, (i - exclusion_zone));
         uint64_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
         IntegerVector dp_range = Range(exc_st, exc_ed);
         distance_profile[dp_range] = R_PosInf;

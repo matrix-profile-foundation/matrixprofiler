@@ -35,8 +35,8 @@
 #' @param progress A logical. If `TRUE` (the default) will show a progress bar. Useful for long computations. (See
 #'   details)
 #'
-#' @return Returns a `list` with the `matrix_profile`, `profile_index` (if `idxs` is `TRUE` in `mpx()`), and some information
-#'   about the settings used to build it, like `ez` and `partial` when the algorithm is finished early.
+#' @return Returns a `list` with the `matrix_profile`, `profile_index` (if `idxs` is `TRUE` in `mpx()`), and some
+#'  information about the settings used to build it, like `ez` and `partial` when the algorithm is finished early.
 #'
 #' @family matrix profile computations
 #'
