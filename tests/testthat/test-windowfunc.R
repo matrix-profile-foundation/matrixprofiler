@@ -112,10 +112,6 @@ if (!testthat:::on_cran()) {
     expect_silent(muinvn_par <- muinvn(
       data = motifs_discords_small, window_size = 150, n_workers = 2
     ))
-    expect_silent(muinvn_r <- muinvn(
-      data = motifs_discords_small, window_size = 150, rcpp = FALSE
-    ))
-    expect_identical(muinvn, muinvn_r)
     expect_identical(muinvn, muinvn_par)
     expect_snapshot_value(muinvn, style = "serialize")
   })

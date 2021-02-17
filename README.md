@@ -1,7 +1,7 @@
 README
 ================
 Francisco Bischoff
-\- 14 Feb 2021
+\- 28 Feb 2021
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -18,9 +18,14 @@ Francisco Bischoff
 [![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=main)](https://r-pkgs.org/r-cmd-check.html)
 
 [![codecov](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/main/graph/badge.svg?token=w7AmbwhNvn)](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler)
-[![CodeQL](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg)](https://github.com/github/codeql-action/)
+[![CodeQL](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg?branch=main)](https://github.com/github/codeql-action/)
 [![Language grade:
 C/C++](https://img.shields.io/lgtm/grade/cpp/g/matrix-profile-foundation/matrixprofiler.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/matrix-profile-foundation/matrixprofiler/context:cpp)
+
+[![CRAN
+version](http://www.r-pkg.org/badges/version/matrixprofiler)](https://cran.r-project.org/package=matrixprofiler)
+[![CRAN
+Downloads](https://cranlogs.r-pkg.org/badges/matrixprofiler)](https://cran.r-project.org/package=matrixprofiler)
 
 <!-- badges: end -->
 
@@ -58,7 +63,7 @@ You can find the current `tsmp` package here:
 install.packages("matrixprofiler")
 # Or the development version from GitHub:
 # install.packages("devtools")
-devtools::install_github("matrix-profile-foundation/matrixprofiler")
+devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
 ```
 
 ## Currently available Features

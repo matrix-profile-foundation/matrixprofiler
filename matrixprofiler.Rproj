@@ -17,8 +17,8 @@ StripTrailingWhitespace: Yes
 
 BuildType: Package
 PackageUseDevtools: Yes
-PackageInstallArgs: --no-multiarch --with-keep.source
-PackageCheckArgs: --no-multiarch --as-cran --use-valgrind --timings
+PackageInstallArgs: --with-keep.source
+PackageCheckArgs: --as-cran --use-valgrind --timings
 PackageRoxygenize: rd,collate,namespace,vignette
 
 QuitChildProcessesOnExit: Yes

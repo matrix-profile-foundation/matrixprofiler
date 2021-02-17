@@ -19,7 +19,7 @@ using namespace RcppParallel;
 
 // [[Rcpp::export]]
 List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                bool progress) {
+                double s_size, bool progress) {
 
   bool partial = false;
   int64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
@@ -57,7 +57,16 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   Progress p(num_queries, progress);
 
+  order = sample(order, order.size());
+
+  uint64_t stop = 0;
+
+  if (s_size < 1.0) {
+    stop = round(order.size() * s_size + DBL_EPSILON);
+  }
+
   try {
+    uint64_t j = 1;
     for (int32_t i : order) {
       RcppThread::checkUserInterrupt();
       p.increment();
@@ -71,7 +80,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       // apply exclusion zone
       if (exclusion_zone > 0) {
         int64_t exc_st = MAX(0, (i - exclusion_zone));
-        int64_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
+        int64_t exc_ed = MIN(matrix_profile_size - 1, (uint64_t)(i + exclusion_zone));
         IntegerVector dp_range = Range(exc_st, exc_ed);
         distance_profile[dp_range] = R_PosInf;
       }
@@ -86,6 +95,13 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       LogicalVector idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
       profile_index[which_cpp(idx)] = i + 1;
+
+      if (stop > 0 && j >= stop) {
+        partial = true;
+        break;
+      }
+
+      j++;
     }
 
   } catch (RcppThread::UserInterruptException &e) {
@@ -236,7 +252,7 @@ struct StampWorker : public Worker {
 
 // [[Rcpp::export]]
 List stamp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                         bool progress) {
+                         double s_size, bool progress) {
 
   uint64_t data_size = data_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;

@@ -21,7 +21,7 @@
 #' @order 4
 #' @examples
 #' mp <- mpx(motifs_discords_small, 50)
-mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TRUE,
+mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1.0, idxs = TRUE,
                 distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE) {
 
 
@@ -88,6 +88,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
             data,
             window_size,
             ez,
+            s_size,
             as.logical(idxs),
             as.logical(dist),
             as.logical(progress)
@@ -98,6 +99,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
             data,
             window_size,
             ez,
+            s_size,
             as.logical(idxs),
             as.logical(dist),
             as.logical(progress)
@@ -123,6 +125,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
             data,
             query,
             window_size,
+            s_size,
             as.logical(idxs),
             as.logical(dist),
             as.logical(progress)
@@ -133,6 +136,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, idxs = TR
             data,
             query,
             window_size,
+            s_size,
             as.logical(idxs),
             as.logical(dist),
             as.logical(progress)

@@ -5,102 +5,17 @@
 # std             Unk      Unk
 # mode            Unk      Unk
 # znorm           Unk      Unk
-# paa             Unk      Unk
-# ipaa            Unk      Unk
 
-
-#' Converts euclidean distances into correlation values
+#' Math Functions
 #'
-#' @param x a `vector` of `numeric`.
-#' @param w the window size
-#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation,
-#' that may or not be slower.
+#' `znorm()`: Normalizes data for mean Zero and Standard Deviation One
 #'
-#' @return Returns the converted values
-#'
-#' @keywords internal
-#' @noRd
-ed_corr <- function(x, w, rcpp = TRUE) {
-  if (rcpp) {
-    return(ed_corr_rcpp(x, w))
-  } else {
-    return((2 * w - x^2) / (2 * w))
-  }
-}
-
-#' Converts correlation values into euclidean distances
-#'
-#' @inheritParams ed_corr
-#'
-#' @return Returns the converted values
-#'
-#' @keywords internal
-#' @noRd
-corr_ed <- function(x, w, rcpp = TRUE) {
-  if (rcpp) {
-    return(corr_ed_rcpp(x, w))
-  } else {
-    sqrt(2 * w * (1 - ifelse(x > 1, 1, x)))
-  }
-}
-
-#' Calculates the mode of a vector
-#'
-#' @inheritParams ed_corr
-#'
-#' @return the mode
-#' @keywords internal
-#' @noRd
-
-mode <- function(x, rcpp = FALSE) {
-  x <- as.integer(x)
-
-  # Rcpp is not faster
-  if (rcpp) {
-    return(mode_rcpp(x))
-  }
-
-  ux <- unique(x)
-  ux[which.max(tabulate(match(x, ux)))]
-}
-
-
-#' Population SD, as R always calculate with n-1 (sample), here we fix it
-#'
-#' @param data A `vector` of `numeric`.
-#' @param na.rm A logical. If `TRUE` remove the `NA` values from the computation.
-#' @param rcpp A logical. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
-#'   or not be slower.
-#'
-#' @return Returns the corrected standard deviation from sample to population
-#' @keywords internal
-#' @noRd
-#'
-
-std <- function(data, na.rm = FALSE, rcpp = TRUE) { # nolint
-
-  # Rcpp is faster
-  if (rcpp) {
-    return(std_rcpp(data, na.rm))
-  }
-
-  sdx <- stats::sd(data, na.rm)
-
-  if (is.na(sdx)) {
-    return(NA)
-  }
-
-  return(sqrt((length(data) - 1) / length(data)) * sdx)
-}
-
-#' Normalizes data for mean Zero and Standard Deviation One
-#'
-#' @inheritParams std
-#'
-#' @return Returns the normalized data
-#' @keywords internal
-#' @noRd
-#'
+#' @return `znorm()`: Returns the normalized data
+#' @export
+#' @order 1
+#' @rdname math_tools
+#' @examples
+#' normalized <- znorm(motifs_discords_small)
 znorm <- function(data, rcpp = TRUE) {
   # Rcpp is faster
   if (rcpp) {
@@ -118,19 +33,115 @@ znorm <- function(data, rcpp = TRUE) {
   }
 }
 
-#' Normalizes data to be between min and max
+#' Math Functions
 #'
+#' `ed_corr()`: Converts euclidean distances into correlation values
+#'
+#' @param data a `vector` of `numeric`.
+#' @param w the window size
+#' @param rcpp A `logical`. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation,
+#' that may or not be slower.
+#'
+#' @return `ed_corr()`: Returns the converted values from euclidean distance to correlation values.
+#' @export
+#' @order 2
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(rep(3, 100), rep(2, 100), rep(1, 100))
+#' correlation <- ed_corr(fake_data, 50)
+ed_corr <- function(data, w, rcpp = TRUE) {
+  if (rcpp) {
+    return(ed_corr_rcpp(data, w))
+  } else {
+    return((2 * w - data^2) / (2 * w))
+  }
+}
+
+#' Math Functions
+#'
+#' `corr_ed()`: Converts correlation values into euclidean distances
+#'
+#' @return `corr_ed()`: Returns the converted values from euclidean distance to correlation values.
+#' @export
+#' @order 3
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(rep(0.5, 100), rep(1, 100), rep(0.1, 100))
+#' euclidean <- corr_ed(fake_data, 50)
+corr_ed <- function(data, w, rcpp = TRUE) {
+  if (rcpp) {
+    return(corr_ed_rcpp(data, w))
+  } else {
+    sqrt(2 * w * (1 - ifelse(data > 1, 1, data)))
+  }
+}
+
+#' Math Functions
+#'
+#' `mode()`: Returns the most common value from a vector of integers
+#'
+#' @param x a `vector` of `integers`.
+#'
+#' @return `mode()`: Returns the most common value from a vector of integers.
+#' @export
+#' @order 4
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(1, 1, 4, 5, 2, 3, 1, 7, 9, 4, 5, 2, 3)
+#' mode <- mode(fake_data)
+mode <- function(x, rcpp = FALSE) {
+  x <- as.integer(x)
+
+  # Rcpp is not faster
+  if (rcpp) {
+    return(mode_rcpp(x))
+  }
+
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+#' Math Functions
+#'
+#' `std()`: Population SD, as R always calculate with n-1 (sample), here we fix it.
+#'
+#' @param na.rm A logical. If `TRUE` remove the `NA` values from the computation.
+#' @return `std()`: Returns the corrected standard deviation from sample to population.
+#' @export
+#' @order 5
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(1, 1.4, 4.3, 5.1, 2, 3.6, 1.24, 2, 9, 4.3, 5, 2.1, 3)
+#' res <- std(fake_data)
+std <- function(data, na.rm = FALSE, rcpp = TRUE) { # nolint
+
+  # Rcpp is faster
+  if (rcpp) {
+    return(std_rcpp(data, na.rm))
+  }
+
+  sdx <- stats::sd(data, na.rm)
+
+  if (is.na(sdx)) {
+    return(NA)
+  }
+
+  return(sqrt((length(data) - 1) / length(data)) * sdx)
+}
+
+#' Math Functions
+#'
+#' `normalize()`: Normalizes data to be between min and max.
 #'
 #' @param min_lim A number
 #' @param max_lim A number
-#' @param rcpp A logical. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
-#'   or not be slower.
-#' @param data A `vector` or a column `matrix` of `numeric`.
-#'
-#' @return Returns the normalized data
-#' @keywords internal
-#' @noRd
-#'
+#' @return `normalize()`: Returns the normalized data between min and max.
+#' @export
+#' @order 6
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(1, 1.4, 4.3, 5.1, 2, 3.6, 1.24, 1, 9, 4.3, 5, 2.1, 3)
+#' res <- normalize(fake_data)
 normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
   if (rcpp) {
     na <- sort(which(is.na(data)))
@@ -155,30 +166,34 @@ normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
   return(data)
 }
 
-#' Computes the complexity index of the data
+#' Math Functions
 #'
-#' @param data a `vector` of `numeric`
+#' `complexity()`: Computes the complexity index of the data
 #'
-#' @return Returns the complexity index of the data provided (normally a subset)
-#' @keywords internal
-#' @noRd
-#'
+#' @return `complexity()`: Returns the complexity index of the data provided (normally a subset).
+#' @export
+#' @order 7
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(1, 1.4, 4.3, 5.1, 2, 3.6, 1.24, 8, 9, 4.3, 5, 2.1, 3)
+#' res <- complexity(fake_data)
 complexity <- function(data) {
   return(sqrt(sum(diff(data)^2)))
 }
 
-#' Binary Split algorithm
+#' Math Functions
 #'
-#' Creates a vector with the indexes of binary split.
+#' `binary_split()`: Creates a vector with the indexes of binary split.
 #'
 #' @param n size of the vector
-#' @param rcpp A logical. If `TRUE` will use the Rcpp implementation, otherwise will use the R implementation, that may
-#'   or not be slower.
 #'
-#' @return Returns a `vector` with the binary split indexes
-#' @keywords internal
-#' @noRd
-
+#' @return `complexity()`: Returns a `vector` with the binary split indexes.
+#' @export
+#' @order 8
+#' @rdname math_tools
+#' @examples
+#' fake_data <- c(10)
+#' res <- binary_split(fake_data)
 binary_split <- function(n, rcpp = TRUE) {
   if (rcpp) {
     res <- binary_split_rcpp(as.integer(n))
@@ -233,75 +248,4 @@ binary_split <- function(n, rcpp = TRUE) {
     }
   }
   return(as.integer(idxs))
-}
-
-#' Piecewise Aggregate Approximation of time series
-#'
-#' @param data a `vector` of `numeric`
-#' @param p factor of PAA reduction (2 == half of size)
-#'
-#' @return PAA result
-#' @keywords internal
-#' @noRd
-
-paa <- function(data, p) {
-  # Rcpp ?
-  paa_data <- as.vector(data)
-  len <- length(paa_data)
-
-  p <- round(abs(p))
-  paa_size <- ceiling(len / p)
-
-  if (len == paa_size) {
-    return(data)
-  } else {
-    if ((len %% p) > 0) {
-      pad <- p - (len %% p)
-      paa_data <- c(paa_data, rep.int(NA, pad))
-    }
-    res <- colMeans(matrix(paa_data, nrow = p, byrow = FALSE), na.rm = TRUE)
-  }
-
-  if (is.matrix(data)) {
-    return(as.matrix(res))
-  } else {
-    return(res)
-  }
-}
-
-#' Resample data to the original size, with interpolation
-#'
-#' @param data a `vector` of `numeric`
-#' @param p factor of PAA reduction (2 == half of size)
-#'
-#' @keywords internal
-#' @noRd
-
-ipaa <- function(data, p) {
-  # Rcpp ?
-  if (is.null(data)) {
-    return(NULL)
-  }
-
-  paa_data <- as.vector(data)
-  paa_size <- length(paa_data)
-  size <- paa_size * p
-
-  res <- rep.int(NA, size)
-
-  j <- 1
-  for (i in seq_len(size)) {
-    if (((i - 1) %% p) == 0) {
-      res[i] <- data[j]
-      j <- j + 1
-    } else {
-      res[i] <- res[i - 1]
-    }
-  }
-
-  if (is.matrix(data)) {
-    return(as.matrix(res))
-  } else {
-    return(res)
-  }
 }

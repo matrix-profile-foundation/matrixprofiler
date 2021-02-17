@@ -24,9 +24,10 @@ using namespace RcppParallel;
 // @param data_ref Time Series
 // @return data_ref List
 // [[Rcpp::export]]
-List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs, bool euclidean, bool progress) {
+List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean,
+              bool progress) {
 
-  uint64_t minlag = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
   try {
     double c, c_cmp;
@@ -43,7 +44,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs
     double *sig = &ssig[0];
 
     uint32_t profile_len = n - window_size + 1;
-    IntegerVector seq_diag = Range(minlag, profile_len - 1);
+    IntegerVector compute_order = Range(exclusion_zone, profile_len - 1);
 
     NumericVector mmp(profile_len, -1.0);
     IntegerVector mmpi(profile_len, -1);
@@ -67,25 +68,33 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs
     NumericVector ww = (data_ref[Range(0, window_size - 1)] - mmu[0]);
 
     uint64_t num_progress =
-        ceil((double)seq_diag.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
+        ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 
+    compute_order = sample(compute_order, compute_order.size());
+
+    uint64_t stop = 0;
+
+    if (s_size < 1.0) {
+      stop = round(compute_order.size() * s_size + DBL_EPSILON);
+    }
+
     try {
       uint64_t i = 1;
-      for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
+      for (int32_t diag : compute_order) {
 
         if ((i % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
           p.increment();
         }
 
-        c = inner_product((data_ref[Range(*diag, (*diag + window_size - 1))] - mu[*diag]), ww);
+        c = inner_product((data_ref[Range(diag, (diag + window_size - 1))] - mu[diag]), ww);
 
-        off_max = (n - window_size - *diag + 1);
+        off_max = (n - window_size - diag + 1);
 
         for (offset = 0; offset < off_max; offset++) {
-          off_diag = offset + *diag;
+          off_diag = offset + diag;
           c = c + df[offset] * dg[off_diag] + df[off_diag] * dg[offset];
           c_cmp = c * sig[offset] * sig[off_diag];
           if (c_cmp > mp[offset]) {
@@ -100,6 +109,11 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs
               mpi[off_diag] = offset + 1;
             }
           }
+        }
+
+        if (stop > 0 && i >= stop) {
+          partial = true;
+          break;
         }
 
         i++;
@@ -128,11 +142,11 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs
 }
 
 // [[Rcpp::export]]
-List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs, bool euclidean,
-                bool progress) {
+List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size, bool idxs,
+                bool euclidean, bool progress) {
 
   try {
-    uint64_t minlag = 0;
+    uint64_t exclusion_zone = 0;
     bool partial = false;
     double c, c_cmp;
     uint32_t off_max, off_diag, offset;
@@ -153,8 +167,6 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     double *sig_b = &ssig_b[0];
 
     uint32_t profile_len_a = a_len - window_size + 1;
-    IntegerVector seq_diag = Range(minlag, profile_len_a - 1);
-
     NumericVector mmp_a(profile_len_a, -1.0);
     IntegerVector mmpi_a(profile_len_a, -1);
 
@@ -162,7 +174,6 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     int *mpi_a = &mmpi_a[0];
 
     uint32_t profile_len_b = b_len - window_size + 1;
-
     NumericVector mmp_b(profile_len_b, -1.0);
     IntegerVector mmpi_b(profile_len_b, -1);
 
@@ -191,33 +202,36 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     double *dg_b = &ddg_b[0];
 
     NumericVector ww = (query_ref[Range(0, window_size - 1)] - mmu_b[0]);
+    IntegerVector compute_order = Range(exclusion_zone, profile_len_a - 1);
+    compute_order = sample(compute_order, compute_order.size());
 
-    uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * minlag) /
+    uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * exclusion_zone) /
                                  100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 
     try {
-      for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
+      //// AB ----
+      for (int32_t diag : compute_order) {
 
-        if ((*diag % num_progress) == 10) {
+        if ((diag % num_progress) == 10) {
           p.increment();
           RcppThread::checkUserInterrupt();
         }
 
-        off_max = MIN(a_len - window_size - *diag + 1, b_len - window_size + 1);
-        c = inner_product((data_ref[Range(*diag, (*diag + window_size - 1))] - mu_a[*diag]), ww);
+        off_max = MIN(a_len - window_size - diag + 1, b_len - window_size + 1);
+        c = inner_product((data_ref[Range(diag, (diag + window_size - 1))] - mu_a[diag]), ww);
         for (offset = 0; offset < off_max; offset++) {
-          off_diag = offset + *diag;
+          off_diag = offset + diag;
           c = c + df_a[off_diag] * dg_b[offset] + dg_a[off_diag] * df_b[offset];
           c_cmp = c * sig_b[offset] * sig_a[off_diag];
-          if (c_cmp > mp_b[offset]) {
+          if (c_cmp > mp_b[offset]) { // mpb
             mp_b[offset] = c_cmp;
             if (idxs) {
               mpi_b[offset] = off_diag + 1;
             }
           }
-          if (c_cmp > mp_a[off_diag]) {
+          if (c_cmp > mp_a[off_diag]) { // mpa
             mp_a[off_diag] = c_cmp;
             if (idxs) {
               mpi_a[off_diag] = offset + 1;
@@ -226,20 +240,22 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
         }
       }
 
+      //// BA ----
       ww = (data_ref[Range(0, window_size - 1)] - mmu_a[0]);
-      seq_diag = Range(minlag, profile_len_b - 1);
+      compute_order = Range(exclusion_zone, profile_len_b - 1);
+      compute_order = sample(compute_order, compute_order.size());
 
-      for (IntegerVector::iterator diag = seq_diag.begin(); diag != seq_diag.end(); ++diag) {
+      for (int32_t diag : compute_order) {
 
-        if ((*diag % num_progress) == 10) {
+        if ((diag % num_progress) == 10) {
           p.increment();
           RcppThread::checkUserInterrupt();
         }
 
-        off_max = MIN(b_len - window_size - *diag + 1, a_len - window_size + 1);
-        c = inner_product((query_ref[Range(*diag, (*diag + window_size - 1))] - mu_b[*diag]), ww);
+        off_max = MIN(b_len - window_size - diag + 1, a_len - window_size + 1);
+        c = inner_product((query_ref[Range(diag, (diag + window_size - 1))] - mu_b[diag]), ww);
         for (offset = 0; offset < off_max; offset++) {
-          off_diag = offset + *diag;
+          off_diag = offset + diag;
           c = c + df_b[off_diag] * dg_a[offset] + dg_b[off_diag] * df_a[offset];
           c_cmp = c * sig_a[offset] * sig_b[off_diag];
           if (c_cmp > mp_a[offset]) {
@@ -288,6 +304,7 @@ struct MatrixProfileP : public Worker {
   // input
   const RVector<double> data_ref;
   const uint64_t window_size;
+  const RVector<int> compute_order;
   const RVector<double> df;
   const RVector<double> dg;
   const RVector<double> mu;
@@ -308,14 +325,14 @@ struct MatrixProfileP : public Worker {
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  MatrixProfileP(const NumericVector data_ref, const uint64_t window_size, const NumericVector df,
-                 const NumericVector dg, const NumericVector mmu, const NumericVector sig, const NumericVector ww,
-                 Progress *p, uint64_t num_progress, NumericVector mp, IntegerVector mpi)
-      : data_ref(data_ref), window_size(window_size), df(df), dg(dg), mu(mmu), sig(sig), ww(ww), p(p),
-        num_progress(num_progress), mp(mp), mpi(mpi) {}
+  MatrixProfileP(const NumericVector data_ref, const uint64_t window_size, const IntegerVector compute_order,
+                 const NumericVector df, const NumericVector dg, const NumericVector mmu, const NumericVector sig,
+                 const NumericVector ww, Progress *p, uint64_t num_progress, NumericVector mp, IntegerVector mpi)
+      : data_ref(data_ref), window_size(window_size), compute_order(compute_order), df(df), dg(dg), mu(mmu), sig(sig),
+        ww(ww), p(p), num_progress(num_progress), mp(mp), mpi(mpi) {}
 
   // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) { // minlag:profile_len
+  void operator()(std::size_t begin, std::size_t end) { // exclusion_zone:profile_len
     double c, c_cmp;
     uint32_t off_max, off_diag, offset;
     uint32_t n = data_ref.length();
@@ -325,7 +342,8 @@ struct MatrixProfileP : public Worker {
     std::vector<int> mpip(mp.size(), -1);
 
     try {
-      for (uint64_t diag = begin; diag < end; diag++) {
+      for (uint64_t dd = begin; dd < end; dd++) {
+        int64_t diag = compute_order[dd];
 
         if ((diag % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
@@ -375,10 +393,10 @@ struct MatrixProfileP : public Worker {
 };
 
 // [[Rcpp::export]]
-List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, bool idxs, bool euclidean,
-                       bool progress) {
+List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs,
+                       bool euclidean, bool progress) {
 
-  uint64_t minlag = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
   try {
     // matrix profile using cross correlation,
@@ -406,17 +424,20 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, 
 
     NumericVector ww = (data_ref[Range(0, window_size - 1)] - mu[0]);
 
-    uint64_t num_progress = (profile_len - minlag) / 100;
+    IntegerVector compute_order = Range(exclusion_zone, profile_len);
+    compute_order = sample(compute_order, compute_order.size());
+
+    uint64_t num_progress = (profile_len - exclusion_zone) / 100;
 
     Progress p(100, progress);
 
-    MatrixProfileP matrix_profile(data_ref, window_size, df, dg, mu, sig, ww, &p, num_progress, mp, mpi);
+    MatrixProfileP matrix_profile(data_ref, window_size, compute_order, df, dg, mu, sig, ww, &p, num_progress, mp, mpi);
 
     try {
 #if RCPP_PARALLEL_USE_TBB
-      RcppParallel::parallelFor(minlag, profile_len, matrix_profile, 4 * window_size);
+      RcppParallel::parallelFor(0, profile_len - exclusion_zone, matrix_profile, 4 * window_size);
 #else
-      RcppParallel2::ttParallelFor(minlag, profile_len, matrix_profile, 4 * window_size);
+      RcppParallel2::ttParallelFor(0, profile_len - exclusion_zone, matrix_profile, 4 * window_size);
 #endif
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
@@ -458,7 +479,8 @@ struct MatrixProfilePAB : public Worker {
   const RVector<double> sig_b;
   const RVector<double> ww_a;
   const RVector<double> ww_b;
-
+  const RVector<int> compute_ordera;
+  const RVector<int> compute_orderb;
   Progress *p;
   uint64_t num_progress;
 
@@ -485,18 +507,19 @@ struct MatrixProfilePAB : public Worker {
                    const NumericVector df_a, const NumericVector df_b, const NumericVector dg_a,
                    const NumericVector dg_b, const NumericVector mu_a, const NumericVector mu_b,
                    const NumericVector sig_a, const NumericVector sig_b, const NumericVector ww_a,
-                   const NumericVector ww_b, Progress *p, uint64_t num_progress, NumericVector mp_a, NumericVector mp_b,
-                   IntegerVector mpi_a, IntegerVector mpi_b)
+                   const NumericVector ww_b, IntegerVector compute_ordera, IntegerVector compute_orderb, Progress *p,
+                   uint64_t num_progress, NumericVector mp_a, NumericVector mp_b, IntegerVector mpi_a,
+                   IntegerVector mpi_b)
       : data_ref(data_ref), query_ref(query_ref), window_size(window_size), df_a(df_a), df_b(df_b), dg_a(dg_a),
-        dg_b(dg_b), mu_a(mu_a), mu_b(mu_b), sig_a(sig_a), sig_b(sig_b), ww_a(ww_a), ww_b(ww_b), p(p),
-        num_progress(num_progress), mp_a(mp_a), mp_b(mp_b), mpi_a(mpi_a), mpi_b(mpi_b), ab_ba(0) {}
+        dg_b(dg_b), mu_a(mu_a), mu_b(mu_b), sig_a(sig_a), sig_b(sig_b), ww_a(ww_a), ww_b(ww_b),
+        compute_ordera(compute_ordera), compute_orderb(compute_orderb), p(p), num_progress(num_progress), mp_a(mp_a),
+        mp_b(mp_b), mpi_a(mpi_a), mpi_b(mpi_b), ab_ba(0) {}
 
   void set_ab() { this->ab_ba = 0; }
-
   void set_ba() { this->ab_ba = 1; }
 
   // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) { // minlag:profile_len
+  void operator()(std::size_t begin, std::size_t end) { // exclusion_zone:profile_len
     double c, c_cmp;
     uint32_t off_max, off_diag, offset;
     uint32_t a_len = data_ref.length();
@@ -604,12 +627,11 @@ struct MatrixProfilePAB : public Worker {
 };
 
 // [[Rcpp::export]]
-List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs,
-                         bool euclidean, bool progress) {
+List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size,
+                         bool idxs, bool euclidean, bool progress) {
 
   try {
     // matrix profile using cross correlation,
-    uint64_t minlag = 0;
     bool partial = false;
     uint32_t a_len = data_ref.length();
     uint32_t b_len = query_ref.length();
@@ -649,19 +671,25 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     NumericVector ww_a = (data_ref[Range(0, window_size - 1)] - mu_a[0]);
     NumericVector ww_b = (query_ref[Range(0, window_size - 1)] - mu_b[0]);
 
-    uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * minlag) /
-                                 100); // added double inside sqrt to avoid ambiguity on Solaris
+    uint64_t num_progress =
+        ceil((double)(profile_len_a + profile_len_b) / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 
+    IntegerVector compute_ordera = Range(0, profile_len_a);
+    compute_ordera = sample(compute_ordera, compute_ordera.size());
+    IntegerVector compute_orderb = Range(0, profile_len_b);
+    compute_orderb = sample(compute_orderb, compute_orderb.size());
+
     MatrixProfilePAB matrix_profile(data_ref, query_ref, window_size, df_a, df_b, dg_a, dg_b, mu_a, mu_b, sig_a, sig_b,
-                                    ww_a, ww_b, &p, num_progress, mp_a, mp_b, mpi_a, mpi_b);
+                                    ww_a, ww_b, compute_ordera, compute_orderb, &p, num_progress, mp_a, mp_b, mpi_a,
+                                    mpi_b);
 
     try {
 #if RCPP_PARALLEL_USE_TBB
-      RcppParallel::parallelFor(minlag, profile_len_a, matrix_profile, 4 * window_size);
+      RcppParallel::parallelFor(0, profile_len_a, matrix_profile, 4 * window_size);
 #else
-      RcppParallel2::ttParallelFor(minlag, profile_len_a, matrix_profile, 4 * window_size);
+      RcppParallel2::ttParallelFor(0, profile_len_a, matrix_profile, 4 * window_size);
 #endif
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;

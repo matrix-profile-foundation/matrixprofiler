@@ -292,23 +292,24 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
   tryCatch(
     {
       if (rcpp) {
-        return(movstd_rcpp(data, window_size))
+        data_sd <- movstd_rcpp(data, window_size)
+      } else {
+        # Improve the numerical analysis by subtracting off the series mean
+        # this has no effect on the standard deviation.
+        data <- data - mean(data)
+
+        data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+        data_mean <- data_sum / window_size
+
+        data2 <- data^2
+        data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
+        data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
+        data_sd <- sqrt(data_sd2)
       }
-
-      # Improve the numerical analysis by subtracting off the series mean
-      # this has no effect on the standard deviation.
-      data <- data - mean(data)
-
-      data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-      data_mean <- data_sum / window_size
-
-      data2 <- data^2
-      data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-      data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
-      data_sd <- sqrt(data_sd2)
     },
     error = print
   )
+
   return(data_sd)
 }
 
@@ -326,30 +327,30 @@ movmean_std <- function(data, window_size, rcpp = TRUE) {
   }
 
   if (rcpp) {
-    return(movmean_std_rcpp(data, window_size))
+    result <- movmean_std_rcpp(data, window_size)
+  } else {
+    mov_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+    data2 <- data^2
+    mov2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
+    mov_mean <- mov_sum / window_size
+    # Improve the numerical analysis by subtracting off the series mean
+    # this has no effect on the standard deviation.
+    dmean <- mean(data)
+    data <- data - dmean
+
+    data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+    data_mean <- data_sum / window_size
+    data2 <- data^2
+    data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
+    data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
+    data_sd2[data_sd2 < 0] <- 0
+    data_sd <- sqrt(data_sd2) # std deviation
+    data_sig <- sqrt(1 / (data_sd2 * window_size))
+
+    result <- list(avg = mov_mean, sd = data_sd, sig = data_sig, sum = mov_sum, sqrsum = mov2_sum)
   }
 
-  mov_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-  data2 <- data^2
-  mov2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-  mov_mean <- mov_sum / window_size
-
-
-  # Improve the numerical analysis by subtracting off the series mean
-  # this has no effect on the standard deviation.
-  dmean <- mean(data)
-  data <- data - dmean
-
-  data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-  data_mean <- data_sum / window_size
-  data2 <- data^2
-  data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-  data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
-  data_sd2[data_sd2 < 0] <- 0
-  data_sd <- sqrt(data_sd2) # std deviation
-  data_sig <- sqrt(1 / (data_sd2 * window_size))
-
-  return(list(avg = mov_mean, sd = data_sd, sig = data_sig, sum = mov_sum, sqrsum = mov2_sum))
+  return(result)
 }
 
 #' Fast implementation of moving average and moving sigma
@@ -362,32 +363,20 @@ movmean_std <- function(data, window_size, rcpp = TRUE) {
 #' @order 8
 #' @examples
 #' mov <- muinvn(motifs_discords_small, 50)
-muinvn <- function(data, window_size, rcpp = TRUE, n_workers = 1) {
+muinvn <- function(data, window_size, n_workers = 1) {
   if (window_size < 2) {
     stop("'window_size' must be at least 2.")
   }
-
-  if (rcpp) {
-    if (n_workers > 1) {
-      p <- RcppParallel::defaultNumThreads()
-      n_workers <- min(n_workers, p)
-      RcppParallel::setThreadOptions(numThreads = n_workers)
-      return(muinvn_rcpp_parallel(data, window_size))
-    } else {
-      return(muinvn_rcpp(data, window_size))
-    }
+  if (n_workers > 1) {
+    p <- RcppParallel::defaultNumThreads()
+    n_workers <- min(n_workers, p)
+    RcppParallel::setThreadOptions(numThreads = n_workers)
+    result <- muinvn_rcpp_parallel(data, window_size)
+  } else {
+    result <- muinvn_rcpp(data, window_size)
   }
 
-  data_sum <- mov_sum(data, window_size)
-  data_mean <- data_sum / window_size
-  data2 <- data^2
-  data2_sum <- mov_sum(data2, window_size)
-  sig <- 1 / sqrt(data2_sum - data_mean^2 * window_size)
-
-  # std is equals to 1 / (sig * sqrt(w))
-  # sig is equals to 1 / (std * sqrt(w))
-
-  return(list(avg = data_mean, sig = sig))
+  return(result)
 }
 
 #' Computes the number of times the data crossed the 'zero' line inside a rolling window
@@ -401,8 +390,6 @@ muinvn <- function(data, window_size, rcpp = TRUE, n_workers = 1) {
 zero_crossing <- function(data, window_size) {
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-
   result <- zero_crossing_rcpp(data, window_size)
-
   return(result)
 }

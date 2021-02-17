@@ -31,6 +31,10 @@
 #'   Default is `NULL` (See details).
 #' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
 #'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
+#' @param s_size A numeric. Used on anytime algorithms (stamp, scrimp, mpx) if only part of the computation is needed.
+#' Default is `1.0` (means 100%).
+#' @param pre_scrimp A numeric. If not zero, pre_scrimp is computed, using a fraction of the data. Default is `0.25`.
+#' This parameter is ignored when using multithread or AB-join.
 #' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.
 #' @param progress A logical. If `TRUE` (the default) will show a progress bar. Useful for long computations. (See
 #'   details)
@@ -57,7 +61,7 @@
 #'
 #' @examples
 #' mp <- stamp(motifs_discords_small, 50)
-stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE) {
+stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1.0, n_workers = 1, progress = TRUE) {
 
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -115,6 +119,7 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
             data,
             window_size,
             ez,
+            s_size,
             as.logical(progress)
           )
           RcppParallel::setThreadOptions(numThreads = p)
@@ -124,6 +129,7 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
             data,
             window_size,
             ez,
+            s_size,
             as.logical(progress)
           )
         }
@@ -148,6 +154,7 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
             query,
             window_size,
             ez,
+            s_size,
             as.logical(progress)
           )
           RcppParallel::setThreadOptions(numThreads = p)
@@ -157,6 +164,7 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
             query,
             window_size,
             ez,
+            s_size,
             as.logical(progress)
           )
         }
