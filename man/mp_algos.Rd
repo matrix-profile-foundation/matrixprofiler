@@ -60,8 +60,8 @@ details)}
 \item{distance}{(\code{mpx()} only) A string. Currently accepts \code{euclidean} and \code{pearson}. Defaults to \code{euclidean}.}
 }
 \value{
-Returns a \code{list} with the \code{matrix_profile}, \code{profile_index} (if \code{idxs} is \code{TRUE} in \code{mpx()}), and some information
-about the settings used to build it, like \code{ez} and \code{partial} when the algorithm is finished early.
+Returns a \code{list} with the \code{matrix_profile}, \code{profile_index} (if \code{idxs} is \code{TRUE} in \code{mpx()}), and some
+information about the settings used to build it, like \code{ez} and \code{partial} when the algorithm is finished early.
 }
 \description{
 STAMP Computes the best so far Matrix Profile and Profile Index for Univariate Time Series.
@@ -119,7 +119,7 @@ on Ogita's work for better precision computing mean and standard deviation (part
 }
 }
 \section{This document}{
-Last updated on 2021-02-15 using R version 4.0.3.
+Last updated on 2021-02-16 using R version 4.0.3.
 }
 
 \examples{

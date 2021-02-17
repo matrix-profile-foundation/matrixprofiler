@@ -14,7 +14,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "group": "none",
+      "group": "test",
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
