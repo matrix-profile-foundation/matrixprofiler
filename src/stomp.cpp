@@ -1,6 +1,6 @@
+#include "math.h" // math first to fix OSX error
 #include "stomp.h"
 #include "mass.h"
-#include "math.h"
 #include <numeric>
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
@@ -75,7 +75,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   Progress p(100, progress);
 
-  uint32_t num_progress = ceil(order.size() / 100);
+  uint32_t num_progress = ceil((double)order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
   try {
     for (int32_t i : order) {

@@ -62,7 +62,6 @@ src-*/
 packrat/lib*/
 packrat/src/
 Rplots.pdf
-/src/RcppExports.cpp
 /src/*.o
 /src/*.so
 /src/*.dll

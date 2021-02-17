@@ -155,69 +155,6 @@ normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
   return(data)
 }
 
-#' Normalizes data between Zero and One
-#'
-#' @param data a `vector` of `numeric`.
-#'
-#' @return Returns the normalized data.
-#' @keywords internal
-#' @noRd
-#'
-zero_one_norm <- function(data) {
-  data <- round(data, 10)
-
-  data <- data - min(data[!is.infinite(data) & !is.na(data)])
-  data <- data / max(data[!is.infinite(data) & !is.na(data)])
-
-  return(data)
-}
-
-#' Counts number of zero-crossings
-#'
-#' Count the number of zero-crossings from the supplied time-domain input vector. A simple method is
-#' applied here that can be easily ported to a real-time system that would minimize the number of
-#' if-else conditionals.
-#'
-#' @param data a `vector` of `numeric`.
-#'
-#' @return Returns the amount of zero-crossings in the input signal.
-#' @author sparafucile17 06/27/04
-#' @references <https://www.dsprelated.com/showcode/179.php>
-#' @keywords internal
-#' @noRd
-#'
-zero_crossings <- function(data) {
-  # initial value
-  count <- 0
-
-  data <- as.matrix(data)
-
-  # error checks
-  if (length(data) == 1) {
-    stop("Input signal must have more than one element.")
-  }
-
-  if ((ncol(data) != 1) && (nrow(data) != 1)) {
-    stop("Input must be one-dimensional.")
-  }
-
-  # force signal to be a vector oriented in the same direction
-  data <- as.vector(data)
-
-  num_samples <- length(data)
-
-  for (i in 2:num_samples) {
-    # Any time you multiply to adjacent values that have a sign difference
-    # the result will always be negative.  When the signs are identical,
-    # the product will always be positive.
-    if ((data[i] * data[i - 1]) < 0) {
-      count <- count + 1
-    }
-  }
-
-  return(as.integer(count))
-}
-
 #' Computes the complexity index of the data
 #'
 #' @param data a `vector` of `numeric`

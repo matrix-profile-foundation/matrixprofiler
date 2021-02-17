@@ -27,14 +27,6 @@ if (!testthat:::on_cran()) {
     data_normalized <- normalize(motifs_discords_small, 1, 5)
     expect_snapshot_value(data_normalized, style = "serialize")
   })
-  test_that("zero_one_norm", {
-    data_norm_zone <- zero_one_norm(motifs_discords_small)
-    expect_snapshot_value(data_norm_zone, style = "serialize")
-  })
-  test_that("zero_crossings", {
-    zeroc <- zero_crossings(motifs_discords_small) # Counts number of zero-crossings
-    expect_snapshot_value(zeroc, style = "json")
-  })
   test_that("complexity", {
     data_complex <- complexity(motifs_discords_small) # Computes the complexity index of the data
     expect_snapshot_value(data_complex, style = "serialize")

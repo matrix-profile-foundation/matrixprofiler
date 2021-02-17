@@ -1,6 +1,6 @@
+#include "math.h" // math first to fix OSX error
 #include "scrimp.h"
 #include "mass.h"
-#include "math.h"
 #include <numeric>
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
@@ -66,15 +66,15 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     if (pre_scrimp > 0) {
       // initialization
-      uint64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
+      int64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
       IntegerVector pre_scrimp_idxs = seq_by(0, matrix_profile_size - 1, current_step);
       Progress ps(pre_scrimp_idxs.size(), progress);
       // compute the matrix profile
       NumericVector dotproduct(matrix_profile_size);
       NumericVector refine_distance(matrix_profile_size, R_PosInf);
 
-      uint64_t j = 1;
-      for (uint64_t &&i : pre_scrimp_idxs) {
+      int64_t j = 1;
+      for (int64_t &&i : pre_scrimp_idxs) {
 
         RcppThread::checkUserInterrupt();
         ps.increment();
@@ -85,8 +85,8 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         NumericVector distance_profile = as<NumericVector>(nn["distance_profile"]);
 
-        uint64_t exc_st = 0;
-        uint64_t exc_ed = 0;
+        int64_t exc_st = 0;
+        int64_t exc_ed = 0;
 
         // apply exclusion zone
         if (exclusion_zone > 0) {
@@ -107,24 +107,24 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
         if (j == 1) {
           matrix_profile = distance_profile;
           profile_index.fill(i);
-          uint64_t min_idx = which_min(distance_profile);
+          int64_t min_idx = which_min(distance_profile);
           profile_index[i] = min_idx;
           matrix_profile[i] = distance_profile[min_idx];
         } else {
           LogicalVector update_pos = distance_profile < matrix_profile;
           profile_index[update_pos] = (int32_t)i;
           matrix_profile[update_pos] = distance_profile[update_pos];
-          uint64_t min_idx = which_min(distance_profile);
+          int64_t min_idx = which_min(distance_profile);
           profile_index[i] = min_idx;
           matrix_profile[i] = distance_profile[min_idx];
         }
 
-        uint64_t idx_nn = profile_index[i];
-        int64_t idx_diff = idx_nn - i;
+        int64_t idx_nn = profile_index[i];
+        int64_t idx_diff = (idx_nn - i);
         dotproduct[i] = (window_size - (matrix_profile[i] / 2)) * data_sd[i] * data_sd[idx_nn] +
                         window_size * data_mean[i] * data_mean[idx_nn];
 
-        uint64_t endidx = MIN(matrix_profile_size - 1, (int64_t)i + current_step - 1);
+        int64_t endidx = MIN(matrix_profile_size - 1, (int64_t)i + current_step - 1);
         endidx = MIN((int64_t)endidx, matrix_profile_size - idx_diff - 1);
 
         if (i < endidx) {
@@ -145,9 +145,9 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
                                      (data_sd[dot_idxs1] * data_sd[ref_idxs1]));
         }
 
-        uint64_t beginidx = ((i + 1) <= current_step) ? 0 : (i + 1 - current_step);
+        int64_t beginidx = ((i + 1) <= current_step) ? 0 : (i + 1 - current_step);
         if (idx_diff < 0) {
-          beginidx = MAX(beginidx, (uint64_t)abs(idx_diff));
+          beginidx = MAX(beginidx, abs(idx_diff));
         }
 
         if (i > 0 && i > beginidx) {
@@ -202,8 +202,8 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     Progress p(compute_order.size(), progress);
 
-    uint64_t j = 1;
-    for (uint64_t &&i : compute_order) {
+    int64_t j = 1;
+    for (int64_t &&i : compute_order) {
 
       RcppThread::checkUserInterrupt();
       p.increment();

@@ -1,7 +1,6 @@
 R/matrixprofiler-defunct.R
 R/matrixprofiler-deprecated.R
 R/deprec-*.R
-R/test_equal.R
 R/compat-*.R
 R/zzz.R
 renv/**

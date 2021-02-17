@@ -57,7 +57,7 @@ namespace FFT {
   maxf and maxp which determine the amount of scratch storage
   required by the algorithm.
 
-  If maxf is zero on return, an error occured during factorization.
+  If maxf is zero on return, an error occurred during factorization.
   The nature of the error can be determined from the value of maxp.
   If maxp is zero, an invalid (zero) parameter was passed and
   if maxp is one,  the internal nfac array was too small.  This can only
@@ -278,7 +278,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
 
   /* extract 3^2, 5^2, ... */
   kchanged = 0;
-  sqrtk = (int)sqrt(k);
+  sqrtk = sqrt((double)k); // added double inside sqrt to avoid ambiguity on Solaris
   for (j = 3; j <= sqrtk; j += 2) {
     jj = j * j;
     while (k % jj == 0) {
@@ -288,7 +288,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
     }
     if (kchanged) {
       kchanged = 0;
-      sqrtk = (int)sqrt(k);
+      sqrtk = sqrt((double)k);
     }
   }
 
@@ -376,8 +376,8 @@ int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, dou
   return 1;
 }
 
-void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, double *at, double *ck,
-                 double *bt, double *sk, int *np, int *nfac) { // lgtm [cpp/use-of-goto]
+void fftw::fftmx(double *a, double *b, int ntot, int n, int nspan, int isn, int m, int kt, // lgtm [cpp/use-of-goto]
+                 double *at, double *ck, double *bt, double *sk, int *np, int *nfac) {
 
   // this function uses multiple forward and backward goto statements
   // for performance purpose. And yes, can be hard to understand, as LGTM QL say, so I disabled the alert.

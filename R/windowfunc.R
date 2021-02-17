@@ -389,3 +389,20 @@ muinvn <- function(data, window_size, rcpp = TRUE, n_workers = 1) {
 
   return(list(avg = data_mean, sig = sig))
 }
+
+#' Computes the number of times the data crossed the 'zero' line inside a rolling window
+#'
+#' @return `zero_crossing()` returns a `vector` of times the data crossed the 'zero' line inside a rolling window.
+#' @export
+#' @rdname windowfunc
+#' @order 9
+#' @examples
+#' zero_cross <- zero_crossing(motifs_discords_small, 50)
+zero_crossing <- function(data, window_size) {
+  checkmate::qassert(data, "N+")
+  window_size <- as.integer(checkmate::qassert(window_size, "X+"))
+
+  result <- zero_crossing_rcpp(data, window_size)
+
+  return(result)
+}

@@ -9,6 +9,7 @@
 \alias{mov_std}
 \alias{movmean_std}
 \alias{muinvn}
+\alias{zero_crossing}
 \title{Several moving window functions}
 \usage{
 mov_mean(
@@ -41,6 +42,8 @@ mov_std(data, window_size, rcpp = TRUE)
 movmean_std(data, window_size, rcpp = TRUE)
 
 muinvn(data, window_size, rcpp = TRUE, n_workers = 1)
+
+zero_crossing(data, window_size)
 }
 \arguments{
 \item{data}{A \code{vector} or a column \code{matrix} of \code{numeric}.}
@@ -72,6 +75,8 @@ that may or not be slower.}
 \code{movmean_std()} returns a \code{list} with \code{vectors} of the moving \code{avg}, \code{sd}, \code{sig}, \code{sum} and \code{sqrsum}.
 
 \code{muinvn()} returns a \code{list} with \code{vectors} of moving \code{avg} and \code{sig}.
+
+\code{zero_crossing()} returns a \code{vector} of times the data crossed the 'zero' line inside a rolling window.
 }
 \description{
 These functions do not handle NA values
@@ -107,4 +112,5 @@ mov <- mov_min(motifs_discords_small, 50)
 mov <- mov_std(motifs_discords_small, 50)
 mov <- movmean_std(motifs_discords_small, 50)
 mov <- muinvn(motifs_discords_small, 50)
+zero_cross <- zero_crossing(motifs_discords_small, 50)
 }
