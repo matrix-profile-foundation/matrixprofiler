@@ -57,7 +57,7 @@ namespace FFT {
   maxf and maxp which determine the amount of scratch storage
   required by the algorithm.
 
-  If maxf is zero on return, an error occured during factorization.
+  If maxf is zero on return, an error occurred during factorization.
   The nature of the error can be determined from the value of maxp.
   If maxp is zero, an invalid (zero) parameter was passed and
   if maxp is one,  the internal nfac array was too small.  This can only
@@ -278,7 +278,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
 
   /* extract 3^2, 5^2, ... */
   kchanged = 0;
-  sqrtk = (int)sqrt(k);
+  sqrtk = sqrt((double)k); // added double inside sqrt to avoid ambiguity on Solaris
   for (j = 3; j <= sqrtk; j += 2) {
     jj = j * j;
     while (k % jj == 0) {
@@ -288,7 +288,7 @@ void fftw::fft_factor(int n, int *pmaxf, int *pmaxp) {
     }
     if (kchanged) {
       kchanged = 0;
-      sqrtk = (int)sqrt(k);
+      sqrtk = sqrt((double)k);
     }
   }
 

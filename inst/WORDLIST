@@ -23,7 +23,9 @@ PAA
 Proc
 QwG
 README
+RPubs
 Rcpp
+RcppParallel
 Roadmap
 Rodrigues
 SDTS
@@ -53,7 +55,7 @@ github
 http
 https
 javidlakha
-jbeleno
+juanbeleno
 khiva
 kotlin
 lifecycle
@@ -68,6 +70,7 @@ mutexes
 neglectable
 ogita
 owlpy
+por
 pre
 precomputations
 procesment
@@ -75,6 +78,7 @@ pyMatrixProfile
 scalability
 shapelet
 shapelets
+tinythread
 tsmp
 ucr
 www

@@ -7,7 +7,8 @@ if (!testthat:::on_cran()) {
       res_norm <- mass(pre_obj_norm, data = motifs_discords_small, index = 100)
     })
     expect_type(res_norm, "list")
-    expect_snapshot_value(res_norm, style = "serialize")
+    expect_snapshot_value(round(res_norm$distance_profile, 8), style = "json2")
+    expect_snapshot_value(round(res_norm$last_product, 8), style = "json2")
   })
 
   test_that("Mass Non-normalized", {
@@ -18,7 +19,8 @@ if (!testthat:::on_cran()) {
       res_non <- mass(pre_obj_non, data = motifs_discords_small, index = 100)
     })
     expect_type(res_non, "list")
-    expect_snapshot_value(res_non, style = "serialize")
+    expect_snapshot_value(round(res_non$distance_profile, 8), style = "json2")
+    expect_snapshot_value(round(res_non$last_product, 8), style = "json2")
   })
 
   test_that("Mass Absolute", {
@@ -29,7 +31,8 @@ if (!testthat:::on_cran()) {
       res_abs <- mass(pre_obj_abs, data = motifs_discords_small, index = 100)
     })
     expect_type(res_abs, "list")
-    expect_snapshot_value(res_abs, style = "serialize")
+    expect_snapshot_value(round(res_abs$distance_profile, 8), style = "json2")
+    expect_snapshot_value(round(res_abs$last_product, 8), style = "json2")
   })
 
   test_that("Mass Weighted", {
@@ -43,6 +46,7 @@ if (!testthat:::on_cran()) {
       res_weight <- mass(pre_obj_weights, data = motifs_discords_small, index = 100)
     })
     expect_type(res_weight, "list")
-    expect_snapshot_value(res_weight, style = "serialize")
+    expect_snapshot_value(round(res_weight$distance_profile, 8), style = "json2")
+    expect_snapshot_value(round(res_weight$last_product, 8), style = "json2")
   })
 }

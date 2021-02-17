@@ -13,6 +13,13 @@ versatility, simplicity and scalability. In particular it has implications for t
 series joins, shapelet discovery (classification), density estimation, semantic segmentation, visualization, rule
 discovery, clustering etc.
 }
+\section{Parallel backend}{
+This package uses RcppParallel in order to do multithreading computations. By default it uses the 'TBB' backend.
+If por any reason you want to change the backend to 'tinythread', you may use:
+\code{Sys.setenv(RCPP_PARALLEL_BACKEND = "tinythread")}. To configure back to 'TBB', use
+\code{Sys.setenv(RCPP_PARALLEL_BACKEND = "tbb")}.
+}
+
 \references{
 \itemize{
 \item Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All pairs similarity joins

@@ -1,7 +1,7 @@
+#include "math.h" // math first to fix OSX error
 #include "stamp.h"
 #include "fft.h"
 #include "mass.h"
-#include "math.h"
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
@@ -22,7 +22,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
                 bool progress) {
 
   bool partial = false;
-  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
+  int64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
   uint64_t query_size = query_ref.length();
   uint64_t matrix_profile_size = data_size - window_size + 1;
@@ -48,7 +48,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   query[is_infinite(query)] = 0;
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, R_NegInf);
+  IntegerVector profile_index(matrix_profile_size, -1);
   List pre = mass_pre_rcpp(data, query, window_size);
 
   IntegerVector order = Range(0, num_queries - 1);
@@ -70,8 +70,8 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
       // apply exclusion zone
       if (exclusion_zone > 0) {
-        uint64_t exc_st = MAX(0, (int32_t)(i - exclusion_zone));
-        uint64_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
+        int64_t exc_st = MAX(0, (i - exclusion_zone));
+        int64_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
         IntegerVector dp_range = Range(exc_st, exc_ed);
         distance_profile[dp_range] = R_PosInf;
       }
@@ -261,7 +261,7 @@ List stamp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
   query[is_infinite(query)] = 0;
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, R_NegInf);
+  IntegerVector profile_index(matrix_profile_size, -1);
   List pre = mass_pre_rcpp(data, query, window_size);
 
   uint64_t k = set_k_rcpp(window_size, data_size, window_size);
