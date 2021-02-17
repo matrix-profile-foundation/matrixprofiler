@@ -80,7 +80,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">matrixprofiler</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.3.9000</span>
       </span>
     </div>
 
@@ -157,7 +157,9 @@
 
 <span class='fu'>movmean_std</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>window_size</span>, rcpp <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
-<span class='fu'>muinvn</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>window_size</span>, rcpp <span class='op'>=</span> <span class='cn'>TRUE</span>, n_workers <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span></pre>
+<span class='fu'>muinvn</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>window_size</span>, rcpp <span class='op'>=</span> <span class='cn'>TRUE</span>, n_workers <span class='op'>=</span> <span class='fl'>1</span><span class='op'>)</span>
+
+<span class='fu'>zero_crossing</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>window_size</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -199,6 +201,7 @@ that may or not be slower.</p></td>
 <p><code>mov_std()</code> returns a <code>vector</code> with moving <code>sd</code>.</p>
 <p><code>movmean_std()</code> returns a <code>list</code> with <code>vectors</code> of the moving <code>avg</code>, <code>sd</code>, <code>sig</code>, <code>sum</code> and <code>sqrsum</code>.</p>
 <p><code>muinvn()</code> returns a <code>list</code> with <code>vectors</code> of moving <code>avg</code> and <code>sig</code>.</p>
+<p><code>zero_crossing()</code> returns a <code>vector</code> of times the data crossed the 'zero' line inside a rolling window.</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p>Some functions may use different algorithms to compute the results.
@@ -223,14 +226,15 @@ function used by <code><a href='stamp.html'>mpx()</a></code>. It returns the <co
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_mean</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; &lt;simpleError in movsum_ogita_rcpp(data, window_size): object '_matrixprofiler_movsum_ogita_rcpp' not found&gt;</div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_var</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; &lt;simpleError in movvar_rcpp(data, window_size): object '_matrixprofiler_movvar_rcpp' not found&gt;</div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_sum</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; &lt;simpleError in movsum_ogita_rcpp(data, window_size): object '_matrixprofiler_movsum_ogita_rcpp' not found&gt;</div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_max</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; &lt;simpleError in movmax_rcpp(data, window_size): object '_matrixprofiler_movmax_rcpp' not found&gt;</div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_min</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; &lt;simpleError in movmin_rcpp(data, window_size): object '_matrixprofiler_movmin_rcpp' not found&gt;</div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_std</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; &lt;simpleError in movstd_rcpp(data, window_size): object '_matrixprofiler_movstd_rcpp' not found&gt;</div><div class='output co'>#&gt; <span class='error'>Error in mov_std(motifs_discords_small, 50): object 'data_sd' not found</span></div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>movmean_std</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span class='error'>Error in movmean_std_rcpp(data, window_size): object '_matrixprofiler_movmean_std_rcpp' not found</span></div><div class='input'><span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>muinvn</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
-</div><div class='output co'>#&gt; <span class='error'>Error in muinvn_rcpp(data, window_size): object '_matrixprofiler_muinvn_rcpp' not found</span></div></pre>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_var</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_sum</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_max</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_min</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>mov_std</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>movmean_std</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>mov</span> <span class='op'>&lt;-</span> <span class='fu'>muinvn</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+<span class='va'>zero_cross</span> <span class='op'>&lt;-</span> <span class='fu'>zero_crossing</span><span class='op'>(</span><span class='va'>motifs_discords_small</span>, <span class='fl'>50</span><span class='op'>)</span>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

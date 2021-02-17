@@ -81,7 +81,7 @@ Matrix Profile computation and what are the data mining process we can do using 
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">matrixprofiler</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.3.9000</span>
       </span>
     </div>
 
@@ -138,6 +138,12 @@ Matrix Profile computation and what are the data mining process we can do using 
 versatility, simplicity and scalability. In particular it has implications for time series motif discovery, time
 series joins, shapelet discovery (classification), density estimation, semantic segmentation, visualization, rule
 discovery, clustering etc.</p>
+    <h2 class="hasAnchor" id="parallel-backend"><a class="anchor" href="#parallel-backend"></a>Parallel backend</h2>
+
+    <p>This package uses RcppParallel in order to do multithreading computations. By default it uses the 'TBB' backend.
+If por any reason you want to change the backend to 'tinythread', you may use:
+<code><a href='https://rdrr.io/r/base/Sys.setenv.html'>Sys.setenv(RCPP_PARALLEL_BACKEND = "tinythread")</a></code>. To configure back to 'TBB', use
+<code><a href='https://rdrr.io/r/base/Sys.setenv.html'>Sys.setenv(RCPP_PARALLEL_BACKEND = "tbb")</a></code>.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     
