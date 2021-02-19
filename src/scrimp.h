@@ -11,5 +11,9 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
                  double pre_scrimp = 0.25, bool progress = false);
 List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
                           double ez = 0.5, bool progress = false);
+List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
+                   bool progress = false);
+// List scrimpab_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
+//                    bool progress = false);
 
 #endif // __SCRIMP__

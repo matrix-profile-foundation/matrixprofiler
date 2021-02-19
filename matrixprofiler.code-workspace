@@ -150,7 +150,8 @@
     "todo-tree.tree.scanMode": "workspace",
     "todo-tree.tree.disableCompactFolders": true,
     "todo-tree.filtering.excludeGlobs": [
-      "**/renv/library/**"
+      "**/renv/library/**",
+      "**/.Rproj.user/**"
     ],
     "cSpell.words": [
       "Actionability",

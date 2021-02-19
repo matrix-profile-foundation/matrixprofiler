@@ -64,7 +64,7 @@ You can find the current `tsmp` package here: https://CRAN.R-project.org/package
 install.packages("matrixprofiler")
 # Or the development version from GitHub:
 # install.packages("devtools")
-devtools::install_github("matrix-profile-foundation/matrixprofiler")
+devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
 ```
 
 ## Currently available Features
@@ -137,7 +137,7 @@ Available at [RPubs](https://rpubs.com/franzbischoff/matrixprofiler).
 <center>
 
 ```{r dependency_plot, echo = FALSE, fig.width = 5, fig.height = 5, message = FALSE, warning = FALSE, fig.path = "man/figures/"}
-source("https://gist.githubusercontent.com/franzbischoff/3b83243dfdfa73e459935112f3f783e3/raw/239548243f984843b3a87d8cc82f99395a8ed26e/plot_dependencies.R")
+source("https://gist.githubusercontent.com/franzbischoff/3b83243dfdfa73e459935112f3f783e3/raw/239548243f984843b3a87d8cc82f99395a8ed26e/plot_dependencies.R") # nolint
 plot_dependencies()
 ```
 

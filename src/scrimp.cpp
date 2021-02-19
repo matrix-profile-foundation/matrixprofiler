@@ -1,6 +1,7 @@
 #include "math.h" // math first to fix OSX error
 #include "scrimp.h"
 #include "mass.h"
+#include "windowfunc.h"
 #include <numeric>
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
@@ -438,4 +439,179 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
   return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
                        Rcpp::Named("profile_index") = profile_index + 1, Rcpp::Named("partial") = partial,
                        Rcpp::Named("ez") = ez));
+}
+
+// [[Rcpp::export]]
+List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, bool progress) {
+  // double s_size = R_PosInf;
+  bool partial = false;
+  uint32_t data_size = data_ref.length();
+  uint32_t query_size = query_ref.length();
+
+  uint32_t mmpa_size = data_size - window_size + 1;
+  uint32_t mmpb_size = query_size - window_size + 1;
+
+  // TODO: check skip position (DBL_EPSILON, etc)
+  LogicalVector skip_location(mmpa_size, 0);
+
+  for (uint64_t i = 0; i < mmpa_size; i++) {
+    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    if (any(is_na(range) | is_infinite(range))) {
+      skip_location[i] = TRUE;
+    }
+  }
+
+  NumericVector data = data_ref;
+  NumericVector query = query_ref;
+
+  data[is_na(data)] = 0;
+  data[is_infinite(data)] = 0;
+  query[is_na(query)] = 0;
+  query[is_infinite(query)] = 0;
+
+  NumericVector mmpa(mmpa_size, R_PosInf);
+  IntegerVector mpia(mmpa_size, -1);
+  NumericVector mmpb(mmpb_size, R_PosInf);
+  IntegerVector mpib(mmpb_size, -1);
+
+  IntegerVector orig_index = Range(0, mmpa_size - 1);
+
+  List dd = movmean_std_rcpp(data, window_size);
+  List qq = movmean_std_rcpp(query, window_size);
+
+  NumericVector data_mean = dd["avg"];
+  NumericVector data_sd = dd["sd"];
+  NumericVector query_mean = qq["avg"];
+  NumericVector query_sd = qq["sd"];
+
+  Progress p(orig_index.size() * 2 - 2, progress);
+
+  try {
+    //// SCRIMP ----
+
+    IntegerVector compute_order = orig_index[orig_index > 1];
+
+    NumericVector curlastz(mmpb_size);
+    NumericVector curdistance(mmpb_size);
+    NumericVector dist1(mmpb_size, R_PosInf);
+    NumericVector dist2(mmpb_size, R_PosInf);
+
+    int64_t j = 1;
+    for (int64_t &&i : compute_order) {
+
+      RcppThread::checkUserInterrupt();
+      p.increment();
+
+      curlastz[i] = sum(data[Range(0, window_size - 1)] * query[Range(i, i + window_size - 1)]);
+
+      if (i < (mmpb_size - 1)) {
+        curlastz[Range(i + 1, mmpb_size - 1)] =
+            (NumericVector)cumsum(data[Range(window_size, data_size - i - 1)] *
+                                      query[Range(i + window_size, query_size - 1)] -
+                                  data[Range(0, mmpb_size - i - 2)] * query[Range(i, mmpb_size - 2)]) +
+            curlastz[i];
+      }
+      curdistance[Range(i, mmpb_size - 1)] =
+          2 * (window_size - (curlastz[Range(i, mmpb_size - 1)] - window_size * query_mean[Range(i, mmpb_size - 1)] *
+                                                                      data_mean[Range(0, mmpb_size - i - 1)]) /
+                                 (query_sd[Range(i, mmpb_size - 1)] * data_sd[Range(0, mmpb_size - i - 1)]));
+
+      LogicalVector cd = (curdistance < 0);
+
+      if (sum(as<IntegerVector>(cd)) > 0) {
+        Rcout << "Debug: curdistance < 0" << std::endl;
+      }
+
+      curdistance[cd] = 0;
+
+      dist1[::seq(0, i - 1)] = R_PosInf;
+      dist1[::seq(i, mmpb_size - 1)] = curdistance[::seq(i, mmpb_size - 1)];
+      LogicalVector loc1 = dist1 < mmpb;
+      mmpb[loc1] = dist1[loc1];
+      mpib[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
+
+      dist2[::seq(0, mmpb_size - i - 1)] = curdistance[::seq(i, mmpb_size - 1)];
+      dist2[::seq(mmpb_size - i, mmpb_size - 1)] = R_PosInf;
+      LogicalVector loc2 = dist2 < mmpa;
+      mmpa[loc2] = dist2[loc2];
+      mpia[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
+
+      j++;
+    }
+
+  } catch (RcppThread::UserInterruptException &e) {
+    partial = true;
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
+  } catch (...) {
+    ::Rf_error("c++ exception (unknown reason)");
+  }
+
+  try {
+    //// SCRIMP ----
+
+    IntegerVector compute_order = orig_index[orig_index > 1];
+
+    NumericVector curlastz(mmpa_size);
+    NumericVector curdistance(mmpa_size);
+    NumericVector dist1(mmpa_size, R_PosInf);
+    NumericVector dist2(mmpa_size, R_PosInf);
+
+    int64_t j = 1;
+    for (int64_t &&i : compute_order) {
+
+      RcppThread::checkUserInterrupt();
+      p.increment();
+
+      curlastz[i] = sum(query[Range(0, window_size - 1)] * data[Range(i, i + window_size - 1)]);
+
+      if (i < (mmpa_size - 1)) {
+        curlastz[Range(i + 1, mmpa_size - 1)] =
+            (NumericVector)cumsum(query[Range(window_size, data_size - i - 1)] *
+                                      data[Range(i + window_size, query_size - 1)] -
+                                  query[Range(0, mmpa_size - i - 2)] * data[Range(i, mmpa_size - 2)]) +
+            curlastz[i];
+      }
+      curdistance[Range(i, mmpa_size - 1)] =
+          2 * (window_size - (curlastz[Range(i, mmpa_size - 1)] - window_size * data_mean[Range(i, mmpa_size - 1)] *
+                                                                      query_mean[Range(0, mmpa_size - i - 1)]) /
+                                 (data_sd[Range(i, mmpa_size - 1)] * query_sd[Range(0, mmpa_size - i - 1)]));
+
+      LogicalVector cd = (curdistance < 0);
+
+      if (sum(as<IntegerVector>(cd)) > 0) {
+        Rcout << "Debug: curdistance < 0" << std::endl;
+      }
+
+      curdistance[cd] = 0;
+
+      dist1[::seq(0, i - 1)] = R_PosInf;
+      dist1[::seq(i, mmpa_size - 1)] = curdistance[::seq(i, mmpa_size - 1)];
+      LogicalVector loc1 = dist1 < mmpa;
+      mmpa[loc1] = dist1[loc1];
+      mpia[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
+
+      dist2[::seq(0, mmpa_size - i - 1)] = curdistance[::seq(i, mmpa_size - 1)];
+      dist2[::seq(mmpa_size - i, mmpa_size - 1)] = R_PosInf;
+      LogicalVector loc2 = dist2 < mmpb;
+      mmpb[loc2] = dist2[loc2];
+      mpib[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
+
+      j++;
+    }
+
+  } catch (RcppThread::UserInterruptException &e) {
+    partial = true;
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
+  } catch (...) {
+    ::Rf_error("c++ exception (unknown reason)");
+  }
+
+  mmpa = sqrt(mmpa);
+  mmpb = sqrt(mmpb);
+  mpia = mpia + 1;
+  mpib = mpib + 1;
+
+  return (List::create(Rcpp::Named("matrix_profile") = mmpa, Rcpp::Named("profile_index") = mpia,
+                       Rcpp::Named("mpb") = mmpb, Rcpp::Named("pib") = mpib, Rcpp::Named("partial") = partial,
+                       Rcpp::Named("ez") = 0));
 }
