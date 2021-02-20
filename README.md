@@ -1,7 +1,7 @@
 README
 ================
 Francisco Bischoff
-\- 17 Feb 2021
+\- 20 Feb 2021
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -63,7 +63,7 @@ You can find the current `tsmp` package here:
 install.packages("matrixprofiler")
 # Or the development version from GitHub:
 # install.packages("devtools")
-devtools::install_github("matrix-profile-foundation/matrixprofiler")
+devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
 ```
 
 ## Currently available Features

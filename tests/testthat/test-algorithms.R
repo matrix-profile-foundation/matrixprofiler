@@ -20,7 +20,7 @@ if (!testthat:::on_cran()) {
     progress = FALSE
   )
   scrimp_res_par <- scrimp(
-    data = motifs_discords_small, window_size = 150, exclusion_zone = 0.5,
+    data = motifs_discords_small, window_size = 150, exclusion_zone = 0.5, pre_scrimp = 0,
     n_workers = 2, progress = FALSE
   )
   mpx_res <- mpx(

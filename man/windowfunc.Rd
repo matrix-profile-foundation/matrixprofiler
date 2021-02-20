@@ -41,7 +41,7 @@ mov_std(data, window_size, rcpp = TRUE)
 
 movmean_std(data, window_size, rcpp = TRUE)
 
-muinvn(data, window_size, rcpp = TRUE, n_workers = 1)
+muinvn(data, window_size, n_workers = 1)
 
 zero_crossing(data, window_size)
 }

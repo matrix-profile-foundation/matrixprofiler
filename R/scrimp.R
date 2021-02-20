@@ -15,7 +15,8 @@
 #' @order 3
 #' @examples
 #' mp <- scrimp(motifs_discords_small, 50)
-scrimp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE) {
+scrimp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1.0, pre_scrimp = 0.25,
+                   n_workers = 1, progress = TRUE) {
 
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
@@ -74,6 +75,7 @@ scrimp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_work
             data,
             window_size,
             ez,
+            s_size,
             as.logical(progress)
           )
           RcppParallel::setThreadOptions(numThreads = p)
@@ -83,7 +85,8 @@ scrimp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_work
             data,
             window_size,
             ez,
-            0.25,
+            s_size,
+            pre_scrimp,
             as.logical(progress)
           )
         }

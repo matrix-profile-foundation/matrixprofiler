@@ -144,15 +144,8 @@
     "todo-tree.tree.showScanModeButton": true,
     "todo-tree.general.enableFileWatcher": true,
     "todo-tree.general.statusBar": "tags",
-    "todo-tree.highlights.useColourScheme": true,
-    "todo-tree.ripgrep.ripgrep": "C:\\ProgramData\\chocolatey\\bin\\rg",
-    "todo-tree.tree.buttons.export": true,
     "todo-tree.tree.scanMode": "workspace",
     "todo-tree.tree.disableCompactFolders": true,
-    "todo-tree.filtering.excludeGlobs": [
-      "**/renv/library/**",
-      "**/.Rproj.user/**"
-    ],
     "cSpell.words": [
       "Actionability",
       "Bischoff",
@@ -263,6 +256,8 @@
       "matrixprofile",
       "maxf",
       "maxp",
+      "mmpa",
+      "mmpb",
       "mmpi",
       "mov",
       "movmax",
@@ -271,6 +266,8 @@
       "movstd",
       "movsum",
       "movvar",
+      "mpia",
+      "mpib",
       "mpip",
       "mpx",
       "mpxab",
@@ -289,6 +286,7 @@
       "nspn",
       "ntot",
       "ogita",
+      "orderb",
       "owlpy",
       "pmaxf",
       "pmaxp",
@@ -302,6 +300,7 @@
       "rdname",
       "rpre",
       "scalability",
+      "scrimpab",
       "setenv",
       "shapelet",
       "shapelets",
@@ -346,5 +345,16 @@
       "rmd",
       "xml"
     ],
+    "todo-tree.filtering.includeGlobs": [
+      "**/src/**",
+      "**/R/**",
+      "**/tests/**"
+    ],
+    "todo-tree.filtering.useBuiltInExcludes": "file and search excludes",
+    "todo-tree.highlights.useColourScheme": true,
+    "todo-tree.tree.expanded": true,
+    "todo-tree.tree.buttons.export": true,
+    "testing.enableProblemDiagnostics": true,
+    "RTestAdapter.RscriptPath": "C:\\Program Files\\R\\R-4.0.3\\bin\\RScript.exe"
   }
 }

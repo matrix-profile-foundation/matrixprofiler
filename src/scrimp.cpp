@@ -20,15 +20,13 @@ using namespace RcppParallel;
 
 // [[Rcpp::export]]
 List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                 double pre_scrimp, bool progress) {
-  // double s_size = R_PosInf;
+                 double s_size, double pre_scrimp, bool progress) {
+
   bool partial = false;
   uint32_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint32_t data_size = data_ref.length();
-  // uint32_t query_size = query_ref.length();
 
   uint32_t matrix_profile_size = data_size - window_size + 1;
-  // uint32_t num_queries = query_size - window_size + 1;
 
   // TODO: check skip position (DBL_EPSILON, etc)
   LogicalVector skip_location(matrix_profile_size, 0);
@@ -188,7 +186,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
         new_idxs = as<IntegerVector>(orig_index[(update_pos2 + beginidx + idx_diff)]) - idx_diff;
         profile_index[(update_pos2 + beginidx + idx_diff)] = new_idxs;
 
-        j = j + 1;
+        j++;
       }
     }
 
@@ -203,7 +201,15 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     Progress p(compute_order.size(), progress);
 
-    int64_t j = 1;
+    std::random_shuffle(compute_order.begin(), compute_order.end());
+
+    uint64_t stop = 0;
+
+    if (s_size < 1.0) {
+      stop = round(compute_order.size() * s_size + DBL_EPSILON);
+    }
+
+    uint64_t j = 1;
     for (int64_t &&i : compute_order) {
 
       RcppThread::checkUserInterrupt();
@@ -247,6 +253,10 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
       matrix_profile[loc2] = dist2[loc2];
       profile_index[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
 
+      if (stop > 0 && j >= stop) {
+        partial = true;
+        break;
+      }
       j++;
     }
 
@@ -383,7 +393,7 @@ struct ScrimpWorker : public Worker {
 
 // [[Rcpp::export]]
 List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                          bool progress) {
+                          double s_size, bool progress) {
   uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t data_size = data_ref.length();
   // uint64_t query_size = query_ref.length();
@@ -442,7 +452,8 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
 }
 
 // [[Rcpp::export]]
-List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, bool progress) {
+List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double s_size,
+                   bool progress) {
   // double s_size = R_PosInf;
   bool partial = false;
   uint32_t data_size = data_ref.length();

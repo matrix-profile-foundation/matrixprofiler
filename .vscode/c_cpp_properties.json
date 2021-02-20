@@ -13,7 +13,8 @@
       "defines": [
         "UNICODE",
         "_UNICODE",
-        "RCPP_PARALLEL_USE_TBB=1"
+        "RCPP_PARALLEL_USE_TBB=1",
+        "NDEBUG"
       ],
       "compilerPath": "C:/rtools40/mingw64/bin/g++.exe",
       "windowsSdkVersion": "10.0.18362.0",
