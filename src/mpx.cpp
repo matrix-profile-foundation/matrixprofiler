@@ -72,7 +72,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
 
     Progress p(100, progress);
 
-    std::random_shuffle(compute_order.begin(), compute_order.end());
+    compute_order = sample(compute_order, compute_order.size());
 
     uint64_t stop = 0;
 
@@ -203,7 +203,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
 
     NumericVector ww = (query_ref[Range(0, window_size - 1)] - mmu_b[0]);
     IntegerVector compute_order = Range(exclusion_zone, profile_len_a - 1);
-    std::random_shuffle(compute_order.begin(), compute_order.end());
+    compute_order = sample(compute_order, compute_order.size());
 
     uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * exclusion_zone) /
                                  100); // added double inside sqrt to avoid ambiguity on Solaris
@@ -243,7 +243,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
       //// BA ----
       ww = (data_ref[Range(0, window_size - 1)] - mmu_a[0]);
       compute_order = Range(exclusion_zone, profile_len_b - 1);
-      std::random_shuffle(compute_order.begin(), compute_order.end());
+      compute_order = sample(compute_order, compute_order.size());
 
       for (int32_t diag : compute_order) {
 
@@ -425,7 +425,7 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, 
     NumericVector ww = (data_ref[Range(0, window_size - 1)] - mu[0]);
 
     IntegerVector compute_order = Range(exclusion_zone, profile_len);
-    std::random_shuffle(compute_order.begin(), compute_order.end());
+    compute_order = sample(compute_order, compute_order.size());
 
     uint64_t num_progress = (profile_len - exclusion_zone) / 100;
 
@@ -677,9 +677,9 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     Progress p(100, progress);
 
     IntegerVector compute_ordera = Range(0, profile_len_a);
-    std::random_shuffle(compute_ordera.begin(), compute_ordera.end());
+    compute_ordera = sample(compute_ordera, compute_ordera.size());
     IntegerVector compute_orderb = Range(0, profile_len_b);
-    std::random_shuffle(compute_orderb.begin(), compute_orderb.end());
+    compute_orderb = sample(compute_orderb, compute_orderb.size());
 
     MatrixProfilePAB matrix_profile(data_ref, query_ref, window_size, df_a, df_b, dg_a, dg_b, mu_a, mu_b, sig_a, sig_b,
                                     ww_a, ww_b, compute_ordera, compute_orderb, &p, num_progress, mp_a, mp_b, mpi_a,

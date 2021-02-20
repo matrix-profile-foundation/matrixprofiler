@@ -201,7 +201,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     Progress p(compute_order.size(), progress);
 
-    std::random_shuffle(compute_order.begin(), compute_order.end());
+    compute_order = sample(compute_order, compute_order.size());
 
     uint64_t stop = 0;
 

@@ -57,7 +57,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   Progress p(num_queries, progress);
 
-  std::random_shuffle(order.begin(), order.end());
+  order = sample(order, order.size());
 
   uint64_t stop = 0;
 
