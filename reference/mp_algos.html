@@ -139,6 +139,7 @@ MPX is by far the fastest implementation with the caveat that is not anytime as 
   <span class='va'>window_size</span>,
   query <span class='op'>=</span> <span class='cn'>NULL</span>,
   exclusion_zone <span class='op'>=</span> <span class='fl'>0.5</span>,
+  s_size <span class='op'>=</span> <span class='fl'>1</span>,
   n_workers <span class='op'>=</span> <span class='fl'>1</span>,
   progress <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span>
@@ -152,13 +153,23 @@ MPX is by far the fastest implementation with the caveat that is not anytime as 
   progress <span class='op'>=</span> <span class='cn'>TRUE</span>
 <span class='op'>)</span>
 
-<span class='fu'>scrimp</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>window_size</span>, exclusion_zone <span class='op'>=</span> <span class='fl'>0.5</span>, n_workers <span class='op'>=</span> <span class='fl'>1</span>, progress <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+<span class='fu'>scrimp</span><span class='op'>(</span>
+  <span class='va'>data</span>,
+  <span class='va'>window_size</span>,
+  query <span class='op'>=</span> <span class='cn'>NULL</span>,
+  exclusion_zone <span class='op'>=</span> <span class='fl'>0.5</span>,
+  s_size <span class='op'>=</span> <span class='fl'>1</span>,
+  pre_scrimp <span class='op'>=</span> <span class='fl'>0.25</span>,
+  n_workers <span class='op'>=</span> <span class='fl'>1</span>,
+  progress <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span>
 
 <span class='fu'>mpx</span><span class='op'>(</span>
   <span class='va'>data</span>,
   <span class='va'>window_size</span>,
   query <span class='op'>=</span> <span class='cn'>NULL</span>,
   exclusion_zone <span class='op'>=</span> <span class='fl'>0.5</span>,
+  s_size <span class='op'>=</span> <span class='fl'>1</span>,
   idxs <span class='op'>=</span> <span class='cn'>TRUE</span>,
   distance <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"euclidean"</span>, <span class='st'>"pearson"</span><span class='op'>)</span>,
   n_workers <span class='op'>=</span> <span class='fl'>1</span>,
@@ -187,6 +198,11 @@ Default is <code>NULL</code> (See details).</p></td>
 trivial matches. Default is <code>0.5</code>, i.e., half of the <code>window_size</code>.</p></td>
     </tr>
     <tr>
+      <th>s_size</th>
+      <td><p>A numeric. Used on anytime algorithms (stamp, scrimp, mpx) if only part of the computation is needed.
+Default is <code>1.0</code> (means 100%).</p></td>
+    </tr>
+    <tr>
       <th>n_workers</th>
       <td><p>An integer. The number of threads using for computing. Defaults to <code>1</code>.</p></td>
     </tr>
@@ -194,6 +210,11 @@ trivial matches. Default is <code>0.5</code>, i.e., half of the <code>window_siz
       <th>progress</th>
       <td><p>A logical. If <code>TRUE</code> (the default) will show a progress bar. Useful for long computations. (See
 details)</p></td>
+    </tr>
+    <tr>
+      <th>pre_scrimp</th>
+      <td><p>A numeric. If not zero, pre_scrimp is computed, using a fraction of the data. Default is <code>0.25</code>.
+This parameter is ignored when using multithread or AB-join.</p></td>
     </tr>
     <tr>
       <th>idxs</th>
@@ -257,7 +278,7 @@ on Ogita's work for better precision computing mean and standard deviation (part
 
     <h2 class="hasAnchor" id="this-document"><a class="anchor" href="#this-document"></a>This document</h2>
 
-    <p>Last updated on 2021-02-16 using R version 4.0.3.</p>
+    <p>Last updated on 2021-02-20 using R version 4.0.3.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
     
