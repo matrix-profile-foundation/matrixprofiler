@@ -159,7 +159,7 @@ NumericVector movsum_ogita_rcpp(const NumericVector data, uint32_t window_size) 
 
   res[0] = accum + resid;
 
-  for (uint32_t i = window_size; i < data.length(); i++) {
+  for (int64_t i = window_size; i < data.length(); i++) {
     double m = data[i - window_size];
     double n = data[i];
     double p = accum - m;

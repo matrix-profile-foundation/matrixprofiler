@@ -18,8 +18,8 @@
 #'
 #' @return Returns the converted values
 #'
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 ed_corr <- function(x, w, rcpp = TRUE) {
   if (rcpp) {
     return(ed_corr_rcpp(x, w))
@@ -34,8 +34,8 @@ ed_corr <- function(x, w, rcpp = TRUE) {
 #'
 #' @return Returns the converted values
 #'
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 corr_ed <- function(x, w, rcpp = TRUE) {
   if (rcpp) {
     return(corr_ed_rcpp(x, w))
@@ -49,8 +49,8 @@ corr_ed <- function(x, w, rcpp = TRUE) {
 #' @inheritParams ed_corr
 #'
 #' @return the mode
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 
 mode <- function(x, rcpp = FALSE) {
   x <- as.integer(x)
@@ -73,8 +73,8 @@ mode <- function(x, rcpp = FALSE) {
 #'   or not be slower.
 #'
 #' @return Returns the corrected standard deviation from sample to population
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 #'
 
 std <- function(data, na.rm = FALSE, rcpp = TRUE) { # nolint
@@ -98,8 +98,7 @@ std <- function(data, na.rm = FALSE, rcpp = TRUE) { # nolint
 #' @inheritParams std
 #'
 #' @return Returns the normalized data
-#' @keywords internal
-#' @noRd
+#' @export
 #'
 znorm <- function(data, rcpp = TRUE) {
   # Rcpp is faster
@@ -128,8 +127,8 @@ znorm <- function(data, rcpp = TRUE) {
 #' @param data A `vector` or a column `matrix` of `numeric`.
 #'
 #' @return Returns the normalized data
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 #'
 normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
   if (rcpp) {
@@ -160,8 +159,8 @@ normalize <- function(data, min_lim = 0, max_lim = 1, rcpp = FALSE) {
 #' @param data a `vector` of `numeric`
 #'
 #' @return Returns the complexity index of the data provided (normally a subset)
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 #'
 complexity <- function(data) {
   return(sqrt(sum(diff(data)^2)))
@@ -176,8 +175,8 @@ complexity <- function(data) {
 #'   or not be slower.
 #'
 #' @return Returns a `vector` with the binary split indexes
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 
 binary_split <- function(n, rcpp = TRUE) {
   if (rcpp) {
@@ -241,8 +240,8 @@ binary_split <- function(n, rcpp = TRUE) {
 #' @param p factor of PAA reduction (2 == half of size)
 #'
 #' @return PAA result
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 
 paa <- function(data, p) {
   # Rcpp ?
@@ -274,8 +273,8 @@ paa <- function(data, p) {
 #' @param data a `vector` of `numeric`
 #' @param p factor of PAA reduction (2 == half of size)
 #'
-#' @keywords internal
-#' @noRd
+#' @export
+#' @rdname math_tools
 
 ipaa <- function(data, p) {
   # Rcpp ?
