@@ -35,10 +35,4 @@ if (!testthat:::on_cran()) {
     split <- binary_split(50)
     expect_snapshot_value(split, style = "json2")
   })
-  test_that("paa", {
-    paa_obj <- paa(motifs_discords_small, 5)
-    expect_snapshot_value(paa_obj, style = "serialize")
-    ipaa_obj <- ipaa(paa_obj, 5)
-    expect_snapshot_value(ipaa_obj, style = "serialize")
-  })
 }

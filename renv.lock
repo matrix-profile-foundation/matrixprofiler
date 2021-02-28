@@ -39,10 +39,10 @@
     },
     "RcppParallel": {
       "Package": "RcppParallel",
-      "Version": "5.0.2",
+      "Version": "5.0.3",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "551d50addb18c7b99637aa377a25afc8"
+      "Hash": "157a1155dc1bdbb6aba8dad88c9ef460"
     },
     "RcppProgress": {
       "Package": "RcppProgress",
@@ -123,10 +123,10 @@
     },
     "cli": {
       "Package": "cli",
-      "Version": "2.3.0",
+      "Version": "2.3.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "26fb4f0871c8e5b84d77f6dc22f2ee0a"
+      "Hash": "3e3f28efcadfda442cd18651fbcbbecf"
     },
     "clipr": {
       "Package": "clipr",
@@ -408,10 +408,10 @@
     },
     "pillar": {
       "Package": "pillar",
-      "Version": "1.4.7",
+      "Version": "1.5.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "3b3dd89b2ee115a8b54e93a34cd546b4"
+      "Hash": "39a778e4e487ded8b1bf5bb617c567b3"
     },
     "pkgbuild": {
       "Package": "pkgbuild",
@@ -429,10 +429,10 @@
     },
     "pkgload": {
       "Package": "pkgload",
-      "Version": "1.1.0",
+      "Version": "1.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "b6b150cd4709e0c0c9b5d51ac4376282"
+      "Hash": "cb57de933545960a86f03513e4bd2911"
     },
     "praise": {
       "Package": "praise",
@@ -465,15 +465,14 @@
     "prompt": {
       "Package": "prompt",
       "Version": "1.0.0",
-      "Source": "GitHub",
-      "Remotes": "gaborcsardi/httrmock",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "prompt",
+      "Source": "Local",
+      "RemoteType": "local",
       "RemoteUsername": "gaborcsardi",
+      "RemoteRepo": "prompt",
       "RemoteRef": "HEAD",
-      "RemoteSha": "b332c42631c16eb8701f3efbe6efd5794a922ab4",
-      "Hash": "4408242ae62656160b1db143edf478ad"
+      "RemoteSha": "2b04d4a1da146d439e82f5e396e1b7975571e94b",
+      "RemoteHost": "api.github.com",
+      "Hash": "1f69cb5639f729b004dc7d9b1b2a14f8"
     },
     "ps": {
       "Package": "ps",
@@ -519,10 +518,10 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "0.12.5",
+      "Version": "0.13.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "5c0cdb37f063c58cdab3c7e9fbb8bd2c"
+      "Hash": "9f10d9db5b50400c348920c5c603385e"
     },
     "rex": {
       "Package": "rex",
@@ -617,10 +616,10 @@
     },
     "tibble": {
       "Package": "tibble",
-      "Version": "3.0.6",
+      "Version": "3.1.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "9c6c10e594f32096ede0c7d373ccbddd"
+      "Hash": "4d894a114dbd4ecafeda5074e7c538e6"
     },
     "tinytex": {
       "Package": "tinytex",

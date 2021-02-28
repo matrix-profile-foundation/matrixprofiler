@@ -1,4 +1,7 @@
-try(silent(source(file.path(
+# nolint start
+source("renv/activate.R")
+
+a <- try(suppressWarnings(source(file.path(
   Sys.getenv(if (.Platform$OS.type == "windows") {
     "USERPROFILE"
   } else {
@@ -10,10 +13,8 @@ try(silent(source(file.path(
 silent = TRUE
 )
 
-source("renv/activate.R") # nolint
-
 if (interactive()) {
-  suppressMessages(require(testthat))
+  suppressMessages(suppressWarnings(require(testthat)))
   suppressMessages(require(devtools))
   suppressMessages(require(usethis))
   suppressMessages(require(conflicted))
@@ -41,3 +42,4 @@ if (interactive()) {
     })
   })
 }
+# nolint end
