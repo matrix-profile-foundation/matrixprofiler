@@ -1,9 +1,14 @@
 NEWS
 ================
 Francisco Bischoff
-\- 20 Feb 2021
+\- 28 Feb 2021
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+# matrixprofiler 0.1.4
+
+  - Dropped PAA algorithm
+  - Added some math helper functions
 
 # matrixprofiler 0.1.3
 

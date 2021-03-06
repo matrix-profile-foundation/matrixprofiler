@@ -25,12 +25,9 @@ That package will then import this as a dependency.
 
 - GNU make is a SystemRequirements.
 
-## Last CRAN comments
+## Current comments
 
-- Last known issue:
-  "runtime error: -inf is outside the range of representable values of type 'int'"
-
-  - Now I'm sure it's fixed
+- I see that last version was archived due to OSX bug on compiling cpp code. I wasn't warned about it, at least I didn't see any e-mail in my inbox. Nevertheless, the "bug" is known and I fixed it in this version. Already tested on rhubs.
 
 ## Old comments
 

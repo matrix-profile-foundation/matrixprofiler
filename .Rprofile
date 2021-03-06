@@ -13,6 +13,8 @@ a <- try(suppressWarnings(source(file.path(
 silent = TRUE
 )
 
+rm(a)
+
 if (interactive()) {
   suppressMessages(suppressWarnings(require(testthat)))
   suppressMessages(require(devtools))
