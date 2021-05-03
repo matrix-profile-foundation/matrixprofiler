@@ -2,6 +2,7 @@
 #include "stamp.h"
 #include "fft.h"
 #include "mass.h"
+#include <cfloat> // DBL_EPSILON when STRICT_R_HEADERS
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
