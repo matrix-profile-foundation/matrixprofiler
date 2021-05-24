@@ -4,7 +4,7 @@
       "name": "Rtools40-x64",
       "intelliSenseMode": "gcc-x64",
       "includePath": [
-        "C:/Program Files/R/R-4.0.3/include",
+        "C:/Program Files/R/R-4.0.5/include",
         "${workspaceFolder}/src",
         "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/Rcpp/include",
         "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/RcppParallel/include",
@@ -29,7 +29,7 @@
       "name": "Rtools40-x86",
       "intelliSenseMode": "gcc-x86",
       "includePath": [ // renv might be on i386-w64-mingw32 if R-32bits
-        "C:/Program Files/R/R-4.0.3/include",
+        "C:/Program Files/R/R-4.0.5/include",
         "${workspaceFolder}/src",
         "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/Rcpp/include",
         "${workspaceFolder}/renv/library/R-4.0/x86_64-w64-mingw32/RcppParallel/include",

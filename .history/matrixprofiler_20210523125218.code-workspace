@@ -306,8 +306,7 @@
       "**/logs/**": true,
       "**/R/RcppExports.R": true,
       "**/renv/library/**": true,
-      "**/tmp/**": true,
-      ".history": true
+      "**/tmp/**": true
     },
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
@@ -320,8 +319,7 @@
       "**/log/**": true,
       "**/logs/**": true,
       "**/renv/library/**": true,
-      "**/tmp/**": true,
-      ".history": true
+      "**/tmp/**": true
     },
     "r.alwaysUseActiveTerminal": true,
     "r.bracketedPaste": true,
