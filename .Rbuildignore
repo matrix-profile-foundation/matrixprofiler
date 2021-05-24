@@ -1,5 +1,6 @@
 ^renv$
 ^renv\.lock$
+^\.history$
 ^\.vscode$
 ^\.editorconfig$
 ^.*\.code-workspace$

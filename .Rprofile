@@ -3,21 +3,23 @@ source("renv/activate.R")
 
 if (Sys.getenv("CI") == "") { # not CI
 
-  suppressMessages(if (requireNamespace("languageserver")) {
-    a <- try(suppressWarnings(source(file.path(
-      Sys.getenv(if (.Platform$OS.type == "windows") {
-        "USERPROFILE"
-      } else {
-        "HOME"
-      }),
-      ".vscode-R",
-      "init.R"
-    ))),
-    silent = TRUE
-    )
+  if (Sys.getenv("RSTUDIO") == "") {
+    suppressMessages(if (requireNamespace("languageserver")) {
+      a <- try(suppressWarnings(source(file.path(
+        Sys.getenv(if (.Platform$OS.type == "windows") {
+          "USERPROFILE"
+        } else {
+          "HOME"
+        }),
+        ".vscode-R",
+        "init.R"
+      ))),
+      silent = TRUE
+      )
 
-    rm(a)
-  })
+      rm(a)
+    })
+  }
 
   if (interactive()) {
     options(

@@ -10,6 +10,7 @@ linters: with_defaults(open_curly_linter = NULL, T_and_F_symbol_linter, assignme
       unneeded_concatenation_linter)
 exclusions: list(
     "dev/*",
+    "**/renv/**",
     "R/RcppExports.R",
     "README.Rmd"
   )
