@@ -377,14 +377,14 @@ local({
     }
 
     # check for os-release files
-    for (file in c("/etc/os-release", "/usr/lib/os-release")) {
+    for (file in c("/etc/os-release", "/usr/lib/os-release")) { #nolint
       if (file.exists(file)) {
         return(renv_bootstrap_platform_os_via_os_release(file, sysinfo))
       }
     }
 
     # check for redhat-release files
-    if (file.exists("/etc/redhat-release")) {
+    if (file.exists("/etc/redhat-release")) { #nolint
       return(renv_bootstrap_platform_os_via_redhat_release())
     }
 
@@ -434,7 +434,7 @@ local({
   renv_bootstrap_platform_os_via_redhat_release <- function() {
 
     # read /etc/redhat-release
-    contents <- readLines("/etc/redhat-release", warn = FALSE)
+    contents <- readLines("/etc/redhat-release", warn = FALSE) #nolint
 
     # infer id
     id <- if (grepl("centos", contents, ignore.case = TRUE)) {
