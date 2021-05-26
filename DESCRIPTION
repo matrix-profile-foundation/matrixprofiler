@@ -1,7 +1,7 @@
 Type: Package
 Package: matrixprofiler
 Title: Matrix Profile for R
-Version: 0.1.4.9000
+Version: 0.1.5
 Authors@R:
     c(person(given = "Francisco",
              family = "Bischoff",

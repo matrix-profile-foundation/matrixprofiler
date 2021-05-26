@@ -1,53 +1,61 @@
-## Comments
+# CRAN Comments
 
-New package implementing the core functions of 'tsmp' package.
-That package will then import this as a dependency.
+## Comments for this version (0.1.5)
+
+Due to new R implementations, `Rcpp` package needs to make some changes and this package is one of the affected. The patch is to comply with the following [issue](https://github.com/RcppCore/Rcpp/issues/1158).
 
 ## Test environments
 
-- GitHub Actions (ubuntu-16.04): devel, release, oldrel
-- GitHub Actions (windows): release, oldrel
-- GitHub Actions (macos): release
-- rhub: all platforms (*nix, solaris, macos, windows, with gcc and clang), all ok,
-  except 'solaris-x86-patched-ods' in which a dependency fails, not this package.
-- Raspbian (armv7l-linux-gnueabihf, 32-bits): release
-- win-builder: devel, release, oldrel
+-   GitHub Actions (ubuntu-16.04): devel, release, oldrel
+-   GitHub Actions (windows): release, oldrel
+-   GitHub Actions (macos): release
+-   rhub: all platforms (*nix, solaris, macos, windows, with gcc and clang), all ok,
+  except:
+    -   `solaris-x86-patched-ods` in which a dependency fails, not this package.
+    -   `linux-x86_64-centos-epel`: not available: 'spelling'; found 'abort'; found 'printf'. I could not find why the code behaves like this on this distribution.
+    -   `ubuntu-rchk`: Bioconductor does not yet build and check packages for R version 4.2; see <https://bioconductor.org/install>. There is nothing in the package code that asks for R 4.2 version.
+-   Raspbian (armv7l-linux-gnueabihf, 32-bits): release
+-   win-builder: devel, release, oldrel
 
 ## R CMD check results
+
+> checking for GNU extensions in Makefiles ... NOTE \
+  GNU make is a SystemRequirements.
 
 `0 errors | 0 warnings | 1 notes`
 
 ## Downstream dependencies
 
-- No reverse dependencies yet
+-   No reverse dependencies yet
 
 ## Known Issues (a.k.a NOTES)
 
-- GNU make is a SystemRequirements.
+-   GNU make is a SystemRequirements.
 
 ## Current comments
 
-- I see that last version was archived due to OSX bug on compiling cpp code. I wasn't warned about it, at least I didn't see any e-mail in my inbox. Nevertheless, the "bug" is known and I fixed it in this version. Already tested on rhubs.
+-   None yet.
 
 ## Old comments
 
-- Please use only undirected quotation marks in the description text.
-  e.g. `tsmp` --> 'tsmp' (fixed)
+-   [x] I see that last version was archived due to OSX bug on compiling cpp code. I wasn't warned about it, at least I didn't see any e-mail in my inbox. Nevertheless, the "bug" is known and I fixed it in this version. Already tested on rhubs.
 
-- Please add \value to .Rd files regarding exported methods and explain
+-   [x] Please use only undirected quotation marks in the description text.
+  e.g. `tsmp` --> 'tsmp'
+
+-   [x] Please add \value to .Rd files regarding exported methods and explain
   the functions results in the documentation. Please write about the
   structure of the output (class) and also what the output means. (If a
   function does not return a value, please document that too, e.g.
   \value{No return value, called for side effects} or similar) (fixed, all functions has returns value explained)
 
-- Missing Rd-tags:
+-   [x] Missing Rd-tags:
          pipe.Rd: \value (dropped, will be keep in the 'tsmp' package, not this one)
          test_equal.Rd: \value (dropped, internal use only)
 
-- Please always add all authors, contributors and copyright holders in the
+-   [x] Please always add all authors, contributors and copyright holders in the
   Authors@R field with the appropriate roles.
   e.g.: Jarek Tuszynski (read below)
 
-  - Authors@R field gives persons with non-standard roles
-  - These non-standard roles where appropriately chosen using [MARC Code List for Relators](https://www.loc.gov/marc/relators/relaterm.html)
-
+    -   Authors@R field gives persons with non-standard roles
+    -   These non-standard roles where appropriately chosen using [MARC Code List for Relators](https://www.loc.gov/marc/relators/relaterm.html)

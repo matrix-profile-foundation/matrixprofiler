@@ -2,13 +2,13 @@ NEWS
 ================
 Francisco Bischoff
 
-25 mai 2021
+26 mai 2021
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
 ## matrixprofiler 0.1.5
 
--   Fixed `Rcpp` as specified by the PR \#15 from Dirk Eddelbuettel
+-   Fixed `Rcpp` as specified by the PR \#15 from Dirk @eddelbuettel
 
 ## matrixprofiler 0.1.4
 

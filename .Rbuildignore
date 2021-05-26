@@ -36,3 +36,4 @@
 \.clang-format
 ^Makefile$
 ^docs/_pkgdown\.yml$
+^.*\.tex$
