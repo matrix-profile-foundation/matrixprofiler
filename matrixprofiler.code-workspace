@@ -352,6 +352,9 @@
     "todo-tree.tree.disableCompactFolders": true,
     "todo-tree.tree.expanded": true,
     "todo-tree.tree.scanMode": "workspace",
-    "todo-tree.tree.showScanModeButton": true
+    "todo-tree.tree.showScanModeButton": true,
+    "markdownlint.ignore": [
+      "revdep/*.md"
+    ]
   }
 }

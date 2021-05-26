@@ -202,6 +202,7 @@
         "-I\"${workspaceFolder}/renv/library/R-4.0/${input:renv_arch}/RcppProgress/include\"",
         "-I\"${workspaceFolder}/renv/library/R-4.0/${input:renv_arch}/RcppThread/include\"",
         "-DRCPP_PARALLEL_USE_TBB=1",
+        "-DSTRICT_R_HEADERS",
         "-O2",
         "-Wall",
         "-mfpmath=sse",
