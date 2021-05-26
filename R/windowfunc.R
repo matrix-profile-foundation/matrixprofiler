@@ -75,8 +75,7 @@ mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", 
   "!DEBUG Computation"
   tryCatch(
     {
-      result <- switch(
-        type,
+      result <- switch(type,
         ogita = movsum_ogita_rcpp(data, window_size) / window_size,
         normal = movmean_rcpp(data, window_size),
         weighted = movmean_weighted_rcpp(data, window_size, eps),
@@ -124,8 +123,7 @@ mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   "!DEBUG Computation"
   tryCatch(
     {
-      result <- switch(
-        type,
+      result <- switch(type,
         ogita = movvar_rcpp(data, window_size),
         normal = movvar2_rcpp(data, window_size),
         weighted = movvar_weighted_rcpp(data, window_size, eps),
@@ -172,8 +170,7 @@ mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   "!DEBUG Computation"
   tryCatch(
     {
-      result <- switch(
-        type,
+      result <- switch(type,
         ogita = movsum_ogita_rcpp(data, window_size),
         normal = movsum_rcpp(data, window_size),
         weighted = movsum_weighted_rcpp(data, window_size, eps),

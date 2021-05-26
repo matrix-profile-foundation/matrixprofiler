@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CODECOV_TOKEN: '21b809ce-ca02-4af5-954f-0dcadb160d24'
     steps:
       - uses: actions/checkout@v2
       - name: Install cURL and others

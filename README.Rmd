@@ -1,8 +1,11 @@
 ---
 title: "README"
-author: "Francisco Bischoff"
-date: "`r format(Sys.Date(), '- %d %b %Y')`"
-output: github_document
+author: "Francisco Bischoff\n"
+date: "`r format(Sys.Date(), '%d %b %Y')`"
+output:
+  github_document:
+    md_extension: +blank_before_header
+    html_preview: false
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -11,13 +14,13 @@ output: github_document
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "man/figures/README-" # nolint
+  fig.path = "man/figures/README-"
 )
 ```
 
 <img src="man/figures/logo.png" align="right" style="float:right;"/>
 
-# Matrix Profile for R
+## Matrix Profile for R
 
 <!-- badges: start -->
 
@@ -31,12 +34,12 @@ knitr::opts_chunk$set(
 [![CodeQL](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg?branch=main)](https://github.com/github/codeql-action/)
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/matrix-profile-foundation/matrixprofiler.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/matrix-profile-foundation/matrixprofiler/context:cpp)
 
-[![CRAN version](http://www.r-pkg.org/badges/version/matrixprofiler)](https://cran.r-project.org/package=matrixprofiler)
+[![CRAN version](https://www.r-pkg.org/badges/version/matrixprofiler)](https://cran.r-project.org/package=matrixprofiler)
 [![CRAN Downloads](https://cranlogs.r-pkg.org/badges/matrixprofiler)](https://cran.r-project.org/package=matrixprofiler)
 
 <!-- badges: end -->
 
-## Overview
+### Overview
 
 R Functions implementing UCR Matrix Profile Algorithm (http://www.cs.ucr.edu/~eamonn/MatrixProfile.html).
 
@@ -57,17 +60,17 @@ This will not be covered here, as it is a `tsmp` purpose:
 
 You can find the current `tsmp` package here: https://CRAN.R-project.org/package=tsmp
 
-## Installation
+### Installation
 
 ```{r installation, gh-installation, eval = FALSE}
 # Install the released version from CRAN
 install.packages("matrixprofiler")
 # Or the development version from GitHub:
 # install.packages("devtools")
-devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
+devtools::install_github("matrix-profile-foundation/matrixprofiler")
 ```
 
-## Currently available Features
+### Currently available Features
 
 * STAMP (single and multi-thread versions)
 * STOMP (single and multi-thread versions)
@@ -81,7 +84,7 @@ devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
   * MASS extensions: ABS (Absolute Query and Data)
   * Window functions like mov_mean() and others.
 
-## On Roadmap
+### On Roadmap
 
 * STOMPi (On-line version)
 * Multivariate STOMP (mSTOMP)
@@ -92,7 +95,7 @@ devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
 * MASS extensions: QwG (Query with Gap)
 
 
-## Will stay on TSMP package
+### Will stay on TSMP package
 
 * Time Series Chains
 * Multivariate MOTIF Search (from mSTOMP)
@@ -105,7 +108,7 @@ devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
 * Time Series Snippets
 * Subsetting Matrix Profiles (`head()`, `tail()`, `[`, etc.)
 
-## Other projects with Matrix Profile
+### Other projects with Matrix Profile
 
 * Python: https://github.com/target/matrixprofile-ts
 * Python: https://github.com/ZiyaoWei/pyMatrixProfile
@@ -121,18 +124,18 @@ devtools::install_github("matrix-profile-foundation/matrixprofiler") # nolint
 * CUDA: https://github.com/zpzim/STOMPSelfJoin
 * CUDA: https://github.com/zpzim/SCAMP
 
-## Matrix Profile Foundation
+### Matrix Profile Foundation
 
 Our next step unifying the Matrix Profile implementation in several programming languages.
 
 Visit: [Matrix Profile Foundation](https://matrixprofile.org)
 
 
-## Benchmarks
+### Benchmarks
 
 Available at [RPubs](https://rpubs.com/franzbischoff/matrixprofiler).
 
-## Package dependencies
+### Package dependencies
 
 <center>
 
@@ -143,7 +146,7 @@ plot_dependencies()
 
 </center>
 
-## Code of Conduct
+### Code of Conduct
 
 Please note that the matrixprofiler project is released with a [Contributor Code of Conduct](https://contributor-covenant.org/version/2/0/CODE_OF_CONDUCT.html).
 By contributing to this project, you agree to abide by its terms.

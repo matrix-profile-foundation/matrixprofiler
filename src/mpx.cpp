@@ -1,6 +1,7 @@
 #include "math.h" // math first to fix OSX error
 #include "mpx.h"
 #include "windowfunc.h"
+#include <cfloat> // DBL_EPSILON when STRICT_R_HEADERS
 
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>

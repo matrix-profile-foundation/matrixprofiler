@@ -108,7 +108,6 @@
       "al",
       "algos",
       "avgsd",
-      "brace",
       "byrow",
       "codecov",
       "comining",
@@ -116,7 +115,6 @@
       "curlastz",
       "debugme",
       "dmean",
-      "dstrict",
       "eamonn",
       "edu",
       "ensozos",
@@ -126,7 +124,6 @@
       "getenv",
       "ggplot",
       "github",
-      "headers",
       "http",
       "https",
       "idxs",
@@ -138,13 +135,11 @@
       "kchanged",
       "khiva",
       "klim",
-      "knitr",
       "kotlin",
       "kspan",
       "kspnn",
       "lastz",
       "lifecycle",
-      "linter",
       "mSTOMP",
       "macOS",
       "matlab",
@@ -183,7 +178,6 @@
       "ogita",
       "orderb",
       "owlpy",
-      "paren",
       "pmaxf",
       "pmaxp",
       "por",
@@ -193,7 +187,6 @@
       "pyMatrixProfile",
       "qassert",
       "queryw",
-      "r",
       "rdname",
       "rnorm",
       "rpre",
@@ -217,7 +210,6 @@
       "tthread",
       "ucr",
       "unfactored",
-      "unnormalized",
       "www",
       "znorm",
       "zpzim"
@@ -314,8 +306,7 @@
       "**/logs/**": true,
       "**/R/RcppExports.R": true,
       "**/renv/library/**": true,
-      "**/tmp/**": true,
-      ".history": true
+      "**/tmp/**": true
     },
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
@@ -328,8 +319,7 @@
       "**/log/**": true,
       "**/logs/**": true,
       "**/renv/library/**": true,
-      "**/tmp/**": true,
-      ".history": true
+      "**/tmp/**": true
     },
     "r.alwaysUseActiveTerminal": true,
     "r.bracketedPaste": true,
@@ -352,9 +342,6 @@
     "todo-tree.tree.disableCompactFolders": true,
     "todo-tree.tree.expanded": true,
     "todo-tree.tree.scanMode": "workspace",
-    "todo-tree.tree.showScanModeButton": true,
-    "markdownlint.ignore": [
-      "revdep/*.md"
-    ]
+    "todo-tree.tree.showScanModeButton": true
   }
 }

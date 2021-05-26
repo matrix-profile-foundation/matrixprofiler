@@ -3,6 +3,7 @@
 #include "mass.h"
 #include "windowfunc.h"
 #include <numeric>
+#include <cfloat> // DBL_EPSILON when STRICT_R_HEADERS
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]

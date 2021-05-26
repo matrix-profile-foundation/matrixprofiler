@@ -4,6 +4,7 @@ CMD
 CUDA
 CodeQL
 Conf
+Eddelbuettel
 FLUSS
 Funning
 GPUs
@@ -61,6 +62,7 @@ kotlin
 lifecycle
 mSTOMP
 macOS
+mai
 matlab
 matrixprofile
 mov
