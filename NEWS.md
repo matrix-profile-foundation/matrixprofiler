@@ -1,3 +1,5 @@
+# matrixprofiler (development version)
+
 NEWS
 ================
 Francisco Bischoff
