@@ -66,8 +66,7 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "no
   "!DEBUG Computation"
   tryCatch(
     {
-      result <- switch(
-        type,
+      result <- switch(type,
         normalized = mass_pre_rcpp(data, query, window_size),
         non_normalized = mass_pre_weighted_rcpp(data, query, window_size, rep(1, window_size)),
         absolute = mass_pre_abs_rcpp(data, query, window_size),
@@ -145,8 +144,7 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
     {
       query_window <- query[index:(index + pre_obj$window_size - 1)]
 
-      result <- switch(
-        type,
+      result <- switch(type,
         normalized = if (version == "v3") {
           if (n_workers > 1) {
             n_workers <- min(n_workers, RcppParallel::defaultNumThreads())
