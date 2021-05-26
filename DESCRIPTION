@@ -57,6 +57,8 @@ LinkingTo:
     RcppParallel (>= 5.1.4),
     RcppProgress (>= 0.4.2),
     RcppThread (>= 1.0.0)
+VignetteBuilder:
+    knitr
 Encoding: UTF-8
 Language: en-US
 LazyData: true
