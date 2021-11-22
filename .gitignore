@@ -52,11 +52,13 @@ vignettes/*.R
 
 # Personalized
 
+desktop.ini
+
 # use github-actions to build the webpage
 /pkgdown/
 /docs/
 
-dev/
+/dev/*
 LOCAL_APPDATA_FONTCONFIG_CACHE/
 src-*/
 packrat/lib*/

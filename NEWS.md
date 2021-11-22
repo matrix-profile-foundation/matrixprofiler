@@ -1,12 +1,19 @@
-# matrixprofiler (development version)
-
 NEWS
 ================
 Francisco Bischoff
 
-26 mai 2021
+20 nov 2021
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+## matrixprofiler 0.1.6
+
+-   Fixed issue on Makefile for Unix/Mac systems that triggered some
+    CRAN policy about “Packages should not attempt to disable compiler
+    diagnostics, nor to remove other diagnostic information such as
+    symbols in shared objects.” The objective was to reduce the compiled
+    library that even in release mode have being compiled in debug mode.
+    More info at <http://dirk.eddelbuettel.com/blog/2017/08/14/>
 
 ## matrixprofiler 0.1.5
 

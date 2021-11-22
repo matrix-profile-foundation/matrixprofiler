@@ -154,8 +154,7 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
               pre_obj$query_sd[index],
               k = 4096
             )
-          }
-          else {
+          } else {
             mass3_rcpp(query_window, data, as.integer(pre_obj$data_size),
               as.integer(pre_obj$window_size), pre_obj$data_mean, pre_obj$data_sd, pre_obj$query_mean[index],
               pre_obj$query_sd[index],

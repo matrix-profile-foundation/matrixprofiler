@@ -347,7 +347,6 @@
     "r.debugger.timeouts.terminate": 1000,
     "r.rpath.linux": "/usr/bin/R",
     "r.rterm.linux": "/usr/bin/R",
-    "taskExplorer.exclude": "**/renv/**",
     "testing.enableProblemDiagnostics": true,
     "todo-tree.filtering.includeGlobs": [
       "**/src/**",
@@ -364,6 +363,8 @@
     "todo-tree.tree.expanded": true,
     "todo-tree.tree.scanMode": "workspace",
     "todo-tree.tree.showScanModeButton": true,
-    "explorerExclude.backup": null
+    "explorerExclude.backup": null,
+    "r.rpath.windows": "C:\\Program Files\\R\\R-4.1.1\\bin\\R.exe",
+    "r.rterm.windows": "C:\\Program Files\\R\\R-4.1.1\\bin\\R.exe"
   }
 }
