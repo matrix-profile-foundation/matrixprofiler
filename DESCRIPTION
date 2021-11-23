@@ -1,7 +1,7 @@
 Type: Package
 Package: matrixprofiler
 Title: Matrix Profile for R
-Version: 0.1.6
+Version: 0.1.7
 Authors@R:
     c(person(given = "Francisco",
              family = "Bischoff",
@@ -52,14 +52,11 @@ Suggests:
     testthat (>= 3.0.2),
     debugme (>= 1.1.0),
     spelling (>= 2.2.0),
-    knitr (>= 1.3.6)
 LinkingTo:
     Rcpp  (>= 1.0.6),
     RcppParallel (>= 5.1.4),
     RcppProgress (>= 0.4.2),
     RcppThread (>= 1.0.0)
-VignetteBuilder:
-    knitr
 Encoding: UTF-8
 Language: en-US
 LazyData: true

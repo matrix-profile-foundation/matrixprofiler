@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## matrixprofiler 0.1.6
+## matrixprofiler 0.1.7
 -   Fixed issue on Makefile for Unix/Mac systems that triggered some CRAN policy about
     "Packages should not attempt to disable compiler diagnostics, nor to remove other diagnostic
     information such as symbols in shared objects." The objective was to reduce the compiled

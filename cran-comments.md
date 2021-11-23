@@ -1,9 +1,11 @@
 # CRAN Comments
 
-## Comments for this version (0.1.6)
+## Comments for this version (0.1.7)
 
 Due to CRAN policy, I had to remove the Makefile command --strip-debug.
 Therefore, the library now has more than 15MB in size on *nix systems.
+
+Removed VignetteBuilder field since this package does not contain a vignette.
 
 ## Test environments
 
@@ -20,8 +22,8 @@ Therefore, the library now has more than 15MB in size on *nix systems.
 
 ## R CMD check results
 
-── R CMD check results ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── matrixprofiler 0.1.6.9000 ────
-Duration: 2m 12.3s
+── R CMD check results ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── matrixprofiler 0.1.7.9000 ────
+Duration: 2m 15.1s
 
 ❯ checking installed package size ... NOTE
     installed size is 16.5Mb

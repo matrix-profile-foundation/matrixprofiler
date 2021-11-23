@@ -18,7 +18,7 @@ Francisco Bischoff
 [![Lint](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/Lint/badge.svg?branch=main)](https://github.com/jimhester/lintr)
 [![R-CMD-check](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/R-CMD-check/badge.svg?branch=main)](https://r-pkgs.org/r-cmd-check.html)
 
-[![codecov](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/main/graph/badge.svg?token=w7AmbwhNvn)](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler)
+[![codecov](https://codecov.io/gh/matrix-profile-foundation/matrixprofiler/branch/main/graph/badge.svg?token=w7AmbwhNvn)](https://app.codecov.io/gh/matrix-profile-foundation/matrixprofiler)
 [![CodeQL](https://github.com/matrix-profile-foundation/matrixprofiler/workflows/CodeQL/badge.svg?branch=main)](https://github.com/github/codeql-action/)
 [![Language grade:
 C/C++](https://img.shields.io/lgtm/grade/cpp/g/matrix-profile-foundation/matrixprofiler.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/matrix-profile-foundation/matrixprofiler/context:cpp)
