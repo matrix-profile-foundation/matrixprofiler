@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // mass_weighted_rcpp
 List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight, const bool normalized);
 RcppExport SEXP _matrixprofiler_mass_weighted_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP data_preSEXP, SEXP weightSEXP, SEXP normalizedSEXP) {

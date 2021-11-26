@@ -4,7 +4,6 @@ CMD
 CUDA
 CodeQL
 Conf
-Eddelbuettel
 FLUSS
 Funning
 GPUs
@@ -15,6 +14,7 @@ Knowl
 MDS
 MPX
 MPdist
+Makefile
 MatrixProfile
 Nikovski
 OPENCL
@@ -49,6 +49,7 @@ ZiyaoWei
 al
 codecov
 eamonn
+eddelbuettel
 edu
 ensozos
 et
@@ -71,6 +72,7 @@ multithread
 multithreading
 mutexes
 neglectable
+nov
 ogita
 owlpy
 por

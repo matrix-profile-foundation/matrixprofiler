@@ -3,7 +3,7 @@ PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=1 -DSTRICT_R_HEADERS
 PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
 
 # use strip -S instead of strip --strip-debug for MacOS compatibility
-strippedLib: $(SHLIB)
-	if test -f "/usr/bin/strip"; then /usr/bin/strip -S $(SHLIB); fi
+# strippedLib: $(SHLIB)
+#	if test -f "/usr/bin/strip"; then /usr/bin/strip -S $(SHLIB); fi
 
-.phony: strippedLib
+# .phony: strippedLib

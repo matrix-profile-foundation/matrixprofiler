@@ -45,6 +45,7 @@
       "CXXFLAGS",
       "CodeQL",
       "Conf",
+      "Covr",
       "DRCPP",
       "EXPRSXP",
       "Eddelbuettel",
@@ -86,6 +87,7 @@
       "Rversion",
       "SDTS",
       "SHLIB",
+      "SIGKDD",
       "STOMPSelfJoin",
       "STOMPi",
       "STRSXP",
@@ -115,6 +117,7 @@
       "cplx",
       "curlastz",
       "debugme",
+      "deps",
       "dmean",
       "dstrict",
       "eamonn",
@@ -205,6 +208,7 @@
       "shapelets",
       "smaxf",
       "sparafucile",
+      "sprintf",
       "sqrsum",
       "sqrtk",
       "ssig",
@@ -304,8 +308,12 @@
       "vector": "cpp"
     },
     "files.exclude": {
-      "**/.DS_Store": true,
       "**/.git": true,
+      "**/.svn": true,
+      "**/.hg": true,
+      "**/CVS": true,
+      "**/.DS_Store": true,
+      ".history": true,
       "**/.git/objects/**": true,
       "**/.git/subtree-cache/**": true,
       "**/.Rproj.user": true,
@@ -314,12 +322,12 @@
       "**/logs/**": true,
       "**/R/RcppExports.R": true,
       "**/renv/library/**": true,
-      "**/tmp/**": true,
-      ".history": true
+      "**/tmp/**": true
     },
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
     "files.watcherExclude": {
+      ".history": true,
       "**/.DS_Store": true,
       "**/.git": true,
       "**/.git/objects/**": true,
@@ -328,16 +336,17 @@
       "**/log/**": true,
       "**/logs/**": true,
       "**/renv/library/**": true,
-      "**/tmp/**": true,
-      ".history": true
+      "**/tmp/**": true
     },
+    "markdownlint.ignore": [
+      "revdep/*.md"
+    ],
     "r.alwaysUseActiveTerminal": true,
     "r.bracketedPaste": true,
     "r.debugger.timeouts.startup": 5000,
     "r.debugger.timeouts.terminate": 1000,
     "r.rpath.linux": "/usr/bin/R",
     "r.rterm.linux": "/usr/bin/R",
-    "taskExplorer.exclude": "**/renv/**",
     "testing.enableProblemDiagnostics": true,
     "todo-tree.filtering.includeGlobs": [
       "**/src/**",
@@ -348,13 +357,14 @@
     "todo-tree.general.enableFileWatcher": true,
     "todo-tree.general.statusBar": "tags",
     "todo-tree.highlights.useColourScheme": true,
+    "todo-tree.ripgrep.ripgrep": "C:\\ProgramData\\chocolatey\\bin\\rg",
     "todo-tree.tree.buttons.export": true,
     "todo-tree.tree.disableCompactFolders": true,
     "todo-tree.tree.expanded": true,
     "todo-tree.tree.scanMode": "workspace",
     "todo-tree.tree.showScanModeButton": true,
-    "markdownlint.ignore": [
-      "revdep/*.md"
-    ]
+    "explorerExclude.backup": null,
+    "r.rpath.windows": "C:\\Program Files\\R\\R-4.1.1\\bin\\R.exe",
+    "r.rterm.windows": "C:\\Program Files\\R\\R-4.1.1\\bin\\R.exe"
   }
 }

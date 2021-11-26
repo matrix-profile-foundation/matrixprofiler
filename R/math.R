@@ -27,8 +27,7 @@ znorm <- function(data, rcpp = TRUE) {
 
   if (is.na(data_dev) || data_dev <= 0.01) {
     return(data - data_mean)
-  }
-  else {
+  } else {
     (data - data_mean) / (data_dev)
   }
 }

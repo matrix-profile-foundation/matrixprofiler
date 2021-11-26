@@ -1,8 +1,11 @@
 # CRAN Comments
 
-## Comments for this version (0.1.5)
+## Comments for this version (0.1.7)
 
-Due to new R implementations, `Rcpp` package needs to make some changes and this package is one of the affected. The patch is to comply with the following [issue](https://github.com/RcppCore/Rcpp/issues/1158).
+Due to CRAN policy, I had to remove the Makefile command --strip-debug.
+Therefore, the library now has more than 15MB in size on *nix systems.
+
+Removed VignetteBuilder field since this package does not contain a vignette.
 
 ## Test environments
 
@@ -19,10 +22,18 @@ Due to new R implementations, `Rcpp` package needs to make some changes and this
 
 ## R CMD check results
 
-> checking for GNU extensions in Makefiles ... NOTE \
+── R CMD check results ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── matrixprofiler 0.1.7.9000 ────
+Duration: 2m 15.1s
+
+❯ checking installed package size ... NOTE
+    installed size is 16.5Mb
+    sub-directories of 1Mb or more:
+      libs  16.3Mb
+
+❯ checking for GNU extensions in Makefiles ... NOTE
   GNU make is a SystemRequirements.
 
-`0 errors | 0 warnings | 1 notes`
+0 errors ✔ | 0 warnings ✔ | 2 notes ✖
 
 ## Downstream dependencies
 

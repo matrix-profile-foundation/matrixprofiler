@@ -12,5 +12,6 @@ exclusions: list(
     "dev/*",
     "**/renv/**",
     "R/RcppExports.R",
-    "README.Rmd"
+    "README.Rmd",
+    ".Rhistory"
   )
