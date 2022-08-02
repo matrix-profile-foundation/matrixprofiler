@@ -2,6 +2,7 @@
 
 export(binary_split)
 export(complexity)
+export(contrast)
 export(corr_ed)
 export(ed_corr)
 export(mass)

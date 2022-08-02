@@ -127,6 +127,8 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   // data_ref is the data, query_window is the query
   //
 
+  // FIXME: mass3 is throwing error when data std is zero; currently a hack is being used on find_k_neighbors.R
+
   uint32_t w_size = window_size;
   uint64_t d_size = data_size;
   NumericVector dist(data_mean.length());
@@ -169,6 +171,10 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
 
       d = 2 * (w_size - (z[Range(w_size - 1, k - 1)] - w_size * d_mean[Range(idx_begin, idx_end)] * q_mean) /
                             (d_std[Range(idx_begin, idx_end)] * q_std));
+
+      // noise correction
+      // d = d - (2 + 2 * w_size) * pow(std_n, 2) / pow(max(std_x, std_y), 2);
+
       std::copy(d.begin(), d.end(), dist_it + j);
       std::copy(z.begin() + w_size - 1, z.begin() + k, last_it + j);
     }
