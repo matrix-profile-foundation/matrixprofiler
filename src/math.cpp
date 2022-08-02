@@ -185,6 +185,7 @@ IntegerVector binary_split_rcpp(const uint32_t n) {
 
 //[[Rcpp::export]]
 NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size) {
+  // this format is less prone to rounding problems
   NumericVector res = (2 * window_size - data * data) / (2 * window_size);
 
   return (res);
@@ -192,6 +193,7 @@ NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size) {
 
 //[[Rcpp::export]]
 NumericVector corr_ed_rcpp(const NumericVector data, uint32_t window_size) {
+  // this format is less prone to rounding problems
   NumericVector res = sqrt(2 * window_size * (1 - ifelse(data > 1, 1, data)));
 
   return (res);

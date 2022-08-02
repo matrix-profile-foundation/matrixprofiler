@@ -212,13 +212,13 @@ NumericVector movmin_rcpp(const NumericVector data, uint32_t window_size) {
 
   min_res = res_out = R_PosInf;
   for (i = window_size - 1; i < data_size; i++) {
-    // if point comining out of the window was window's min than we need to
+    // if point coming out of the window was window's min than we need to
     // recalculate 'min_res'
     if (res_out == min_res) {
       // find minimum over a window of length 'window_size'
       min_res = *std::min_element(data.begin() + d, data.begin() + d + window_size); // cpp11, faster
     } else {
-      // if point comining out of the window was NOT window min than min of
+      // if point coming out of the window was NOT window min than min of
       // window's first
       //  'window_size - 1' points is still 'min_res', so we have to add a
       //  single point
@@ -254,13 +254,13 @@ NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
 
   max_res = res_out = R_NegInf;
   for (i = window_size - 1; i < data_size; i++) {
-    // if point comining out of the window was window's max than we need to
+    // if point coming out of the window was window's max than we need to
     // recalculate 'max_res'
     if (res_out == max_res) {
       // find maximum over a window of length 'window_size'
       max_res = *std::max_element(data.begin() + d, data.begin() + d + window_size); // cpp11, faster
     } else {
-      // if point comining out of the window was NOT window max than max of
+      // if point coming out of the window was NOT window max than max of
       // window's first
       //  'window_size - 1' points is still 'max_res', so we have to add a
       //  single point

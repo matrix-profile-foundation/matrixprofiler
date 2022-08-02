@@ -32,7 +32,6 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   // check skip position
   LogicalVector skip_location(matrix_profile_size);
 
-  // TODO: data or query?
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
