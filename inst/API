@@ -4,6 +4,7 @@
 
 binary_split(n, rcpp = TRUE)
 complexity(data)
+contrast(negative_data, positive_data, window_size, positive_matrix = NULL, exclusion_zone = 0.5, distance = c("euclidean", "pearson"), n_workers = 1L, progress = TRUE)
 corr_ed(data, w, rcpp = TRUE)
 ed_corr(data, w, rcpp = TRUE)
 mass(pre_obj, data, query = data, index = 1, version = c("v3", "v2"), n_workers = 1)

@@ -67,7 +67,6 @@ kotlin
 lifecycle
 mSTOMP
 macOS
-mai
 matlab
 matrixprofile
 mov
@@ -84,6 +83,7 @@ precomputations
 precomputed
 procesment
 pyMatrixProfile
+rcpp
 scalability
 shapelet
 shapelets
