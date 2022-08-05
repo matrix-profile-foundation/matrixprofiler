@@ -86,27 +86,27 @@ BEGIN_RCPP
 END_RCPP
 }
 // mass3_rcpp
-List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, uint32_t k);
-RcppExport SEXP _matrixprofiler_mass3_rcpp(SEXP query_windowSEXP, SEXP data_refSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP kSEXP) {
+List mass3_rcpp(const NumericVector& query_window, const NumericVector& data_ref, uint64_t data_size, uint32_t window_size, const NumericVector& data_mean, const NumericVector& data_sd, double query_mean, double query_sd, uint32_t grain);
+RcppExport SEXP _matrixprofiler_mass3_rcpp(SEXP query_windowSEXP, SEXP data_refSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP grainSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector >::type query_window(query_windowSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type query_window(query_windowSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type data_ref(data_refSEXP);
     Rcpp::traits::input_parameter< uint64_t >::type data_size(data_sizeSEXP);
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type data_mean(data_meanSEXP);
-    Rcpp::traits::input_parameter< const NumericVector >::type data_sd(data_sdSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type data_mean(data_meanSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type data_sd(data_sdSEXP);
     Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
     Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
-    Rcpp::traits::input_parameter< uint32_t >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(mass3_rcpp(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k));
+    Rcpp::traits::input_parameter< uint32_t >::type grain(grainSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass3_rcpp(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain));
     return rcpp_result_gen;
 END_RCPP
 }
 // mass3_rcpp_parallel
-List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, uint16_t k);
-RcppExport SEXP _matrixprofiler_mass3_rcpp_parallel(SEXP query_windowSEXP, SEXP data_refSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP kSEXP) {
+List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, uint16_t grain);
+RcppExport SEXP _matrixprofiler_mass3_rcpp_parallel(SEXP query_windowSEXP, SEXP data_refSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP grainSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -118,21 +118,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector >::type data_sd(data_sdSEXP);
     Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
     Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
-    Rcpp::traits::input_parameter< uint16_t >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(mass3_rcpp_parallel(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k));
+    Rcpp::traits::input_parameter< uint16_t >::type grain(grainSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass3_rcpp_parallel(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain));
     return rcpp_result_gen;
 END_RCPP
 }
 // set_k_rcpp
-uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size);
-RcppExport SEXP _matrixprofiler_set_k_rcpp(SEXP kSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP) {
+uint32_t set_k_rcpp(uint32_t grain, uint64_t data_size, uint64_t window_size);
+RcppExport SEXP _matrixprofiler_set_k_rcpp(SEXP grainSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< uint32_t >::type k(kSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type grain(grainSEXP);
     Rcpp::traits::input_parameter< uint64_t >::type data_size(data_sizeSEXP);
     Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(set_k_rcpp(k, data_size, window_size));
+    rcpp_result_gen = Rcpp::wrap(set_k_rcpp(grain, data_size, window_size));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -580,13 +580,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // precision_test_rcpp
-double precision_test_rcpp(std::vector<double> d);
-RcppExport SEXP _matrixprofiler_precision_test_rcpp(SEXP dSEXP) {
+double precision_test_rcpp(std::vector<double> dd);
+RcppExport SEXP _matrixprofiler_precision_test_rcpp(SEXP ddSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<double> >::type d(dSEXP);
-    rcpp_result_gen = Rcpp::wrap(precision_test_rcpp(d));
+    Rcpp::traits::input_parameter< std::vector<double> >::type dd(ddSEXP);
+    rcpp_result_gen = Rcpp::wrap(precision_test_rcpp(dd));
     return rcpp_result_gen;
 END_RCPP
 }

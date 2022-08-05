@@ -33,6 +33,8 @@
 
 */
 
+// NOLINTBEGIN(*)
+
 #include "fft.h"
 #include <iostream>
 
@@ -41,6 +43,7 @@
 using namespace Rcpp;
 
 namespace FFT {
+
 /*  Fast Fourier Transform
 
   These routines are based on code by Richard Singleton in the
@@ -136,7 +139,7 @@ namespace FFT {
   factor any positive int n, up to 2^31 - 1.
 */
 
-fftw::fftw() {}
+fftw::fftw() = default;
 
 // Destructor
 fftw::~fftw() {
@@ -153,7 +156,7 @@ fftw::~fftw() {
 
 std::vector<std::complex<double>> fftw::fft(std::vector<double> z, bool inverse) {
 
-  int n = z.size();
+  int const n = z.size();
 
   std::vector<std::complex<double>> res(n);
 
@@ -172,7 +175,7 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
   int i, inv, maxf, maxp, n;
   double f;
   size_t smaxf;
-  size_t maxsize = ((size_t)-1) / 4;
+  size_t const maxsize = ((size_t)-1) / 4;
 
   n = z.size();
 
@@ -368,8 +371,8 @@ int fftw::fft_work(double *a, double *b, int nseg, int n, int nspn, int isn, dou
 
   /* perform the transform */
 
-  size_t mf = maxf;
-  int nspan = n * nspn, ntot = nspan * nseg;
+  size_t const mf = maxf;
+  int const nspan = n * nspn, ntot = nspan * nseg;
 
   fftmx(a, b, ntot, n, nspan, isn, m_fac, kt, work, work + mf, work + 2 * mf, work + 3 * mf, iwork, nfac);
 
@@ -1100,4 +1103,7 @@ L570:
     goto L_ord;
   }
 } /* fftmx */
+
 } // namespace FFT
+
+// NOLINTEND(*)

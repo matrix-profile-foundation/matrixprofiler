@@ -5,7 +5,6 @@
   "C_Cpp.default.defines": [
     "RC_INVOKED"
   ],
-  "C_Cpp.intelliSenseEngineFallback": "Enabled",
   "editor.fontFamily": "'Fira Code Retina', Consolas, 'Courier New', monospace",
   "editor.formatOnSave": true,
   "editor.tabCompletion": "on",
@@ -288,5 +287,13 @@
   "todo-tree.tree.showCountsInTree": true,
   "C_Cpp.clang_format_path": "/usr/bin/clang-format",
   "C_Cpp.clang_format_fallbackStyle": "LLVM",
-  "C_Cpp.formatting": "clangFormat"
+  "C_Cpp.formatting": "clangFormat",
+  "C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
+    "modernize-use-trailing-return-type",
+    "readability-isolate-declaration",
+    "readability-magic-numbers",
+    "cppcoreguidelines-avoid-magic-numbers",
+    "readability-else-after-return",
+    "bugprone-easily-swappable-parameters"
+  ]
 }

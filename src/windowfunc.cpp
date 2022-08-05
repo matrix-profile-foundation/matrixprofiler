@@ -11,7 +11,7 @@
 // movmin          Unk     Unk      No
 // movmax          Unk     Unk      No
 
-#include "math.h" // math first to fix OSX error
+#include "mathtools.h" // math first to fix OSX error
 #include "windowfunc.h"
 
 // [[Rcpp::depends(RcppParallel)]]
@@ -29,7 +29,7 @@ using namespace RcppParallel;
 
 //[[Rcpp::export]]
 NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size) {
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
   NumericVector out(data_size - window_size + 1);
 
@@ -55,10 +55,10 @@ NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size)
 //[[Rcpp::export]]
 NumericVector movstd_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
-  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
-  NumericVector data_var = (data2_sum / window_size) - (mu * mu);
-  NumericVector data_sd = sqrt(data_var);
+  NumericVector const mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector const data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector const data_var = (data2_sum / window_size) - (mu * mu);
+  NumericVector const data_sd = sqrt(data_var);
 
   return (data_sd);
 }
@@ -66,14 +66,14 @@ NumericVector movstd_rcpp(const NumericVector data, const uint32_t window_size) 
 //[[Rcpp::export]]
 List movmean_std_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  NumericVector data_sum = movsum_ogita_rcpp(data, window_size);
-  NumericVector data_mean = data_sum / window_size;
-  NumericVector data2 = (data * data);
-  NumericVector data2_sum = movsum_ogita_rcpp(data2, window_size);
+  NumericVector const data_sum = movsum_ogita_rcpp(data, window_size);
+  NumericVector const data_mean = data_sum / window_size;
+  NumericVector const data2 = (data * data);
+  NumericVector const data2_sum = movsum_ogita_rcpp(data2, window_size);
 
-  NumericVector data_var = (data2_sum / window_size) - (data_mean * data_mean); // variance
-  NumericVector data_sd = sqrt(data_var);
-  NumericVector data_sig = sqrt(1 / (data_var * window_size));
+  NumericVector const data_var = (data2_sum / window_size) - (data_mean * data_mean); // variance
+  NumericVector const data_sd = sqrt(data_var);
+  NumericVector const data_sig = sqrt(1 / (data_var * window_size));
 
   return (List::create(Rcpp::Named("avg") = data_mean, Rcpp::Named("sd") = data_sd, Rcpp::Named("sig") = data_sig,
                        Rcpp::Named("sum") = data_sum, Rcpp::Named("sqrsum") = data2_sum));
@@ -82,9 +82,9 @@ List movmean_std_rcpp(const NumericVector data, const uint32_t window_size) {
 //[[Rcpp::export]]
 NumericVector movvar_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
-  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
-  NumericVector data_var = (data2_sum / window_size) - (mu * mu);
+  NumericVector const mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector const data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector const data_var = (data2_sum / window_size) - (mu * mu);
 
   return (data_var);
 }
@@ -92,7 +92,7 @@ NumericVector movvar_rcpp(const NumericVector data, const uint32_t window_size) 
 //[[Rcpp::export]]
 NumericVector movvar2_rcpp(const NumericVector data, uint32_t window_size) {
 
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
   NumericVector out(data_size - window_size + 1);
 
@@ -119,7 +119,7 @@ NumericVector movvar2_rcpp(const NumericVector data, uint32_t window_size) {
 
 //[[Rcpp::export]]
 NumericVector movsum_rcpp(NumericVector data, uint32_t window_size) {
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
   NumericVector out(data_size - window_size + 1);
 
@@ -146,27 +146,28 @@ NumericVector movsum_ogita_rcpp(const NumericVector data, uint32_t window_size) 
   double resid = 0.0;
 
   for (uint32_t i = 1; i < window_size; i++) {
-    double m = data[i];
-    double p = accum;
+    double const m = data[i];
+    double const p = accum;
     accum = accum + m;
-    double q = accum - p;
+    double const q = accum - p;
     resid = resid + ((p - (accum - q)) + (m - q));
   }
 
   if (resid > 0.001) {
-    Rf_warning("Residual value is large. Some precision may be lost. res = %f\n", resid);
+    Function const warning("warning");
+    warning("Residual value is large. Some precision may be lost. res = %f\n", resid);
   }
 
   res[0] = accum + resid;
 
   for (int64_t i = window_size; i < data.length(); i++) {
-    double m = data[i - window_size];
-    double n = data[i];
-    double p = accum - m;
-    double q = p - accum;
-    double r = resid + ((accum - (p - q)) - (m + q));
+    double const m = data[i - window_size];
+    double const n = data[i];
+    double const p = accum - m;
+    double const q = p - accum;
+    double const r = resid + ((accum - (p - q)) - (m + q));
     accum = p + n;
-    double t = accum - p;
+    double const t = accum - p;
     resid = r + ((p - (accum - t)) + (n - t));
     res[i - window_size + 1] = accum + resid;
   }
@@ -175,25 +176,25 @@ NumericVector movsum_ogita_rcpp(const NumericVector data, uint32_t window_size) 
 }
 
 //[[Rcpp::export]]
-double precision_test_rcpp(std::vector<double> d) {
+double precision_test_rcpp(std::vector<double> dd) {
 
-  std::vector<double> data(d);
+  std::vector<double> data(dd);
 
-  double sum = std::accumulate(data.begin(), data.end(), 0.0);
-  double mean = sum / data.size();
+  double const sum = std::accumulate(data.begin(), data.end(), 0.0);
+  double const mean = sum / static_cast<double>(data.size());
 
-  for (uint32_t i = 0; i < data.size(); i++) {
-    data[i] = data[i] - mean;
+  for (double &i : data) {
+    i = i - mean;
   }
 
-  double out = std::accumulate(data.begin(), data.end(), 0.0);
+  double const out = std::accumulate(data.begin(), data.end(), 0.0);
 
   return (out);
 }
 
 //[[Rcpp::export]]
 NumericVector movmin_rcpp(const NumericVector data, uint32_t window_size) {
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
   if (window_size <= 1) {
     return data;
@@ -203,8 +204,8 @@ NumericVector movmin_rcpp(const NumericVector data, uint32_t window_size) {
     window_size = data_size;
   }
 
-  uint32_t i, d, k;
-  double min_res, res_out;
+  uint32_t i = 0UL, d = 0UL, k = 0UL;
+  double min_res = 0.0, res_out = 0.0;
   NumericVector out(data_size - window_size + 1);
 
   k = 0;
@@ -235,7 +236,7 @@ NumericVector movmin_rcpp(const NumericVector data, uint32_t window_size) {
 
 //[[Rcpp::export]]
 NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
   if (window_size <= 1) {
     return data;
@@ -245,8 +246,8 @@ NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
     window_size = data_size;
   }
 
-  uint32_t i, d, k;
-  double max_res, res_out;
+  uint32_t i = 0UL, d = 0UL, k = 0UL;
+  double max_res = 0.0, res_out = 0.0;
   NumericVector out(data_size - window_size + 1);
 
   k = 0;
@@ -280,11 +281,11 @@ NumericVector movmax_rcpp(const NumericVector data, uint32_t window_size) {
 //[[Rcpp::export]]
 NumericVector movmean_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps) {
 
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
-  double w = window_size;
+  double const w = window_size;
 
-  double alpha = pow(eps, 1 / w);
+  double const alpha = pow(eps, 1 / w);
   NumericVector out(data_size - window_size + 1);
 
   double n = 0.0;
@@ -309,11 +310,11 @@ NumericVector movmean_weighted_rcpp(const NumericVector data, uint32_t window_si
 //[[Rcpp::export]]
 NumericVector movmean_fading_rcpp(const NumericVector data, uint32_t window_size, double eps) {
 
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
-  double w = window_size;
+  double const w = window_size;
 
-  double alpha = pow(eps, 1 / w);
+  double const alpha = pow(eps, 1 / w);
   NumericVector out(data_size - window_size + 1);
 
   double n = 0.0;
@@ -337,11 +338,11 @@ NumericVector movmean_fading_rcpp(const NumericVector data, uint32_t window_size
 
 //[[Rcpp::export]]
 NumericVector movsum_weighted_rcpp(NumericVector data, uint32_t window_size, double eps) {
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
-  double w = window_size;
+  double const w = window_size;
 
-  double alpha = pow(eps, 1 / w);
+  double const alpha = pow(eps, 1 / w);
   NumericVector out(data_size - window_size + 1);
 
   double sum = 0.0;
@@ -363,11 +364,11 @@ NumericVector movsum_weighted_rcpp(NumericVector data, uint32_t window_size, dou
 //[[Rcpp::export]]
 NumericVector movsum_fading_rcpp(NumericVector data, uint32_t window_size, double eps) {
 
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
-  double w = window_size;
+  double const w = window_size;
 
-  double alpha = pow(eps, 1 / w);
+  double const alpha = pow(eps, 1 / w);
   NumericVector out(data_size - window_size + 1);
 
   double sum = 0.0;
@@ -389,11 +390,11 @@ NumericVector movsum_fading_rcpp(NumericVector data, uint32_t window_size, doubl
 //[[Rcpp::export]]
 NumericVector movvar_weighted_rcpp(const NumericVector data, uint32_t window_size, double eps) {
 
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
-  double w = window_size;
+  double const w = window_size;
 
-  double alpha = pow(eps, 1 / w);
+  double const alpha = pow(eps, 1 / w);
   NumericVector out(data_size - window_size + 1);
 
   double n = 0.0;
@@ -421,11 +422,11 @@ NumericVector movvar_weighted_rcpp(const NumericVector data, uint32_t window_siz
 //[[Rcpp::export]]
 NumericVector movvar_fading_rcpp(const NumericVector data, uint32_t window_size, double eps) {
 
-  uint32_t data_size = data.length();
+  uint32_t const data_size = data.length();
 
-  double w = window_size;
+  double const w = window_size;
 
-  double alpha = pow(eps, 1 / w);
+  double const alpha = pow(eps, 1 / w);
   NumericVector out(data_size - window_size + 1);
 
   double n = 0.0;
@@ -452,9 +453,9 @@ List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
   // on Accurate Sum and Dot Product, Ogita et al
 
   // NumericVector sig(data.length() - window_size + 1, 0);
-  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
-  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
-  NumericVector sig = 1 / sqrt(data2_sum - mu * mu * window_size);
+  NumericVector const mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector const data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector const sig = 1 / sqrt(data2_sum - mu * mu * window_size);
 
   // std is equals to 1 / (sig * sqrt(w))
   // sig is equals to 1 / (std * sqrt(w))
@@ -463,6 +464,8 @@ List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
 }
 
 struct MuinWorker : public Worker {
+
+private:
   // input
   const RVector<double> data2_sum;
   const RVector<double> mu;
@@ -470,13 +473,14 @@ struct MuinWorker : public Worker {
   // output
   RVector<double> sig;
 
+public:
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  MuinWorker(const NumericVector data2_sum, const NumericVector mu, const uint32_t w_size, NumericVector sig)
+  MuinWorker(const NumericVector &data2_sum, const NumericVector &mu, const uint32_t w_size, const NumericVector &sig)
       : data2_sum(data2_sum), mu(mu), w_size(w_size), sig(sig) {}
 
   // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) {
+  void operator()(std::size_t begin, std::size_t end) override {
     for (uint32_t i = begin; i < end; i++) {
       sig[i] = 1 / sqrt(data2_sum[i] - mu[i] * mu[i] * w_size);
     }
@@ -490,9 +494,9 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
   // results here are a moving average and stable inverse centered norm based
   // on Accurate Sum and Dot Product, Ogita et al
 
-  NumericVector sig(data.length() - window_size + 1);
-  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
-  NumericVector data2_sum = movsum_ogita_rcpp(data * data, window_size);
+  NumericVector const sig(data.length() - window_size + 1);
+  NumericVector const mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector const data2_sum = movsum_ogita_rcpp(data * data, window_size);
 
   MuinWorker muin_worker(data2_sum, mu, window_size, sig);
 
@@ -506,7 +510,7 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated.\n";
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
@@ -529,7 +533,7 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
 //[[Rcpp::export]]
 IntegerVector zero_crossing_rcpp(const NumericVector data, const uint32_t window_size) {
 
-  uint32_t profile_size = data.size() - window_size + 1;
+  uint32_t const profile_size = data.size() - window_size + 1;
   NumericVector norm_data = znorm_rcpp(data);
   IntegerVector crossings(profile_size);
 

@@ -1,4 +1,4 @@
-#include "math.h" // math first to fix OSX error
+#include "mathtools.h" // math first to fix OSX error
 #include "scrimp.h"
 #include "mass.h"
 #include "windowfunc.h"
@@ -24,16 +24,16 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
                  double s_size, double pre_scrimp, bool progress) {
 
   bool partial = false;
-  uint32_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
-  uint32_t data_size = data_ref.length();
+  uint32_t const exclusion_zone = round(window_size * ez + DBL_EPSILON);
+  uint32_t const data_size = data_ref.length();
 
-  uint32_t matrix_profile_size = data_size - window_size + 1;
+  uint32_t const matrix_profile_size = data_size - window_size + 1;
 
   // TODO: check skip position (DBL_EPSILON, etc)
   LogicalVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
-    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    NumericVector const range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
       skip_location[i] = TRUE;
     }
@@ -52,7 +52,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
   IntegerVector orig_index = Range(0, matrix_profile_size - 1);
 
-  uint32_t k = set_k_rcpp(window_size, data_size, window_size);
+  uint32_t const grain = set_k_rcpp(window_size, data_size, window_size);
 
   List pre = mass_pre_rcpp(data, query, window_size);
 
@@ -66,8 +66,8 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     if (pre_scrimp > 0) {
       // initialization
-      int64_t current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
-      IntegerVector pre_scrimp_idxs = seq_by(0, matrix_profile_size - 1, current_step);
+      int64_t const current_step = floor(window_size * pre_scrimp + DBL_EPSILON);
+      IntegerVector const pre_scrimp_idxs = seq_by(0, matrix_profile_size - 1, current_step);
       Progress ps(pre_scrimp_idxs.size(), progress);
       // compute the matrix profile
       NumericVector dotproduct(matrix_profile_size);
@@ -81,7 +81,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         // compute the distance profile
         List nn = mass3_rcpp(query[Range(i, i + window_size - 1)], data, pre["data_size"], pre["window_size"],
-                             data_mean, data_sd, query_mean[i], query_sd[i], k);
+                             data_mean, data_sd, query_mean[i], query_sd[i], grain);
 
         NumericVector distance_profile = as<NumericVector>(nn["distance_profile"]);
 
@@ -94,11 +94,11 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
           exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
         }
 
-        IntegerVector exc_idxs = Range(exc_st, exc_ed);
+        IntegerVector const exc_idxs = Range(exc_st, exc_ed);
         distance_profile[exc_idxs] = R_PosInf;
 
         distance_profile[data_sd < DBL_EPSILON] = R_PosInf;
-        if (skip_location[i] || query_sd[i] < DBL_EPSILON) {
+        if ((skip_location[i] != 0) || query_sd[i] < DBL_EPSILON) {
           distance_profile.fill(R_PosInf);
         }
         distance_profile[skip_location] = R_PosInf;
@@ -107,20 +107,20 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
         if (j == 1) {
           matrix_profile = distance_profile;
           profile_index.fill(i);
-          int64_t min_idx = which_min(distance_profile);
+          int64_t const min_idx = which_min(distance_profile);
           profile_index[i] = min_idx;
           matrix_profile[i] = distance_profile[min_idx];
         } else {
-          LogicalVector update_pos = distance_profile < matrix_profile;
+          LogicalVector const update_pos = distance_profile < matrix_profile;
           profile_index[update_pos] = (int32_t)i;
           matrix_profile[update_pos] = distance_profile[update_pos];
-          int64_t min_idx = which_min(distance_profile);
+          int64_t const min_idx = which_min(distance_profile);
           profile_index[i] = min_idx;
           matrix_profile[i] = distance_profile[min_idx];
         }
 
-        int64_t idx_nn = profile_index[i];
-        int64_t idx_diff = (idx_nn - i);
+        int64_t const idx_nn = profile_index[i];
+        int64_t const idx_diff = (idx_nn - i);
         dotproduct[i] = (window_size - (matrix_profile[i] / 2)) * data_sd[i] * data_sd[idx_nn] +
                         window_size * data_mean[i] * data_mean[idx_nn];
 
@@ -129,17 +129,17 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         if (i < endidx) {
           // confirmed, sequences asc
-          Range dot_idxs1 = Range((i + 1), endidx);
-          Range dot_idxs2 = Range((i + window_size), (endidx + window_size - 1));
-          Range dot_idxs3 = Range((idx_nn + window_size), (endidx + window_size - 1 + idx_diff));
-          Range dot_idxs4 = Range(i, (endidx - 1));
-          Range dot_idxs5 = Range(idx_nn, (endidx - 1 + idx_diff));
-          dotproduct[dot_idxs1] = (NumericVector)(
-              (NumericVector)(cumsum(data[dot_idxs2] * data[dot_idxs3] - data[dot_idxs4] * data[dot_idxs5])) +
-              dotproduct[i]);
+          Range const dot_idxs1 = Range((i + 1), endidx);
+          Range const dot_idxs2 = Range((i + window_size), (endidx + window_size - 1));
+          Range const dot_idxs3 = Range((idx_nn + window_size), (endidx + window_size - 1 + idx_diff));
+          Range const dot_idxs4 = Range(i, (endidx - 1));
+          Range const dot_idxs5 = Range(idx_nn, (endidx - 1 + idx_diff));
+          dotproduct[dot_idxs1] = (NumericVector)((NumericVector)(cumsum(data[dot_idxs2] * data[dot_idxs3] -
+                                                                         data[dot_idxs4] * data[dot_idxs5])) +
+                                                  dotproduct[i]);
 
           // confirmed, sequences asc
-          Range ref_idxs1 = Range((idx_nn + 1), (endidx + idx_diff));
+          Range const ref_idxs1 = Range((idx_nn + 1), (endidx + idx_diff));
           refine_distance[dot_idxs1] =
               2 * (window_size - (dotproduct[dot_idxs1] - data_mean[dot_idxs1] * data_mean[ref_idxs1] * window_size) /
                                      (data_sd[dot_idxs1] * data_sd[ref_idxs1]));
@@ -152,23 +152,23 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         if (i > 0 && i > beginidx) {
           // sequences reversed
-          IntegerVector dot_rev_idxs1 = ::seq((i - 1), beginidx);
-          IntegerVector dot_rev_idxs2 = ::seq((idx_nn - 1), (beginidx + idx_diff));
-          IntegerVector dot_rev_idxs3 = ::seq((i - 1 + window_size), (beginidx + window_size));
-          IntegerVector dot_rev_idxs4 = ::seq((idx_nn - 1 + window_size), (beginidx + idx_diff + window_size));
+          IntegerVector const dot_rev_idxs1 = ::seq((i - 1), beginidx);
+          IntegerVector const dot_rev_idxs2 = ::seq((idx_nn - 1), (beginidx + idx_diff));
+          IntegerVector const dot_rev_idxs3 = ::seq((i - 1 + window_size), (beginidx + window_size));
+          IntegerVector const dot_rev_idxs4 = ::seq((idx_nn - 1 + window_size), (beginidx + idx_diff + window_size));
           dotproduct[dot_rev_idxs1] = (NumericVector)((NumericVector)cumsum(data[dot_rev_idxs1] * data[dot_rev_idxs2] -
                                                                             data[dot_rev_idxs3] * data[dot_rev_idxs4]) +
                                                       dotproduct[i]);
 
-          Range ref_idxs2 = Range(beginidx, (i - 1));
-          Range ref_idxs3 = Range((beginidx + idx_diff), (idx_nn - 1));
+          Range const ref_idxs2 = Range(beginidx, (i - 1));
+          Range const ref_idxs3 = Range((beginidx + idx_diff), (idx_nn - 1));
 
           refine_distance[ref_idxs2] =
               2 * (window_size - (dotproduct[ref_idxs2] - data_mean[ref_idxs2] * data_mean[ref_idxs3] * window_size) /
                                      (data_sd[ref_idxs2] * data_sd[ref_idxs3]));
         }
 
-        LogicalVector rd = (refine_distance < 0);
+        LogicalVector const rd = (refine_distance < 0);
 
         if (sum(as<IntegerVector>(rd)) > 0) {
           Rcout << "Debug: refine_distance < 0" << std::endl;
@@ -176,13 +176,13 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
         refine_distance[rd] = 0;
 
-        Range upd_idxs1 = Range(beginidx, endidx);
-        Range upd_idxs2 = Range((beginidx + idx_diff), (endidx + idx_diff));
-        IntegerVector update_pos1 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs1]);
+        Range const upd_idxs1 = Range(beginidx, endidx);
+        Range const upd_idxs2 = Range((beginidx + idx_diff), (endidx + idx_diff));
+        IntegerVector const update_pos1 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs1]);
         matrix_profile[(update_pos1 + beginidx)] = refine_distance[(update_pos1 + beginidx)];
         IntegerVector new_idxs = as<IntegerVector>(orig_index[(update_pos1 + beginidx)]) + idx_diff;
         profile_index[(update_pos1 + beginidx)] = new_idxs;
-        IntegerVector update_pos2 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs2]);
+        IntegerVector const update_pos2 = which_cpp(refine_distance[upd_idxs1] < matrix_profile[upd_idxs2]);
         matrix_profile[(update_pos2 + beginidx + idx_diff)] = refine_distance[(update_pos2 + beginidx)];
         new_idxs = as<IntegerVector>(orig_index[(update_pos2 + beginidx + idx_diff)]) - idx_diff;
         profile_index[(update_pos2 + beginidx + idx_diff)] = new_idxs;
@@ -193,7 +193,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
     //// SCRIMP ----
 
-    IntegerVector compute_order = orig_index[orig_index > exclusion_zone];
+    IntegerVector const compute_order = orig_index[orig_index > exclusion_zone];
 
     NumericVector curlastz(matrix_profile_size);
     NumericVector curdistance(matrix_profile_size);
@@ -232,7 +232,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
                                                               data_mean[Range(0, matrix_profile_size - i - 1)]) /
                (data_sd[Range(i, matrix_profile_size - 1)] * data_sd[Range(0, matrix_profile_size - i - 1)]));
 
-      LogicalVector cd = (curdistance < 0);
+      LogicalVector const cd = (curdistance < 0);
 
       if (sum(as<IntegerVector>(cd)) > 0) {
         Rcout << "Debug: curdistance < 0" << std::endl;
@@ -246,11 +246,11 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
       dist2[::seq(0, matrix_profile_size - i - 1)] = curdistance[::seq(i, matrix_profile_size - 1)];
       dist2[::seq(matrix_profile_size - i, matrix_profile_size - 1)] = R_PosInf;
 
-      LogicalVector loc1 = dist1 < matrix_profile;
+      LogicalVector const loc1 = dist1 < matrix_profile;
       matrix_profile[loc1] = dist1[loc1];
       profile_index[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
 
-      LogicalVector loc2 = dist2 < matrix_profile;
+      LogicalVector const loc2 = dist2 < matrix_profile;
       matrix_profile[loc2] = dist2[loc2];
       profile_index[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
 
@@ -265,7 +265,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   matrix_profile = sqrt(matrix_profile);
@@ -277,6 +277,7 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
 struct ScrimpWorker : public Worker {
   // input
+private:
   const RVector<double> data_ref;
   const RVector<double> window_ref;
   const uint64_t w_size;
@@ -296,21 +297,22 @@ struct ScrimpWorker : public Worker {
   tthread::mutex m;
 #endif
 
+public:
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  ScrimpWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size,
-               const uint64_t d_size, const NumericVector d_mean, const NumericVector d_std,
-               const IntegerVector skip_location, Progress *p, NumericVector mp, IntegerVector pi)
+  ScrimpWorker(const NumericVector &data_ref, const NumericVector &window_ref, const uint64_t w_size,
+               const uint64_t d_size, const NumericVector &d_mean, const NumericVector &d_std,
+               const IntegerVector &skip_location, Progress *p, const NumericVector &mp, const IntegerVector &pi)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
         skip_location(skip_location), p(p), mp(mp), pi(pi) {}
 
-  ~ScrimpWorker() {}
+  ~ScrimpWorker() override = default;
 
   // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) {
+  void operator()(std::size_t begin, std::size_t end) override {
     // begin and end are the compute_order
     //// SCRIMP ----
-    uint64_t dp_size = d_size - w_size + 1;
+    uint64_t const dp_size = d_size - w_size + 1;
 
     std::vector<double> curlastz(dp_size);
     std::vector<double> curdistance(dp_size);
@@ -395,17 +397,17 @@ struct ScrimpWorker : public Worker {
 // [[Rcpp::export]]
 List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
                           double s_size, bool progress) {
-  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
-  uint64_t data_size = data_ref.length();
+  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON);
+  uint64_t const data_size = data_ref.length();
   // uint64_t query_size = query_ref.length();
-  uint64_t matrix_profile_size = data_size - window_size + 1;
+  uint64_t const matrix_profile_size = data_size - window_size + 1;
   bool partial = false;
 
   // TODO: check skip position (DBL_EPSILON, etc)
   IntegerVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
-    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    NumericVector const range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
       skip_location[i] = 1;
     }
@@ -419,8 +421,8 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
   query[is_na(query)] = 0;
   query[is_infinite(query)] = 0;
 
-  NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, -1);
+  NumericVector const matrix_profile(matrix_profile_size, R_PosInf);
+  IntegerVector const profile_index(matrix_profile_size, -1);
 
   // NumericVector first_product = rnn["last_product"];
 
@@ -444,7 +446,7 @@ List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector quer
     Rcout << "Process terminated by the user successfully, partial results "
              "were returned.";
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
@@ -457,17 +459,17 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
                    bool progress) {
   // double s_size = R_PosInf;
   bool partial = false;
-  uint32_t data_size = data_ref.length();
-  uint32_t query_size = query_ref.length();
+  uint32_t const data_size = data_ref.length();
+  uint32_t const query_size = query_ref.length();
 
-  uint32_t mmpa_size = data_size - window_size + 1;
-  uint32_t mmpb_size = query_size - window_size + 1;
+  uint32_t const mmpa_size = data_size - window_size + 1;
+  uint32_t const mmpb_size = query_size - window_size + 1;
 
   // TODO: check skip position (DBL_EPSILON, etc)
   LogicalVector skip_location(mmpa_size, 0);
 
   for (uint64_t i = 0; i < mmpa_size; i++) {
-    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    NumericVector const range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
       skip_location[i] = TRUE;
     }
@@ -501,7 +503,7 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
   try {
     //// SCRIMP ----
 
-    IntegerVector compute_order = orig_index[orig_index > 1];
+    IntegerVector const compute_order = orig_index[orig_index > 1];
 
     NumericVector curlastz(mmpb_size);
     NumericVector curdistance(mmpb_size);
@@ -528,7 +530,7 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
                                                                       data_mean[Range(0, mmpb_size - i - 1)]) /
                                  (query_sd[Range(i, mmpb_size - 1)] * data_sd[Range(0, mmpb_size - i - 1)]));
 
-      LogicalVector cd = (curdistance < 0);
+      LogicalVector const cd = (curdistance < 0);
 
       if (sum(as<IntegerVector>(cd)) > 0) {
         Rcout << "Debug: curdistance < 0" << std::endl;
@@ -538,13 +540,13 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
 
       dist1[::seq(0, i - 1)] = R_PosInf;
       dist1[::seq(i, mmpb_size - 1)] = curdistance[::seq(i, mmpb_size - 1)];
-      LogicalVector loc1 = dist1 < mmpb;
+      LogicalVector const loc1 = dist1 < mmpb;
       mmpb[loc1] = dist1[loc1];
       mpib[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
 
       dist2[::seq(0, mmpb_size - i - 1)] = curdistance[::seq(i, mmpb_size - 1)];
       dist2[::seq(mmpb_size - i, mmpb_size - 1)] = R_PosInf;
-      LogicalVector loc2 = dist2 < mmpa;
+      LogicalVector const loc2 = dist2 < mmpa;
       mmpa[loc2] = dist2[loc2];
       mpia[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
 
@@ -555,13 +557,13 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   try {
     //// SCRIMP ----
 
-    IntegerVector compute_order = orig_index[orig_index > 1];
+    IntegerVector const compute_order = orig_index[orig_index > 1];
 
     NumericVector curlastz(mmpa_size);
     NumericVector curdistance(mmpa_size);
@@ -588,7 +590,7 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
                                                                       query_mean[Range(0, mmpa_size - i - 1)]) /
                                  (data_sd[Range(i, mmpa_size - 1)] * query_sd[Range(0, mmpa_size - i - 1)]));
 
-      LogicalVector cd = (curdistance < 0);
+      LogicalVector const cd = (curdistance < 0);
 
       if (sum(as<IntegerVector>(cd)) > 0) {
         Rcout << "Debug: curdistance < 0" << std::endl;
@@ -598,13 +600,13 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
 
       dist1[::seq(0, i - 1)] = R_PosInf;
       dist1[::seq(i, mmpa_size - 1)] = curdistance[::seq(i, mmpa_size - 1)];
-      LogicalVector loc1 = dist1 < mmpa;
+      LogicalVector const loc1 = dist1 < mmpa;
       mmpa[loc1] = dist1[loc1];
       mpia[loc1] = (IntegerVector)(as<IntegerVector>(orig_index[loc1]) - i);
 
       dist2[::seq(0, mmpa_size - i - 1)] = curdistance[::seq(i, mmpa_size - 1)];
       dist2[::seq(mmpa_size - i, mmpa_size - 1)] = R_PosInf;
-      LogicalVector loc2 = dist2 < mmpb;
+      LogicalVector const loc2 = dist2 < mmpb;
       mmpb[loc2] = dist2[loc2];
       mpib[loc2] = (IntegerVector)(as<IntegerVector>(orig_index[loc2]) + i);
 
@@ -615,7 +617,7 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   mmpa = sqrt(mmpa);

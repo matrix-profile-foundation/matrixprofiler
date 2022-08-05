@@ -1,5 +1,6 @@
 #include "contrast.h"
 #include "mpx.h"
+#include "mpx_parallel.h"
 
 /**
  * @brief Contrast Profile
@@ -47,7 +48,7 @@ List contrast_profile_rcpp(NumericVector negative_data, NumericVector positive_d
     NumericVector mp_ab = as<NumericVector>(ab_mp["matrix_profile"]);
 
     // Clip the MP above sqrt(2*w), these values are anti-correlated on pearson's space
-    double clip = sqrt(2 * window_size);
+    double const clip = sqrt(2 * window_size);
     mp_ab[mp_ab > clip] = clip;
     mp_aa[mp_aa > clip] = clip;
 
@@ -70,10 +71,11 @@ List contrast_profile_rcpp(NumericVector negative_data, NumericVector positive_d
     contrast[contrast < 0] = 0;
   }
 
-  uint64_t plato_idx = which_max(contrast);
-  uint64_t plato_nn_idx = as<IntegerVector>(positive_mp["profile_index"])[plato_idx] - 1; // idx was +1 for R interface
-  NumericVector plato = positive_data[Range(plato_idx, plato_idx + window_size - 1)];
-  NumericVector plato_nn = positive_data[Range(plato_nn_idx, plato_nn_idx + window_size - 1)];
+  uint64_t const plato_idx = which_max(contrast);
+  // idx was +1 for R interface
+  uint64_t const plato_nn_idx = as<IntegerVector>(positive_mp["profile_index"])[plato_idx] - 1;
+  NumericVector const plato = positive_data[Range(plato_idx, plato_idx + window_size - 1)];
+  NumericVector const plato_nn = positive_data[Range(plato_nn_idx, plato_nn_idx + window_size - 1)];
 
   return (List::create(Rcpp::Named("contrast_profile") = contrast, Rcpp::Named("plato") = plato,
                        Rcpp::Named("plato_nn") = plato_nn, Rcpp::Named("plato_idx") = plato_idx + 1,

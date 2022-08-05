@@ -1,4 +1,4 @@
-#include "math.h" // math first to fix OSX error
+#include "mathtools.h" // math first to fix OSX error
 #include "stomp.h"
 #include "mass.h"
 #include <numeric>
@@ -22,17 +22,17 @@ using namespace RcppParallel;
 List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
                 bool progress) {
   bool partial = false;
-  double exclusion_zone = round(window_size * ez + DBL_EPSILON);
-  uint32_t data_size = data_ref.length();
-  uint32_t query_size = query_ref.length();
-  uint32_t matrix_profile_size = data_size - window_size + 1;
-  uint32_t num_queries = query_size - window_size + 1;
+  double const exclusion_zone = round(window_size * ez + DBL_EPSILON);
+  uint32_t const data_size = data_ref.length();
+  uint32_t const query_size = query_ref.length();
+  uint32_t const matrix_profile_size = data_size - window_size + 1;
+  uint32_t const num_queries = query_size - window_size + 1;
 
   // check skip position
   LogicalVector skip_location(matrix_profile_size, FALSE);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
-    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    NumericVector const range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
       skip_location[i] = TRUE;
     }
@@ -49,37 +49,39 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector profile_index(matrix_profile_size, -1);
 
-  uint32_t k = find_best_k_rcpp(data, query, window_size);
+  uint32_t const grain = find_best_k_rcpp(data, query, window_size);
 
   List pre = mass_pre_rcpp(data, query, window_size);
+  // NOLINTNEXTLINE(readability-suspicious-call-argument): it is really swapped
   List rpre = mass_pre_rcpp(query, data, window_size);
   List nn =
       mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], rpre["window_size"], pre["data_mean"],
-                 pre["data_sd"], as<NumericVector>(pre["query_mean"])[0], as<NumericVector>(pre["query_sd"])[0], k);
+                 pre["data_sd"], as<NumericVector>(pre["query_mean"])[0], as<NumericVector>(pre["query_sd"])[0], grain);
 
   ///// This is needed for JOIN similarity
-  List rnn =
-      mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
-                 rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0], as<NumericVector>(rpre["query_sd"])[0], k);
+  List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
+                        rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0],
+                        as<NumericVector>(rpre["query_sd"])[0], grain);
 
   NumericVector first_product = rnn["last_product"];
 
   ///// This is needed for JOIN similarity
-  IntegerVector lp_range = Range(1, (data_size - window_size));
-  IntegerVector lp2_range = Range(0, (data_size - window_size - 1));
-  IntegerVector dt_range = Range(window_size, data_size - 1);
+  IntegerVector const lp_range = Range(1, (data_size - window_size));
+  IntegerVector const lp2_range = Range(0, (data_size - window_size - 1));
+  IntegerVector const dt_range = Range(window_size, data_size - 1);
   NumericVector distance_profile;
   NumericVector last_product;
   double drop_value = query[0];
 
-  IntegerVector order = Range(0, num_queries - 1);
+  IntegerVector const order = Range(0, num_queries - 1);
 
   Progress p(100, progress);
 
-  uint32_t num_progress = ceil((double)order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
+  uint32_t const num_progress =
+      ceil((double)order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
   try {
-    for (int32_t i : order) {
+    for (int32_t const i : order) {
 
       if ((i % num_progress) == 0) {
         RcppThread::checkUserInterrupt();
@@ -107,9 +109,9 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
       // apply exclusion zone
       if (exclusion_zone > 0) {
-        uint32_t exc_st = MAX(0, i - exclusion_zone);
-        uint32_t exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
-        IntegerVector dp_range = Range(exc_st, exc_ed);
+        uint32_t const exc_st = MAX(0, i - exclusion_zone);
+        uint32_t const exc_ed = MIN(matrix_profile_size - 1, i + exclusion_zone);
+        IntegerVector const dp_range = Range(exc_st, exc_ed);
         distance_profile[dp_range] = R_PosInf;
       }
 
@@ -120,7 +122,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
       distance_profile[skip_location] = R_PosInf;
 
-      LogicalVector idx = (distance_profile < matrix_profile);
+      LogicalVector const idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
       profile_index[which_cpp(idx)] = i + 1;
     }
@@ -130,7 +132,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
@@ -138,6 +140,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 }
 
 struct StompWorker : public Worker {
+private:
   // input
   const RVector<double> data_ref;
   const RVector<double> window_ref;
@@ -163,38 +166,40 @@ struct StompWorker : public Worker {
   tthread::mutex m;
 #endif
 
+public:
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  StompWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size,
-              const uint64_t d_size, const NumericVector d_mean, const NumericVector d_std, const NumericVector q_mean,
-              const NumericVector q_std, const IntegerVector skip_location, const NumericVector first_product,
-              const uint64_t ez, Progress *p, uint64_t num_progress, NumericVector mp, IntegerVector pi)
+  StompWorker(const NumericVector &data_ref, const NumericVector &window_ref, const uint64_t w_size,
+              const uint64_t d_size, const NumericVector &d_mean, const NumericVector &d_std,
+              const NumericVector &q_mean, const NumericVector &q_std, const IntegerVector &skip_location,
+              const NumericVector &first_product, const uint64_t ez, Progress *progr, uint64_t num_progress,
+              const NumericVector &mp, const IntegerVector &pi)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(p),
+        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(progr),
         num_progress(num_progress), mp(mp), pi(pi) {}
 
-  ~StompWorker() {}
+  ~StompWorker() override = default;
 
   // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) {
+  void operator()(std::size_t begin, std::size_t end) override {
     // begin and end are the query window
 
     // index of sliding window
     try {
       RcppThread::checkUserInterrupt();
 
-      uint64_t chunk = (end - begin);
+      uint64_t const chunk = (end - begin);
 
       if (chunk <= w_size) {
         Rcout << "Chunk size is too small (" << chunk << ") for a window size of " << w_size << std::endl;
         return;
       }
 
-      uint64_t k = set_k_rcpp(w_size * 2, chunk, w_size);
+      uint64_t const grain = set_k_rcpp(w_size * 2, chunk, w_size);
 
       m.lock();
       List nn = mass3_cpp(window_ref.begin() + begin, data_ref.begin(), d_size, w_size, d_mean.begin(), d_std.begin(),
-                          q_mean[begin], q_std[begin], k);
+                          q_mean[begin], q_std[begin], grain);
       m.unlock();
       std::vector<double> distance_profile(as<NumericVector>(nn["distance_profile"]).begin(),
                                            as<NumericVector>(nn["distance_profile"]).end());
@@ -235,7 +240,7 @@ struct StompWorker : public Worker {
           if (skip_location[j] == 1 || d_std[j] < DBL_EPSILON || q_std[i] < DBL_EPSILON) {
             distance_profile[j] = R_PosInf;
           } else if (ez == 0 || j < exc_st || j > exc_ed) {
-            double dp = 2 * (w_size - (last_product[j] - w_size * d_mean[j] * q_mean[i]) / (d_std[j] * q_std[i]));
+            double const dp = 2 * (w_size - (last_product[j] - w_size * d_mean[j] * q_mean[i]) / (d_std[j] * q_std[i]));
             distance_profile[j] = (dp > 0) ? dp : 0;
           } else if (i == begin) {
             distance_profile[j] = R_PosInf;
@@ -272,18 +277,18 @@ struct StompWorker : public Worker {
 // [[Rcpp::export]]
 List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
                          bool progress) {
-  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON);
-  uint64_t data_size = data_ref.length();
-  uint64_t query_size = query_ref.length();
-  uint64_t matrix_profile_size = data_size - window_size + 1;
-  uint64_t num_queries = query_size - window_size + 1;
+  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON);
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
+  uint64_t const matrix_profile_size = data_size - window_size + 1;
+  uint64_t const num_queries = query_size - window_size + 1;
   bool partial = false;
 
   // check skip position
   IntegerVector skip_location(matrix_profile_size, 0);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
-    NumericVector range = data_ref[Range(i, (i + window_size - 1))];
+    NumericVector const range = data_ref[Range(i, (i + window_size - 1))];
     if (any(is_na(range) | is_infinite(range))) {
       skip_location[i] = 1;
     }
@@ -297,22 +302,23 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
   query[is_na(query)] = 0;
   query[is_infinite(query)] = 0;
 
-  NumericVector matrix_profile(matrix_profile_size, R_PosInf);
-  IntegerVector profile_index(matrix_profile_size, -1);
+  NumericVector const matrix_profile(matrix_profile_size, R_PosInf);
+  IntegerVector const profile_index(matrix_profile_size, -1);
 
-  uint64_t k = set_k_rcpp(256, data_size, window_size);
+  uint64_t grain = set_k_rcpp(256, data_size, window_size);
 
   ///// This is needed for JOIN similarity
+  // NOLINTNEXTLINE(readability-suspicious-call-argument): it is really swapped
   List rpre = mass_pre_rcpp(query, data, window_size);
-  List rnn =
-      mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
-                 rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0], as<NumericVector>(rpre["query_sd"])[0], k);
+  List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
+                        rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0],
+                        as<NumericVector>(rpre["query_sd"])[0], grain);
 
-  NumericVector first_product = rnn["last_product"];
+  NumericVector const first_product = rnn["last_product"];
 
   List pre = mass_pre_rcpp(data, query, window_size);
 
-  uint64_t num_progress = num_queries / 100;
+  uint64_t const num_progress = num_queries / 100;
 
   Progress p(100, progress);
 
@@ -320,14 +326,14 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
                            pre["query_mean"], pre["query_sd"], skip_location, first_product, exclusion_zone, &p,
                            num_progress, matrix_profile, profile_index);
 
-  k = set_k_rcpp(1024, num_queries, window_size);
+  grain = set_k_rcpp(1024, num_queries, window_size);
 
   // call parallelFor to do the work
   try {
 #if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, num_queries, stomp_worker, 2 * k);
+    RcppParallel::parallelFor(0, num_queries, stomp_worker, 2 * grain);
 #else
-    RcppParallel2::ttParallelFor(0, num_queries, stomp_worker, 2 * k);
+    RcppParallel2::ttParallelFor(0, num_queries, stomp_worker, 2 * grain);
 #endif
 
   } catch (RcppThread::UserInterruptException &e) {
@@ -335,7 +341,7 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
     Rcout << "Process terminated by the user successfully, partial results "
              "were returned.";
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),

@@ -1,3 +1,5 @@
+// NOLINTBEGIN(*)
+
 #ifndef __FFT__
 #define __FFT__
 #include <complex>
@@ -23,10 +25,10 @@ namespace FFT {
 #define M_PI_4 0.785398163397448309615660845820 /* pi/4 */
 #endif
 
-typedef struct complex {
+using complex_t = struct complex {
   double r;
   double i;
-} complex_t;
+};
 
 class fftw {
 
@@ -60,3 +62,5 @@ private:
 } // namespace FFT
 
 #endif // __FFT__
+
+// NOLINTEND(*)
