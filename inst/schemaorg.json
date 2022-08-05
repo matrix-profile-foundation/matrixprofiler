@@ -46,9 +46,7 @@
       "givenName": "Michele"
     }
   ],
-  "copyrightHolder": {},
   "description": "This is the core functions needed by the 'tsmp' package. The low level and carefully checked mathematical functions are here. These are implementations of the Matrix Profile concept that was created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.",
-  "funder": {},
   "license": "https://spdx.org/licenses/GPL-3.0",
   "name": "matrixprofiler: Matrix Profile for R",
   "programmingLanguage": {
@@ -62,6 +60,6 @@
     "name": "Comprehensive R Archive Network (CRAN)",
     "url": "https://cran.r-project.org"
   },
-  "runtimePlatform": "R version 4.1.1 (2021-08-10)",
-  "version": "0.1.7"
+  "runtimePlatform": "R version 4.2.1 (2022-06-23)",
+  "version": "0.1.8.9000"
 }

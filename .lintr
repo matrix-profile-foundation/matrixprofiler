@@ -9,10 +9,8 @@ linters: linters_with_defaults(
   consecutive_stopifnot_linter(),
   cyclocomp_linter(50),
   duplicate_argument_linter(),
-  extraction_operator_linter = NULL,
   fixed_regex_linter(),
   ifelse_censor_linter(),
-  implicit_integer_linter(),
   inner_combine_linter(),
   line_length_linter(150),
   literal_coercion_linter(),
@@ -42,4 +40,4 @@ linters: linters_with_defaults(
   unused_import_linter(),
   yoda_test_linter()
   )
-exclusions: list("dev", "renv", "R/RcppExports.R", "README.Rmd")
+exclusions: list("dev", "tests", "renv", "R/RcppExports.R", "README.Rmd")

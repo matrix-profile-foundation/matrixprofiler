@@ -1,6 +1,6 @@
 # CRAN Comments
 
-## Comments for this version (0.1.7)
+## Comments for this version (0.1.8)
 
 Due to CRAN policy, I had to remove the Makefile command --strip-debug.
 Therefore, the library now has more than 15MB in size on *nix systems.

@@ -2,7 +2,7 @@ README
 ================
 Francisco Bischoff
 
-26 mai 2021
+05 Aug 2022
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -79,7 +79,7 @@ devtools::install_github("matrix-profile-foundation/matrixprofiler")
     -   MASS extensions: UN (Unnormalized Query)
     -   MASS extensions: WQ (Weighted Query)
     -   MASS extensions: ABS (Absolute Query and Data)
-    -   Window functions like mov\_mean() and others.
+    -   Window functions like mov_mean() and others.
 
 ### On Roadmap
 
