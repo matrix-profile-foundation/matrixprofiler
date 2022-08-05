@@ -17,16 +17,16 @@ mass2_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean
     .Call(`_matrixprofiler_mass2_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd)
 }
 
-mass3_rcpp <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k) {
-    .Call(`_matrixprofiler_mass3_rcpp`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k)
+mass3_rcpp <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain) {
+    .Call(`_matrixprofiler_mass3_rcpp`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain)
 }
 
-mass3_rcpp_parallel <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k) {
-    .Call(`_matrixprofiler_mass3_rcpp_parallel`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, k)
+mass3_rcpp_parallel <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain) {
+    .Call(`_matrixprofiler_mass3_rcpp_parallel`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain)
 }
 
-set_k_rcpp <- function(k, data_size, window_size) {
-    .Call(`_matrixprofiler_set_k_rcpp`, k, data_size, window_size)
+set_k_rcpp <- function(grain, data_size, window_size) {
+    .Call(`_matrixprofiler_set_k_rcpp`, grain, data_size, window_size)
 }
 
 find_best_k_rcpp <- function(data_ref, query_ref, window_size) {
@@ -161,8 +161,8 @@ movsum_ogita_rcpp <- function(data, window_size) {
     .Call(`_matrixprofiler_movsum_ogita_rcpp`, data, window_size)
 }
 
-precision_test_rcpp <- function(d) {
-    .Call(`_matrixprofiler_precision_test_rcpp`, d)
+precision_test_rcpp <- function(dd) {
+    .Call(`_matrixprofiler_precision_test_rcpp`, dd)
 }
 
 movmin_rcpp <- function(data, window_size) {

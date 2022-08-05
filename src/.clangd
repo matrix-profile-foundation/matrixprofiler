@@ -1,0 +1,30 @@
+CompileFlags:
+  Add:
+    [
+      "-I/usr/share/R/include",
+      "-I/usr/lib/R/library/Rcpp/include",
+      "-I/usr/lib/R/library/RcppParallel/include",
+      "-I/usr/lib/R/library/RcppThread/include",
+      "-I/usr/lib/R/library/RcppProgress/include",
+      "-DUNICODE",
+      "-D_UNICODE",
+      "-DRCPP_PARALLEL_USE_TBB=1",
+      "-DSTRICT_R_HEADERS",
+    ]
+  Compiler: clang++
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+Diagnostics:
+  ClangTidy:
+    Remove:
+      - modernize-use-trailing-return-type
+      - modernize-use-auto
+      - readability-isolate-declaration
+      - readability-else-after-return
+      - readability-magic-numbers
+      - bugprone-easily-swappable-parameters
+      - cppcoreguidelines-avoid-magic-numbers
+      - cppcoreguidelines-pro-bounds-pointer-arithmetic
+      - cppcoreguidelines-owning-memory

@@ -193,10 +193,15 @@
     },
     "clipr": {
       "Package": "clipr",
-      "Version": "0.8.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "3f038e5ac7f41d4ac41ce658c85e3042",
+      "Version": "0.8.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "mdlincoln",
+      "RemoteRepo": "clipr",
+      "RemoteRef": "main",
+      "RemoteSha": "d14fc11f37c7ea90e1598fab9b597634f77376d9",
+      "Hash": "c3e6eaeed24789ed512327084b150d00",
       "Requirements": []
     },
     "commonmark": {

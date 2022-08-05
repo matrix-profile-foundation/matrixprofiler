@@ -7,38 +7,41 @@
 using namespace RcppParallel;
 
 namespace RcppParallel2 {
-namespace {
+namespace { // NOLINT: anonymous namespace
 // Function to calculate the ranges for a given input
-std::vector<IndexRange> splitInputRange(const IndexRange &range, std::size_t grainSize) {
+inline std::vector<IndexRange> splitInputRange(const IndexRange &range, std::size_t grainSize) {
 
   // determine max number of threads
   std::size_t threads = tthread::thread::hardware_concurrency();
-  char *numThreads = ::getenv("RCPP_PARALLEL_NUM_THREADS");
-  if (numThreads != NULL) {
-    int parsedThreads = ::atoi(numThreads);
-    if (parsedThreads > 0)
+  char *numThreads = ::getenv("RCPP_PARALLEL_NUM_THREADS"); // NOLINT(concurrency-mt-unsafe)
+  if (numThreads != nullptr) {
+    long const parsedThreads = ::strtol(numThreads, nullptr, 10);
+    if (parsedThreads > 0) {
       threads = parsedThreads;
+    }
   }
 
   // compute grainSize (including enforcing requested minimum)
-  std::size_t length = range.end() - range.begin();
-  if (threads == 1)
+  std::size_t const length = range.end() - range.begin();
+  if (threads == 1) {
     grainSize = length;
-  else if ((length % threads) == 0) // perfect division
+  } else if ((length % threads) == 0) { // perfect division
     grainSize = std::max(length / threads, grainSize);
-  else // imperfect division, divide by threads - 1
+  } else { // imperfect division, divide by threads - 1
     grainSize = std::max(length / (threads - 1), grainSize);
+  }
   // allocate ranges
   std::vector<IndexRange> ranges;
   std::size_t begin = range.begin();
   std::size_t end = begin;
   while (begin < range.end()) {
-    if ((range.end() - (begin + grainSize)) < grainSize)
+    if ((range.end() - (begin + grainSize)) < grainSize) {
       end = range.end();
-    else
+    } else {
       end = std::min(begin + grainSize, range.end());
+    }
 
-    ranges.push_back(IndexRange(begin, end));
+    ranges.emplace_back(begin, end);
     begin = end;
   }
 
@@ -49,19 +52,21 @@ std::vector<IndexRange> splitInputRange(const IndexRange &range, std::size_t gra
 // Execute the Worker over the IndexRange in parallel
 inline void ttParallelFor(std::size_t begin, std::size_t end, Worker &worker, std::size_t grainSize = 1) {
   // split the work
-  IndexRange inputRange(begin, end);
-  std::vector<IndexRange> ranges = RcppParallel2::splitInputRange(inputRange, grainSize);
+  IndexRange const inputRange(begin, end);
+  std::vector<IndexRange> const ranges = RcppParallel2::splitInputRange(inputRange, grainSize);
 
   // create threads
   std::vector<tthread::thread *> threads;
-  for (std::size_t i = 0; i < ranges.size(); ++i) {
-    threads.push_back(new tthread::thread(workerThread, new Work(ranges[i], worker)));
+  threads.reserve(ranges.size());
+
+  for (IndexRange const range : ranges) {
+    threads.push_back(new tthread::thread(workerThread, new Work(range, worker)));
   }
 
   // join and delete them
-  for (std::size_t i = 0; i < threads.size(); ++i) {
-    threads[i]->join();
-    delete threads[i];
+  for (tthread::thread *thread : threads) {
+    thread->join();
+    delete thread;
   }
 }
 

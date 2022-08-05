@@ -1,4 +1,4 @@
-#include "math.h"
+#include "mathtools.h"
 #include "fft.h"
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>
@@ -24,9 +24,9 @@ IntegerVector seq(uint64_t start, uint64_t end) {
 
 IntegerVector seq_by(uint64_t start, uint64_t end, uint32_t by) {
 
-  uint64_t total_length = ceil((double)end / by);
+  uint64_t const total_length = ceil((double)end / by);
 
-  IntegerVector result = Range(1, total_length) * by + start - by;
+  IntegerVector const result = Range(1, total_length) * by + start - by;
 
   return (result);
 }
@@ -45,18 +45,18 @@ double std_rcpp(const NumericVector data, const bool na_rm = false) {
     }
   }
 
-  double result = sqrt(sum(((the_data - mean(the_data)) * (the_data - mean(the_data)))) / the_data.length());
+  double const result = sqrt(sum(((the_data - mean(the_data)) * (the_data - mean(the_data)))) / the_data.length());
 
   return (result);
 }
 
 //[[Rcpp::export]]
 NumericMatrix list_to_matrix(const List x) {
-  int32_t nlines = x.size();
+  int32_t const nlines = x.size();
   uint32_t colmax = 0;
 
   for (int32_t i = 0; i < nlines; i++) {
-    uint32_t currsize = as<NumericVector>(x[i]).size();
+    uint32_t const currsize = as<NumericVector>(x[i]).size();
     if (colmax < currsize) {
       colmax = currsize;
     }
@@ -66,7 +66,7 @@ NumericMatrix list_to_matrix(const List x) {
 
   for (int32_t i = 0; i < nlines; i++) {
     // int32_t line = nlines - i - 1;
-    uint32_t currsize = as<NumericVector>(x[i]).size();
+    uint32_t const currsize = as<NumericVector>(x[i]).size();
     NumericMatrix::Row row = m(i, _);
     row = as<NumericVector>(x[i]);
 
@@ -80,7 +80,7 @@ NumericMatrix list_to_matrix(const List x) {
 
 IntegerVector which_cpp(const LogicalVector x) {
 
-  int nx = x.size();
+  int const nx = x.size();
   std::vector<int> y;
   y.reserve(nx);
 
@@ -98,7 +98,7 @@ int32_t mode_rcpp(const IntegerVector x) {
 
   // is slower than R implementation...
   IntegerVector ux = unique(x);
-  int32_t y = ux[which_max(table(match(x, ux)))];
+  int32_t const y = ux[which_max(table(match(x, ux)))];
   return y;
 }
 
@@ -113,8 +113,8 @@ int32_t mode_rcpp(const IntegerVector x) {
 
 //[[Rcpp::export]]
 NumericVector znorm_rcpp(const NumericVector data) {
-  double data_mean = mean(data);
-  double data_dev = sqrt(sum(((data - data_mean) * (data - data_mean))) / data.length());
+  double const data_mean = mean(data);
+  double const data_dev = sqrt(sum(((data - data_mean) * (data - data_mean))) / data.length());
 
   if (data_dev == NA_REAL || data_dev <= 0.01) {
     return (data - data_mean);
@@ -125,11 +125,11 @@ NumericVector znorm_rcpp(const NumericVector data) {
 
 //[[Rcpp::export]]
 NumericVector normalize_rcpp(const NumericVector data, double min, double max) {
-  double min_val = ::min(data);
-  double max_val = ::max(data);
+  double const min_val = ::min(data);
+  double const max_val = ::max(data);
 
-  double a = (max - min) / (max_val - min_val);
-  double b = max - a * max_val;
+  double const a = (max - min) / (max_val - min_val);
+  double const b = max - a * max_val;
   NumericVector norm_data = a * data + b;
 
   norm_data[norm_data < min] = min;
@@ -152,9 +152,9 @@ IntegerVector binary_split_rcpp(const uint32_t n) {
   lb_list.push_back(2);
   ub_list.push_back(n);
 
-  uint32_t lb;
-  uint32_t ub;
-  uint32_t mid;
+  uint32_t lb = 0;
+  uint32_t ub = 0;
+  uint32_t mid = 0;
 
   for (uint32_t i = 1; i < n; i++) {
     lb = lb_list.front();
@@ -186,7 +186,7 @@ IntegerVector binary_split_rcpp(const uint32_t n) {
 //[[Rcpp::export]]
 NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size) {
   // this format is less prone to rounding problems
-  NumericVector res = (2 * window_size - data * data) / (2 * window_size);
+  NumericVector const res = (2 * window_size - data * data) / (2 * window_size);
 
   return (res);
 }
@@ -194,21 +194,21 @@ NumericVector ed_corr_rcpp(const NumericVector data, uint32_t window_size) {
 //[[Rcpp::export]]
 NumericVector corr_ed_rcpp(const NumericVector data, uint32_t window_size) {
   // this format is less prone to rounding problems
-  NumericVector res = sqrt(2 * window_size * (1 - ifelse(data > 1, 1, data)));
+  NumericVector const res = sqrt(2 * window_size * (1 - ifelse(data > 1, 1, data)));
 
   return (res);
 }
 
 //[[Rcpp::export]]
 double inner_product(const NumericVector a, const NumericVector b) {
-  double res = std::inner_product(a.begin(), a.end(), b.begin(), 0.0);
+  double const res = std::inner_product(a.begin(), a.end(), b.begin(), 0.0);
 
   return (res);
 }
 
 //[[Rcpp::export]]
 double sum_of_squares(const NumericVector a) {
-  double res = std::inner_product(a.begin(), a.end(), a.begin(), 0.0);
+  double const res = std::inner_product(a.begin(), a.end(), a.begin(), 0.0);
 
   return (res);
 }
@@ -218,7 +218,7 @@ double sum_of_squares(const NumericVector a) {
 ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
 
   ComplexVector result;
-  int n = z.length();
+  int const n = z.length();
   std::vector<std::complex<double>> zz(n);
   FFT::fftw *fft = new FFT::fftw();
 
@@ -236,7 +236,7 @@ ComplexVector fft_rcpp(const ComplexVector z, bool invert) {
 ComplexVector fft_rcpp(const NumericVector z, bool invert) {
 
   ComplexVector result;
-  int n = z.length();
+  int const n = z.length();
   std::vector<std::complex<double>> zz(n);
   FFT::fftw *fft = new FFT::fftw();
 
@@ -254,7 +254,7 @@ ComplexVector fft_rcpp(const NumericVector z, bool invert) {
 std::vector<std::complex<double>> fft_rcpp(const std::vector<double> z, bool invert) {
 
   std::vector<std::complex<double>> result;
-  int n = z.size();
+  int const n = z.size();
   std::vector<std::complex<double>> zz(n);
   FFT::fftw *fft = new FFT::fftw();
 
@@ -272,7 +272,7 @@ std::vector<std::complex<double>> fft_rcpp(const std::vector<double> z, bool inv
 std::vector<std::complex<double>> fft_rcpp(const std::vector<std::complex<double>> z, bool invert) {
 
   std::vector<std::complex<double>> result;
-  int n = z.size();
+  int const n = z.size();
   std::vector<std::complex<double>> zz(n);
   FFT::fftw *fft = new FFT::fftw();
 
@@ -289,7 +289,7 @@ std::vector<std::complex<double>> fft_rcpp(const std::vector<std::complex<double
 
 std::vector<double> fft_rcpp_real(const std::vector<std::complex<double>> z, bool invert) {
 
-  int n = z.size();
+  int const n = z.size();
   std::vector<double> result(n);
   std::vector<std::complex<double>> zz(n);
   std::vector<std::complex<double>> result_cplx;

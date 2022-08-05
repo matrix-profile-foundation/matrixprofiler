@@ -1,4 +1,4 @@
-#include "math.h" // math first to fix OSX error
+#include "mathtools.h" // math first to fix OSX error
 #include "mass.h"
 #include "fft.h"
 #include "windowfunc.h"
@@ -6,6 +6,8 @@
 #include <RcppParallel.h>
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
+using std::multiplies;
+
 using namespace RcppParallel;
 #include <Rcpp/Benchmark/Timer.h>
 #if RCPP_PARALLEL_USE_TBB
@@ -35,16 +37,16 @@ List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_
     query = query_window;
   }
 
-  double sumwy = sum(query * weight);
-  double sumwy2 = sum(weight * query * query);
+  double const sumwy = sum(query * weight);
+  double const sumwy2 = sum(weight * query * query);
 
   std::reverse_copy(query.begin(), query.end(), rev_query.begin());
   std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
 
-  ComplexVector prod = data_fft * fft_rcpp(rev_weight * rev_query);
+  ComplexVector const prod = data_fft * fft_rcpp(rev_weight * rev_query);
   NumericVector data_queryw = Re(fft_rcpp(prod, true));
 
-  IntegerVector range_d = Range(window_size - 1, data_size - 1);
+  IntegerVector const range_d = Range(window_size - 1, data_size - 1);
 
   last_product = data_queryw[range_d];
 
@@ -66,18 +68,18 @@ List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_
     std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
 
     // compute the product
-    ComplexVector prod = data_fft * fft_rcpp(rev_query);
+    ComplexVector const prod = data_fft * fft_rcpp(rev_query);
     NumericVector z = Re(fft_rcpp(prod, true));
     // compute the distance profile
-    IntegerVector range_z = Range(window_size - 1, data_size - 1);
-    IntegerVector range_d = Range(0, data_size - window_size);
+    IntegerVector const range_z = Range(window_size - 1, data_size - 1);
+    IntegerVector const range_d = Range(0, data_size - window_size);
     last_product = z[range_z];
     distance_profile = as<NumericVector>(sumx2[range_d]) - 2 * last_product + sumy2;
     distance_profile[distance_profile < 0] = 0;
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product));
@@ -89,7 +91,7 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
                 double query_sd) {
   NumericVector distance_profile;
   NumericVector last_product;
-  double q_mean, q_std = 0;
+  double q_mean = 0.0, q_std = 0.0;
 
   // compute query_window stats -- O(d_size)
   q_mean = query_mean;
@@ -101,7 +103,7 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
     std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
 
     // compute the product
-    ComplexVector prod = data_fft * fft_rcpp(rev_query);
+    ComplexVector const prod = data_fft * fft_rcpp(rev_query);
     NumericVector z = Re(fft_rcpp(prod, true));
     // compute the distance profile
     last_product = z[Range(window_size - 1, data_size - 1)];
@@ -111,33 +113,33 @@ List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, 
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product));
 }
 
 //[[Rcpp::export]]
-List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size,
-                uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean,
-                double query_sd, uint32_t k) {
+List mass3_rcpp(const NumericVector &query_window, const NumericVector &data_ref, uint64_t data_size,
+                uint32_t window_size, const NumericVector &data_mean, const NumericVector &data_sd, double query_mean,
+                double query_sd, uint32_t grain) {
   // data_ref is the long time series
   // query_window is the query
-  // k is the size of pieces, preferably a power of two
+  // grain is the size of pieces, preferably a power of two
   // data_ref is the data, query_window is the query
   //
 
   // FIXME: mass3 is throwing error when data std is zero; currently a hack is being used on find_k_neighbors.R
 
-  uint32_t w_size = window_size;
-  uint64_t d_size = data_size;
+  uint32_t const w_size = window_size;
+  uint64_t const d_size = data_size;
   NumericVector dist(data_mean.length());
   NumericVector::iterator dist_it = dist.begin();
   NumericVector last(data_mean.length());
   NumericVector::iterator last_it = last.begin();
 
-  k = set_k_rcpp(k, d_size, w_size);
-  double q_mean, q_std = 0;
+  grain = set_k_rcpp(grain, d_size, w_size);
+  double q_mean = 0.0, q_std = 0.0;
 
   // compute query_window stats -- O(d_size)
   q_mean = query_mean;
@@ -147,13 +149,13 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   NumericVector d_mean = data_mean;
   NumericVector d_std = data_sd;
 
-  NumericVector rev_query(k);
+  NumericVector rev_query(grain);
   std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
   ComplexVector Y = fft_rcpp(rev_query);
 
   uint64_t j = 0;
-  uint64_t jump = k - w_size + 1;
-  uint64_t seq_end = d_size - k;
+  uint64_t jump = grain - w_size + 1;
+  uint64_t const seq_end = d_size - grain;
   ComplexVector Z;
   NumericVector z;
   NumericVector d;
@@ -161,40 +163,40 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   try {
     for (j = 0; j <= seq_end; j = j + jump) {
       // The main trick of getting dot products in O(d_size log d_size) time
-      uint64_t idx_begin = j;
-      uint64_t idx_end = j + k - w_size;                         // idx_begin + jump - 1
-      ComplexVector X = fft_rcpp(data_ref[Range(j, j + k - 1)]); // idx_begin:(idx_begin + jump + w_size - 2)
+      uint64_t const idx_begin = j;
+      uint64_t const idx_end = j + grain - w_size;                         // idx_begin + jump - 1
+      ComplexVector const X = fft_rcpp(data_ref[Range(j, j + grain - 1)]); // idx_begin:(idx_begin + jump + w_size - 2)
 
       Z = X * Y;
 
       z = Re(fft_rcpp(Z, true));
 
-      d = 2 * (w_size - (z[Range(w_size - 1, k - 1)] - w_size * d_mean[Range(idx_begin, idx_end)] * q_mean) /
+      d = 2 * (w_size - (z[Range(w_size - 1, grain - 1)] - w_size * d_mean[Range(idx_begin, idx_end)] * q_mean) /
                             (d_std[Range(idx_begin, idx_end)] * q_std));
 
       // noise correction
       // d = d - (2 + 2 * w_size) * pow(std_n, 2) / pow(max(std_x, std_y), 2);
 
       std::copy(d.begin(), d.end(), dist_it + j);
-      std::copy(z.begin() + w_size - 1, z.begin() + k, last_it + j);
+      std::copy(z.begin() + w_size - 1, z.begin() + grain, last_it + j);
     }
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   jump = d_size - j;
 
   try {
     if (jump >= w_size) {
-      uint64_t idx_begin = j;
-      uint64_t idx_end = d_size - w_size;
+      uint64_t const idx_begin = j;
+      uint64_t const idx_end = d_size - w_size;
 
       if ((jump - (w_size - 1) + j) > (uint64_t)data_mean.length()) {
         Rcout << "DEBUG: error." << std::endl;
       } else {
-        ComplexVector X = fft_rcpp(data_ref[Range(j, d_size - 1)]);
+        ComplexVector const X = fft_rcpp(data_ref[Range(j, d_size - 1)]);
         Y = fft_rcpp(rev_query[Range(0, jump - 1)]);
 
         Z = X * Y;
@@ -212,13 +214,15 @@ List mass3_rcpp(const NumericVector query_window, const NumericVector data_ref, 
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("distance_profile") = dist, Rcpp::Named("last_product") = last));
 }
 
 struct MassWorker : public Worker {
+
+private:
   // input
   const RVector<double> data_ref;
   const RVector<double> window_ref;
@@ -240,19 +244,20 @@ struct MassWorker : public Worker {
   RVector<double> dp;
   RVector<double> lp;
 
+public:
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
-  MassWorker(const NumericVector data_ref, const NumericVector window_ref, const uint64_t w_size, const uint64_t d_size,
-             const NumericVector d_mean, const NumericVector d_std, const double q_mean, const double q_std,
-             NumericVector dp, NumericVector lp)
+  MassWorker(const NumericVector &data_ref, const NumericVector &window_ref, const uint64_t w_size,
+             const uint64_t d_size, const NumericVector &d_mean, const NumericVector &d_std, const double q_mean,
+             const double q_std, const NumericVector &dp, const NumericVector &lp)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
         q_mean(q_mean), q_std(q_std), dp(dp), lp(lp) {}
 
   // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) {
+  void operator()(std::size_t begin, std::size_t end) override {
     uint64_t jump = end - begin;
     uint64_t k = jump + w_size - 1;
-    uint64_t s = pow(2, (ceil(log2(k))));
+    uint64_t const s = pow(2, (ceil(log2(k))));
 
     FFT::fftw *fft = new FFT::fftw();
 
@@ -296,13 +301,13 @@ struct MassWorker : public Worker {
 //[[Rcpp::export]]
 List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector data_ref, uint64_t data_size,
                          uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
-                         double query_mean, double query_sd, uint16_t k) {
+                         double query_mean, double query_sd, uint16_t grain) {
   try {
-    k = set_k_rcpp(k, data_size, window_size);
+    grain = set_k_rcpp(grain, data_size, window_size);
 
     // allocate the output matrix
     NumericVector distance_profile(data_mean.length());
-    NumericVector last_product(data_mean.length());
+    NumericVector const last_product(data_mean.length());
 
     // SquareRoot functor (pass input and output matrixes)
     MassWorker mass_worker(data_ref, query_window, window_size, data_size, data_mean, data_sd, query_mean, query_sd,
@@ -311,9 +316,9 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
     // call parallelFor to do the work
     try {
 #if RCPP_PARALLEL_USE_TBB
-      RcppParallel::parallelFor(0, data_size, mass_worker, k);
+      RcppParallel::parallelFor(0, data_size, mass_worker, grain);
 #else
-      RcppParallel2::ttParallelFor(0, data_size, mass_worker, k);
+      RcppParallel2::ttParallelFor(0, data_size, mass_worker, grain);
 #endif
 
       distance_profile[distance_profile < 0] = 0;
@@ -321,63 +326,63 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
     } catch (RcppThread::UserInterruptException &ex) {
       Rcout << "Process terminated.\n";
     } catch (...) {
-      ::Rf_error("c++ exception (unknown reason)");
+      Rcpp::stop("c++ exception (unknown reason)");
     }
 
     return (
         List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product));
   } catch (std::out_of_range &ex) {
-    ::Rf_error("out_of_range\\n");
+    stop("out_of_range\\n");
   } catch (...) {
-    ::Rf_error("Interrupted\\n");
+    stop("Interrupted\\n");
   }
 }
 
 //[[Rcpp::export]]
-uint32_t set_k_rcpp(uint32_t k, uint64_t data_size, uint64_t window_size) {
+uint32_t set_k_rcpp(uint32_t grain, uint64_t data_size, uint64_t window_size) {
   try {
-    if (k > data_size) {
-      k = pow(2, ceil(log2(sqrt((double)data_size)))); // added double inside sqrt to avoid ambiguity on Solaris
+    if (grain > data_size) {
+      grain = pow(2, ceil(log2(sqrt((double)data_size)))); // added double inside sqrt to avoid ambiguity on Solaris
     }
 
-    if (k <= window_size) {
-      k = pow(2, (ceil(log2(window_size)) + 1));
-      if (k > data_size) {
-        k = data_size;
+    if (grain <= window_size) {
+      grain = pow(2, (ceil(log2(window_size)) + 1));
+      if (grain > data_size) {
+        grain = data_size;
       }
     }
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
-  return (k);
+  return (grain);
 }
 
 //[[Rcpp::export]]
 uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size) {
-  uint64_t data_size = data_ref.length();
-  uint32_t k = set_k_rcpp(window_size, data_size, window_size); // Set baseline
+  uint64_t const data_size = data_ref.length();
+  uint32_t grain = set_k_rcpp(window_size, data_size, window_size); // Set baseline
   uint64_t best_time = pow((double)2, (double)50); // added double inside sqrt to avoid ambiguity on Solaris
-  uint32_t best_k = k;
+  uint32_t best_k = grain;
   List pre = mass_pre_rcpp(data_ref, query_ref, window_size);
-  Timer timer;
+  Timer const timer;
 
   try {
     for (uint16_t j = 0; j < 10; j++) {
-      uint64_t tictoc = timer.now();
+      uint64_t const tictoc = timer.now();
       for (uint16_t i = 0; i < 10; i++) {
-        List nn = mass3_rcpp(query_ref[Range(i, i + window_size - 1)], data_ref, pre["data_size"], pre["window_size"],
-                             pre["data_mean"], pre["data_sd"], as<NumericVector>(pre["query_mean"])[i],
-                             as<NumericVector>(pre["query_sd"])[i], k);
+        List const nn = mass3_rcpp(
+            query_ref[Range(i, i + window_size - 1)], data_ref, pre["data_size"], pre["window_size"], pre["data_mean"],
+            pre["data_sd"], as<NumericVector>(pre["query_mean"])[i], as<NumericVector>(pre["query_sd"])[i], grain);
       }
-      uint64_t time_res = timer.now() - tictoc;
+      uint64_t const time_res = timer.now() - tictoc;
       if (time_res < best_time) {
         best_time = time_res;
-        best_k = k;
-        k = k * 2;
-        if (k > data_size) {
+        best_k = grain;
+        grain = grain * 2;
+        if (grain > data_size) {
           break;
         }
       } else {
@@ -387,7 +392,7 @@ uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector quer
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return best_k;
@@ -397,17 +402,17 @@ uint32_t find_best_k_rcpp(const NumericVector data_ref, const NumericVector quer
 
 //[[Rcpp::export]]
 List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size) {
-  uint64_t data_size = data_ref.length();
-  uint64_t query_size = query_ref.length();
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
 
   List data_avgsd = movmean_std_rcpp(data_ref, window_size); // precompute moving average and SD
 
-  uint32_t pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
+  uint32_t const pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
 
   std::copy(data_ref.begin(), data_ref.end(), data_padded.begin());
 
-  ComplexVector data_fft = fft_rcpp(data_padded); // precompute fft of data
+  ComplexVector const data_fft = fft_rcpp(data_padded); // precompute fft of data
 
   NumericVector query_mean;
   NumericVector query_sd;
@@ -424,7 +429,7 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("data_fft") = data_fft, Rcpp::Named("data_size") = data_size,
@@ -435,16 +440,16 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
 
 //[[Rcpp::export]]
 List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size) {
-  uint64_t data_size = data_ref.length();
-  uint64_t query_size = query_ref.length();
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
 
-  uint32_t pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
+  uint32_t const pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
 
   std::copy(data_ref.begin(), data_ref.end(), data_padded.begin());
 
-  ComplexVector data_fft = fft_rcpp(data_padded); // precompute fft of data
-  NumericVector sumx2 = movsum_ogita_rcpp(data_ref * data_ref, window_size);
+  ComplexVector const data_fft = fft_rcpp(data_padded); // precompute fft of data
+  NumericVector const sumx2 = movsum_ogita_rcpp(data_ref * data_ref, window_size);
   NumericVector sumy2;
   try {
     if (query_size > 0) {
@@ -455,7 +460,7 @@ List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_r
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
   return (List::create(Rcpp::Named("data_fft") = data_fft, Rcpp::Named("window_size") = window_size,
@@ -466,22 +471,22 @@ List mass_pre_abs_rcpp(const NumericVector data_ref, const NumericVector query_r
 //[[Rcpp::export]]
 List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size,
                             const NumericVector weight) {
-  uint64_t data_size = data_ref.length();
-  uint64_t query_size = query_ref.length();
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
 
   List data_avgsd = movmean_std_rcpp(data_ref, window_size); // precompute moving average and SD
 
-  uint32_t pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
+  uint32_t const pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
   NumericVector rev_weight(pad_size);
-  double sumw = sum(weight);
+  double const sumw = sum(weight);
 
   std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
   std::copy(data_ref.begin(), data_ref.end(), data_padded.begin());
 
-  ComplexVector data_fft = fft_rcpp(data_padded); // precompute fft of data
-  ComplexVector w_fft = fft_rcpp(rev_weight);
-  ComplexVector data_fft_w_fft = data_fft * w_fft;
+  ComplexVector const data_fft = fft_rcpp(data_padded); // precompute fft of data
+  ComplexVector const w_fft = fft_rcpp(rev_weight);
+  ComplexVector const data_fft_w_fft = data_fft * w_fft;
 
   NumericVector query_mean;
   NumericVector query_sd;
@@ -498,22 +503,23 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    Rcpp::stop("c++ exception (unknown reason)");
   }
 
-  IntegerVector range_s = Range(window_size - 1, data_size - 1);
+  IntegerVector const range_s = Range(window_size - 1, data_size - 1);
 
   NumericVector data_w = Re(fft_rcpp(data_fft_w_fft, true));
-  ComplexVector data2_fft = fft_rcpp(data_padded * data_padded);
-  ComplexVector data2_fft_w_fft = data2_fft * w_fft;
+  ComplexVector const data2_fft = fft_rcpp(data_padded * data_padded);
+  ComplexVector const data2_fft_w_fft = data2_fft * w_fft;
   NumericVector data2_w = Re(fft_rcpp(data2_fft_w_fft, true));
-  NumericVector sumxw2 = data2_w[range_s];
-  NumericVector sumxw = data_w[range_s];
+  NumericVector const sumxw2 = data2_w[range_s];
+  NumericVector const sumxw = data_w[range_s];
 
-  NumericVector data_mean = data_avgsd["avg"];
-  NumericVector data_sd = data_avgsd["sd"];
+  NumericVector const data_mean = data_avgsd["avg"];
+  NumericVector const data_sd = data_avgsd["sd"];
 
-  NumericVector data_pre = (sumxw2 - 2 * sumxw * data_mean + sumw * (data_mean * data_mean)) / (data_sd * data_sd);
+  NumericVector const data_pre =
+      (sumxw2 - 2 * sumxw * data_mean + sumw * (data_mean * data_mean)) / (data_sd * data_sd);
 
   return (List::create(
       Rcpp::Named("data_fft") = data_fft, Rcpp::Named("data_pre") = data_pre, Rcpp::Named("data_size") = data_size,
