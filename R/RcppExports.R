@@ -125,12 +125,12 @@ stamp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, s_size, pr
     .Call(`_matrixprofiler_stamp_rcpp_parallel`, data_ref, query_ref, window_size, ez, s_size, progress)
 }
 
-stomp_rcpp <- function(data_ref, query_ref, window_size, ez, progress) {
-    .Call(`_matrixprofiler_stomp_rcpp`, data_ref, query_ref, window_size, ez, progress)
+stomp_rcpp <- function(data_ref, query_ref, window_size, ez, progress, left_right_profile) {
+    .Call(`_matrixprofiler_stomp_rcpp`, data_ref, query_ref, window_size, ez, progress, left_right_profile)
 }
 
-stomp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, progress) {
-    .Call(`_matrixprofiler_stomp_rcpp_parallel`, data_ref, query_ref, window_size, ez, progress)
+stomp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, progress, left_right_profile) {
+    .Call(`_matrixprofiler_stomp_rcpp_parallel`, data_ref, query_ref, window_size, ez, progress, left_right_profile)
 }
 
 movmean_rcpp <- function(data, window_size) {

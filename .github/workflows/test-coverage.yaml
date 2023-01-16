@@ -40,7 +40,8 @@ jobs:
 
       - name: Install System dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update -y && sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev \
+        run:
+          sudo apt-get update -y && sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev \
           make libicu-dev libxml2-dev
 
       - name: Setting up pandoc and pandoc-citeproc

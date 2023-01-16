@@ -2,14 +2,7 @@
   "version": "0.2",
   "allowCompoundWords": true,
   "diagnosticLevel": "Information",
-  "enableFiletypes": [
-    "inf",
-    "ini",
-    "log",
-    "makefile",
-    "rmd",
-    "xml"
-  ],
+  "enableFiletypes": ["inf", "ini", "log", "makefile", "rmd", "xml"],
   "ignorePaths": [
     "**/package-lock.json",
     "**/node_modules/**",
@@ -222,11 +215,7 @@
       "path": "${workspaceFolder}/inst/WORDLIST"
     }
   ],
-  "dictionaries": [
-    "wordlist"
-  ],
+  "dictionaries": ["wordlist"],
   "language": "en,pt",
-  "flagWords": [
-    "hte"
-  ]
+  "flagWords": ["hte"]
 }

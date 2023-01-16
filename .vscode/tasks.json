@@ -8,9 +8,7 @@
       "linux": {
         "type": "process",
         "command": "/usr/bin/Rscript",
-        "args": [
-          "dev/check_asan.R"
-        ]
+        "args": ["dev/check_asan.R"]
       },
       "options": {
         "cwd": "${workspaceFolder}"
@@ -24,10 +22,7 @@
       "problemMatcher": [
         {
           "owner": "R",
-          "fileLocation": [
-            "relative",
-            "${workspaceFolder}/src"
-          ],
+          "fileLocation": ["relative", "${workspaceFolder}/src"],
           "pattern": {
             "regexp": "^\\**(.*):(\\d+):(\\d+):\\s+runtime (warning|error):\\s+(.*)$",
             "file": 1,
@@ -48,7 +43,7 @@
             },
             {
               "regexp": "(.*)",
-              "message": 1,
+              "message": 1
             }
           ]
         },
@@ -63,7 +58,7 @@
             },
             {
               "regexp": "(.*)",
-              "message": 1,
+              "message": 1
             }
           ]
         }
@@ -76,10 +71,7 @@
       "linux": {
         "command": "/usr/bin/Rscript"
       },
-      "args": [
-        "-e",
-        "styler:::style_pkg(filetype = c('R', 'Rmd'))"
-      ],
+      "args": ["-e", "styler:::style_pkg(filetype = c('R', 'Rmd'))"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -97,12 +89,7 @@
       "linux": {
         "command": "/usr/bin/clang-format"
       },
-      "args": [
-        "-i",
-        "--style=file",
-        "*.cpp",
-        "*.h"
-      ],
+      "args": ["-i", "--style=file", "*.cpp", "*.h"],
       "dependsOn": "R: lint package",
       "group": "none",
       "presentation": {
@@ -110,6 +97,16 @@
         "panel": "shared"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "PVS-Analyze",
+      "type": "shell",
+      "command": "rm ./build/PVS-Studio.log; pvs-studio-analyzer analyze -c ./.vscode/pvsconfig.cfg -R ./.vscode/.pvsconfig -r /workspaces/main -f ./build/compile_commands.json -j2"
+    },
+    {
+      "label": "PVS-Convert",
+      "type": "shell",
+      "command": "plog-converter ./build/PVS-Studio.log -t json -o ./build/PVS-Studio.json && plog-converter ./build/PVS-Studio.log -t sarif-vscode -o ./build/PVS-Studio.sarif"
     },
     {
       "type": "process",
@@ -144,10 +141,7 @@
       "linux": {
         "command": "/usr/bin/Rscript"
       },
-      "args": [
-        "-e",
-        "covr::package_coverage()"
-      ],
+      "args": ["-e", "covr::package_coverage()"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -169,7 +163,7 @@
         "args": [
           "-e",
           "codemetar::write_codemeta(write_minimeta = TRUE); codemetar::give_opinions()"
-        ],
+        ]
       },
       "options": {
         "cwd": "${workspaceFolder}"
@@ -181,9 +175,7 @@
         "reveal": "always",
         "panel": "shared"
       },
-      "problemMatcher": [
-        "$gcc"
-      ]
+      "problemMatcher": ["$gcc"]
     },
     {
       "type": "shell",
@@ -193,16 +185,11 @@
         "command": "/usr/bin/Rscript"
       },
       "detail": "compiler: Rcmd",
-      "args": [
-        "-e",
-        "'devtools::load_all()'"
-      ],
+      "args": ["-e", "'devtools::load_all()'"],
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": ["$gcc"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -242,9 +229,7 @@
       "options": {
         "cwd": "${workspaceFolder}/src"
       },
-      "problemMatcher": [
-        "$gcc"
-      ],
+      "problemMatcher": ["$gcc"],
       "group": {
         "kind": "build",
         "isDefault": true

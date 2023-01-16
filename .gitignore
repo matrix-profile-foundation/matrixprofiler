@@ -4,6 +4,7 @@
 ### R ###
 # History files
 .Rhistory
+.Renviron
 .Rapp.history
 
 # Session Data files
@@ -78,3 +79,6 @@ README.html
 workspace.RData
 .history
 docs
+.vscode/.pvsconfig
+.vscode/pvsconfig.cfg
+.gitignore

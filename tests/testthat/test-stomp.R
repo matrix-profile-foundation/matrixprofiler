@@ -1,24 +1,59 @@
-stomp_res <- NULL
-stomp_res_par <- NA
-
 test_that("Stomp", {
-  expect_silent(stomp_res <<- stomp(
-    data = motifs_discords_small, window_size = 150, exclusion_zone = 0.5,
+  withr::local_options(digits = 22)
+  obj <- helper_objects()
+
+  stomp_res <- expect_silent(stomp(
+    data = obj$ref_data, window_size = obj$w, exclusion_zone = 0.5,
     progress = FALSE
   ))
-  expect_type(stomp_res, "list")
-  expect_snapshot_value(stomp_res, style = "serialize")
+
+  stomp_res %>%
+    expect_type("list") %>%
+    expect_length(4) %>%
+    expect_named(c("matrix_profile", "profile_index", "partial", "ez"))
+
+  expect_snapshot(stomp_res)
 })
 
 test_that("Stomp Parallel", {
-  expect_silent(stomp_res_par <<- stomp(
-    data = motifs_discords_small, window_size = 150, exclusion_zone = 0.5,
-    n_workers = 2, progress = FALSE
+  withr::local_options(digits = 22)
+  obj <- helper_objects()
+
+  stomp_res_par <- expect_silent(stomp(
+    data = obj$ref_data, window_size = obj$w, exclusion_zone = 0.5, n_workers = 2,
+    progress = FALSE
   ))
-  expect_type(stomp_res_par, "list")
-  # expect_snapshot_value(stomp_res_par, style = "serialize")
+
+  stomp_res_par %>%
+    expect_type("list") %>%
+    expect_length(4) %>%
+    expect_named(c("matrix_profile", "profile_index", "partial", "ez"))
+  expect_snapshot(stomp_res_par)
 })
 
 test_that("Stomps are equal", {
+  obj <- helper_objects()
+  stomp_res <- expect_silent(stomp(
+    data = obj$ref_data, window_size = obj$w, exclusion_zone = 0.5,
+    progress = FALSE
+  ))
+
+  stomp_res_par <- expect_silent(stomp(
+    data = obj$ref_data, window_size = obj$w, exclusion_zone = 0.5, n_workers = 2,
+    progress = FALSE
+  ))
+
   expect_equal(stomp_res, stomp_res_par)
+})
+
+test_that("Left Right Profiles", {
+  obj <- helper_objects()
+  stomp_res <- expect_silent(stomp(
+    data = obj$ref_data, window_size = obj$w, exclusion_zone = 0.5,
+    progress = FALSE, left_right_profile = TRUE
+  ))
+
+  join <- pmin(stomp_res$left_matrix_profile, stomp_res$right_matrix_profile)
+
+  expect_equal(stomp_res$matrix_profile, join)
 })

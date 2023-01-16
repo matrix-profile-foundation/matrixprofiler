@@ -1,0 +1,43 @@
+version: 0.1
+cli:
+  version: 1.3.1
+plugins:
+  sources:
+    - id: trunk
+      ref: v0.0.8
+      uri: https://github.com/trunk-io/plugins
+lint:
+  enabled:
+    - gitleaks@8.15.2
+    - git-diff-check
+    - yamllint@1.29.0
+    - semgrep@1.3.0
+    - markdownlint@0.33.0
+    - prettier@2.8.3
+    - actionlint@1.6.22
+  disabled:
+    - oxipng
+  ignore:
+    - linters: [ALL]
+      paths:
+        - renv/**
+        - examples/**
+        - man/**
+        - revdep/**
+        - "**/_snaps/**"
+        - src/RcppExports.cpp
+        - R/RcppExports.R
+        - README.md
+        - NEWS.md
+runtimes:
+  enabled:
+    - python@3.10.8
+    - go@1.18.3
+    - node@18.12.1
+actions:
+  disabled:
+    - trunk-announce
+    - trunk-check-pre-push
+    - trunk-fmt-pre-commit
+  enabled:
+    - trunk-upgrade-available

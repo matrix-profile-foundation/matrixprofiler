@@ -42,9 +42,7 @@
       "request": "launch",
       "debugMode": "workspace",
       "includePackageScopes": true,
-      "loadPackages": [
-        "."
-      ]
+      "loadPackages": ["."]
     },
     {
       "name": "(gdb) Bash on Windows Attach",
@@ -55,9 +53,7 @@
       "pipeTransport": {
         "debuggerPath": "/usr/bin/gdb",
         "pipeProgram": "${env:windir}\\system32\\bash.exe",
-        "pipeArgs": [
-          "-c"
-        ],
+        "pipeArgs": ["-c"],
         "pipeCwd": ""
       },
       "setupCommands": [
