@@ -1,3 +1,7 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
+
 #include "mathtools.h" // math first to fix OSX error
 #include "stomp.h"
 #include "mass.h"
@@ -20,7 +24,7 @@ using namespace RcppParallel;
 
 // [[Rcpp::export]]
 List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                bool progress) {
+                bool progress, bool left_right_profile) {
   bool partial = false;
   double const exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint32_t const data_size = data_ref.length();
@@ -48,6 +52,17 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   NumericVector matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector profile_index(matrix_profile_size, -1);
+  NumericVector right_matrix_profile;
+  IntegerVector right_profile_index;
+  NumericVector left_matrix_profile;
+  IntegerVector left_profile_index;
+
+  if (left_right_profile) {
+    right_matrix_profile = NumericVector(matrix_profile_size, R_PosInf);
+    right_profile_index = IntegerVector(matrix_profile_size, -1);
+    left_matrix_profile = NumericVector(matrix_profile_size, R_PosInf);
+    left_profile_index = IntegerVector(matrix_profile_size, -1);
+  }
 
   uint32_t const grain = find_best_k_rcpp(data, query, window_size);
 
@@ -122,9 +137,29 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
       distance_profile[skip_location] = R_PosInf;
 
+      if (left_right_profile) {
+        // left matrix_profile
+        LogicalVector ldx(matrix_profile_size, FALSE);
+        ldx[Range(i, matrix_profile_size - 1)] = (distance_profile[Range(i, matrix_profile_size - 1)] <
+                                                  left_matrix_profile[Range(i, matrix_profile_size - 1)]);
+        left_matrix_profile[ldx] = distance_profile[ldx];
+        left_profile_index[which_cpp(ldx)] = i;
+
+        // right matrix_profile
+        LogicalVector rdx(matrix_profile_size, FALSE);
+        rdx[Range(0, i)] = (distance_profile[Range(0, i)] < right_matrix_profile[Range(0, i)]);
+        right_matrix_profile[rdx] = distance_profile[rdx];
+        right_profile_index[which_cpp(rdx)] = i;
+      }
+
       LogicalVector const idx = (distance_profile < matrix_profile);
       matrix_profile[idx] = distance_profile[idx];
       profile_index[which_cpp(idx)] = i + 1;
+    }
+
+    if (left_right_profile) {
+      left_matrix_profile = sqrt(left_matrix_profile);
+      right_matrix_profile = sqrt(right_matrix_profile);
     }
 
     matrix_profile = sqrt(matrix_profile);
@@ -135,8 +170,17 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
     Rcpp::stop("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
-                       Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
+  if (left_right_profile) {
+    return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
+                         Rcpp::Named("right_matrix_profile") = right_matrix_profile,
+                         Rcpp::Named("right_profile_index") = right_profile_index,
+                         Rcpp::Named("left_matrix_profile") = left_matrix_profile,
+                         Rcpp::Named("left_profile_index") = left_profile_index, Rcpp::Named("partial") = partial,
+                         Rcpp::Named("ez") = ez));
+  } else {
+    return (List::create(Rcpp::Named("matrix_profile") = matrix_profile, Rcpp::Named("profile_index") = profile_index,
+                         Rcpp::Named("partial") = partial, Rcpp::Named("ez") = ez));
+  }
 }
 
 struct StompWorker : public Worker {
@@ -276,7 +320,7 @@ public:
 
 // [[Rcpp::export]]
 List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                         bool progress) {
+                         bool progress, bool left_right_profile) {
   uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON);
   uint64_t const data_size = data_ref.length();
   uint64_t const query_size = query_ref.length();

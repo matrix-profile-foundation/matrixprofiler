@@ -1,10 +1,6 @@
 {
-  "C_Cpp.default.browse.path": [
-    "${workspaceRoot}/src"
-  ],
-  "C_Cpp.default.defines": [
-    "RC_INVOKED"
-  ],
+  "C_Cpp.default.browse.path": ["${workspaceRoot}/src"],
+  "C_Cpp.default.defines": ["RC_INVOKED"],
   "editor.fontFamily": "'Fira Code Retina', Consolas, 'Courier New', monospace",
   "editor.formatOnSave": true,
   "editor.tabCompletion": "on",
@@ -155,9 +151,7 @@
   "grammarly.startTextCheckInPausedState": true,
   "json.schemas": [
     {
-      "fileMatch": [
-        "codemeta.json"
-      ],
+      "fileMatch": ["codemeta.json"],
       "url": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld"
     }
   ],
@@ -181,16 +175,11 @@
     },
     "MD031": false,
     "MD033": {
-      "allowed_elements": [
-        "center",
-        "img"
-      ]
+      "allowed_elements": ["center", "img"]
     },
     "MD045": false
   },
-  "markdownlint.ignore": [
-    "revdep/*.md"
-  ],
+  "markdownlint.ignore": ["revdep/*.md"],
   "markdownlint.lintWorkspaceGlobs": [
     "**/*.{md,mkd,mdwn,mdown,markdown,markdn,mdtxt,mdtext,workbook}",
     "!**/node_modules",
@@ -214,13 +203,8 @@
   "search.exclude": {
     "**/_*/": true
   },
-  "sortJSON.orderOverride": [
-    "label",
-    "type"
-  ],
-  "sortJSON.orderUnderride": [
-    "problemMatcher"
-  ],
+  "sortJSON.orderOverride": ["label", "type"],
+  "sortJSON.orderUnderride": ["problemMatcher"],
   "taskExplorer.enableAnsiconForAnt": false,
   "taskExplorer.enableAnt": false,
   "taskExplorer.enableAppPublisher": false,
@@ -258,11 +242,7 @@
   "taskExplorer.showLastTasks": false,
   "terminal.integrated.shellIntegration.enabled": false,
   "testing.enableProblemDiagnostics": true,
-  "todo-tree.filtering.includeGlobs": [
-    "**/src/**",
-    "**/R/**",
-    "**/tests/**"
-  ],
+  "todo-tree.filtering.includeGlobs": ["**/src/**", "**/R/**", "**/tests/**"],
   "todo-tree.filtering.useBuiltInExcludes": "file and search excludes",
   "todo-tree.general.enableFileWatcher": true,
   "todo-tree.general.statusBar": "tags",

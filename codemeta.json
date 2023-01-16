@@ -182,6 +182,13 @@
   "readme": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/README.md",
   "contIntegration": "https://app.codecov.io/gh/matrix-profile-foundation/matrixprofiler",
   "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html",
-  "keywords": ["matrix-profile", "time-series", "r", "rcpp", "cran", "algorithm"],
+  "keywords": [
+    "matrix-profile",
+    "time-series",
+    "r",
+    "rcpp",
+    "cran",
+    "algorithm"
+  ],
   "relatedLink": "https://CRAN.R-project.org/package=matrixprofiler"
 }

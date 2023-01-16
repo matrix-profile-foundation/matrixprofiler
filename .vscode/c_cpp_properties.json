@@ -49,7 +49,8 @@
     {
       "name": "Rtools40-x86",
       "intelliSenseMode": "gcc-x86",
-      "includePath": [ // renv might be on i386-w64-mingw32 if R-32bits
+      "includePath": [
+        // renv might be on i386-w64-mingw32 if R-32bits
         "C:/Program Files/R/R-4.2.1/include",
         "${workspaceFolder}/src"
       ],
@@ -61,9 +62,7 @@
         "NDEBUG"
       ],
       "compilerPath": "D:/rtools40/mingw32/bin/g++.exe",
-      "compilerArgs": [
-        "-m32"
-      ], // redundant, but...
+      "compilerArgs": ["-m32"], // redundant, but...
       "cStandard": "gnu11",
       "cppStandard": "gnu++11",
       "customConfigurationVariables": {
@@ -73,7 +72,8 @@
     },
     {
       "name": "Raspian",
-      "includePath": [ // this is for 32-bits (armv7l)
+      "includePath": [
+        // this is for 32-bits (armv7l)
         "/usr/local/lib/R/include",
         "${workspaceFolder}/src"
       ],
@@ -84,9 +84,7 @@
         "STRICT_R_HEADERS"
       ],
       "compilerPath": "/usr/bin/g++",
-      "compilerArgs": [
-        "-m32"
-      ], // redundant, but...
+      "compilerArgs": ["-m32"], // redundant, but...
       "cStandard": "gnu11",
       "cppStandard": "gnu++11",
       "intelliSenseMode": "linux-gcc-arm",
@@ -96,7 +94,8 @@
     },
     {
       "name": "MacOS-clang++",
-      "includePath": [ // renv might be on i386-pc-linux-gnu if R-32bits
+      "includePath": [
+        // renv might be on i386-pc-linux-gnu if R-32bits
         "/usr/share/R/include",
         "${workspaceFolder}/src"
       ],
