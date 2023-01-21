@@ -1,8 +1,8 @@
 Type: Package
 Package: matrixprofiler
 Title: Matrix Profile for R
-Version: 0.1.8.9000
-Authors@R:c(
+Version: 0.1.8
+Authors@R: c(
     person("Francisco", "Bischoff", , "fbischoff@med.up.pt", role = c("aut", "cre"),
            comment = c(ORCID = "https://orcid.org/0000-0002-5301-8672")),
     person("Michael", "Yeh", , "myeh003@ucr.edu", role = c("res", "ccp", "ctb"),
@@ -48,5 +48,5 @@ Language: en-US
 LazyData: true
 NeedsCompilation: yes
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 SystemRequirements: GNU make

@@ -72,7 +72,7 @@ NumericMatrix list_to_matrix(const List x) {
     // int32_t line = nlines - i - 1;
     uint32_t const currsize = as<NumericVector>(x[i]).size();
     NumericMatrix::Row row = m(i, _);
-    row = as<NumericVector>(x[i]);
+    row = as<NumericVector>(x[i]); //-V519
 
     for (uint32_t j = currsize; j < colmax; j++) {
       row[j] = 0;
@@ -137,7 +137,7 @@ NumericVector normalize_rcpp(const NumericVector data, double min, double max) {
   NumericVector norm_data = a * data + b;
 
   norm_data[norm_data < min] = min;
-  norm_data[norm_data > max] = max;
+  norm_data[norm_data > max] = max; //-V519
 
   return (norm_data);
 }

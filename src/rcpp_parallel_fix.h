@@ -27,7 +27,7 @@ inline std::vector<IndexRange> splitInputRange(const IndexRange &range, std::siz
     grainSize = length;
   } else if ((length % threads) == 0) { // perfect division
     grainSize = std::max(length / threads, grainSize);
-  } else { // imperfect division, divide by threads - 1
+  } else {                              // imperfect division, divide by threads - 1
     grainSize = std::max(length / (threads - 1), grainSize);
   }
   // allocate ranges

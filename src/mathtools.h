@@ -1,5 +1,5 @@
-#ifndef __MATH__
-#define __MATH__
+#ifndef __MATHTOOLS__
+#define __MATHTOOLS__
 
 #include "fft.h"
 #include <Rcpp.h>
@@ -34,4 +34,4 @@ std::vector<std::complex<double>> fft_rcpp(std::vector<double> z, bool invert = 
 std::vector<std::complex<double>> fft_rcpp(std::vector<std::complex<double>> z, bool invert = false);
 std::vector<double> fft_rcpp_real(std::vector<std::complex<double>> z, bool invert = false);
 
-#endif // __MATH__
+#endif // __MATHTOOLS__

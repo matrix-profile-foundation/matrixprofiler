@@ -23,7 +23,7 @@ Removed VignetteBuilder field since this package does not contain a vignette.
 
 ## R CMD check results
 
-── R CMD check results ─── matrixprofiler 0.1.7.9000 ────
+── R CMD check results ─── matrixprofiler 0.1.8.9000 ────
 Duration: 2m 15.1s
 
 ❯ checking installed package size ... NOTE

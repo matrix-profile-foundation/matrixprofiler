@@ -31,7 +31,6 @@
 #'
 contrast <- function(negative_data, positive_data, window_size, positive_matrix = NULL, exclusion_zone = 0.5,
                      distance = c("euclidean", "pearson"), n_workers = 1L, progress = TRUE) {
-
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
 

@@ -2,6 +2,8 @@
 #'
 #' STOMP is a faster implementation with the caveat that is not anytime as STAMP or SCRIMP.
 #'
+#' @param left_right_profile (`stomp()` only) A boolean. If `TRUE`, the function will return the left and right profiles.
+#'
 #' @details ## stomp
 #'  The STOMP uses a faster implementation to compute the Matrix Profile and Profile Index. It can be stopped earlier by
 #'  the user, but the result is not considered anytime, just incomplete. For a anytime algorithm, use `stamp()` or
@@ -15,7 +17,6 @@
 #' @examples
 #' mp <- stomp(motifs_discords_small, 50)
 stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE, left_right_profile = FALSE) {
-
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
 
