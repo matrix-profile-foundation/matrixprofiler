@@ -1,12 +1,21 @@
 {
-  "C_Cpp.default.browse.path": ["${workspaceRoot}/src"],
-  "C_Cpp.default.defines": ["RC_INVOKED"],
+  "C_Cpp.default.browse.path": [
+    "${workspaceRoot}/src"
+  ],
+  "C_Cpp.default.defines": [
+    "RC_INVOKED"
+  ],
   "editor.fontFamily": "'Fira Code Retina', Consolas, 'Courier New', monospace",
   "editor.formatOnSave": true,
   "editor.tabCompletion": "on",
   "editor.tabSize": 2,
   "editor.wordWrapColumn": 120,
   "files.associations": {
+    ".clang-tidy": "yaml",
+    "*.defaults": "properties",
+    "*.log-viewer": "log",
+    "doxyfile": "properties",
+    "*.jinja": "jinja",
     ".whitesource": "jsonc",
     "*.cls": "latex",
     "*.ipp": "cpp",
@@ -90,7 +99,8 @@
     "utility": "cpp",
     "valarray": "cpp",
     "variant": "cpp",
-    "vector": "cpp"
+    "vector": "cpp",
+    "climits": "cpp"
   },
   "files.exclude": {
     ".history": true,
@@ -110,7 +120,6 @@
     "**/docs/**": false,
     "**/log/**": true,
     "**/logs/**": true,
-    "**/man/**": true,
     "**/pdfs/**": true,
     "**/R/RcppExports.R": true,
     "**/tmp/**": true
@@ -151,7 +160,9 @@
   "grammarly.startTextCheckInPausedState": true,
   "json.schemas": [
     {
-      "fileMatch": ["codemeta.json"],
+      "fileMatch": [
+        "codemeta.json"
+      ],
       "url": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld"
     }
   ],
@@ -175,11 +186,16 @@
     },
     "MD031": false,
     "MD033": {
-      "allowed_elements": ["center", "img"]
+      "allowed_elements": [
+        "center",
+        "img"
+      ]
     },
     "MD045": false
   },
-  "markdownlint.ignore": ["revdep/*.md"],
+  "markdownlint.ignore": [
+    "revdep/*.md"
+  ],
   "markdownlint.lintWorkspaceGlobs": [
     "**/*.{md,mkd,mdwn,mdown,markdown,markdn,mdtxt,mdtext,workbook}",
     "!**/node_modules",
@@ -196,15 +212,19 @@
   "r.rmarkdown.knit.focusOutputChannel": false,
   "r.rpath.linux": "/usr/bin/R",
   "r.rpath.windows": "C:\\Program Files\\R\\R-4.2.1\\bin\\R.exe",
-  "r.rterm.linux": "/usr/bin/R",
   "r.rterm.windows": "C:\\Program Files\\R\\R-4.2.1\\bin\\R.exe",
   "r.session.levelOfObjectDetail": "Detailed",
   "reflowMarkdown.preferredLineLength": 120,
   "search.exclude": {
     "**/_*/": true
   },
-  "sortJSON.orderOverride": ["label", "type"],
-  "sortJSON.orderUnderride": ["problemMatcher"],
+  "sortJSON.orderOverride": [
+    "label",
+    "type"
+  ],
+  "sortJSON.orderUnderride": [
+    "problemMatcher"
+  ],
   "taskExplorer.enableAnsiconForAnt": false,
   "taskExplorer.enableAnt": false,
   "taskExplorer.enableAppPublisher": false,
@@ -242,7 +262,11 @@
   "taskExplorer.showLastTasks": false,
   "terminal.integrated.shellIntegration.enabled": false,
   "testing.enableProblemDiagnostics": true,
-  "todo-tree.filtering.includeGlobs": ["**/src/**", "**/R/**", "**/tests/**"],
+  "todo-tree.filtering.includeGlobs": [
+    "**/src/**",
+    "**/R/**",
+    "**/tests/**"
+  ],
   "todo-tree.filtering.useBuiltInExcludes": "file and search excludes",
   "todo-tree.general.enableFileWatcher": true,
   "todo-tree.general.statusBar": "tags",

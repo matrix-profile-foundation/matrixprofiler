@@ -1,20 +1,20 @@
 path_classifiers:
   test:
-    - "src/*"
+    - src/*
 extraction:
   cpp:
     prepare:
       packages:
-        - "r-base"
-        - "r-base-dev"
-        - "libgit2-dev"
-        - "libcurl4-openssl-dev"
+        - r-base
+        - r-base-dev
+        - libgit2-dev
+        - libcurl4-openssl-dev
     configure:
       command:
-        - "sed -i 's/>= 4.0/>= 3.6.1/g' DESCRIPTION"
-        - 'Rscript -e "install.packages(c(''remotes'', ''devtools''))"'
-        - 'Rscript -e "remotes::install_github(''ropensci/git2r'', configure.args=''--without-libgit2'')"'
-        - 'Rscript -e "remotes::install_deps(dependencies = TRUE)"'
-        - 'Rscript -e "Rcpp::compileAttributes()"'
+        - sed -i 's/>= 4.0/>= 3.6.1/g' DESCRIPTION
+        - Rscript -e "install.packages(c(''remotes'', ''devtools''))"
+        - Rscript -e "remotes::install_github(''ropensci/git2r'', configure.args=''--without-libgit2'')"
+        - Rscript -e "remotes::install_deps(dependencies = TRUE)"
+        - Rscript -e "Rcpp::compileAttributes()"
     index:
-      build_command: 'Rscript -e "pkgbuild::compile_dll()"'
+      build_command: Rscript -e "pkgbuild::compile_dll()"

@@ -82,3 +82,7 @@ docs
 .vscode/.pvsconfig
 .vscode/pvsconfig.cfg
 .gitignore
+src/PVS-Studio.log
+src/PVS-Studio.json
+src/PVS-Studio.sarif
+strace_out

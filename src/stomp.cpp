@@ -68,7 +68,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   List pre = mass_pre_rcpp(data, query, window_size);
   // NOLINTNEXTLINE(readability-suspicious-call-argument): it is really swapped
-  List rpre = mass_pre_rcpp(query, data, window_size);
+  List rpre = mass_pre_rcpp(query, data, window_size); //-V764
   List nn =
       mass3_rcpp(query[Range(0, window_size - 1)], data, pre["data_size"], rpre["window_size"], pre["data_mean"],
                  pre["data_sd"], as<NumericVector>(pre["query_mean"])[0], as<NumericVector>(pre["query_sd"])[0], grain);
@@ -353,7 +353,7 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
 
   ///// This is needed for JOIN similarity
   // NOLINTNEXTLINE(readability-suspicious-call-argument): it is really swapped
-  List rpre = mass_pre_rcpp(query, data, window_size);
+  List rpre = mass_pre_rcpp(query, data, window_size); //-V764
   List rnn = mass3_rcpp(data[Range(0, window_size - 1)], query, query_size, rpre["window_size"], rpre["data_mean"],
                         rpre["data_sd"], as<NumericVector>(rpre["query_mean"])[0],
                         as<NumericVector>(rpre["query_sd"])[0], grain);

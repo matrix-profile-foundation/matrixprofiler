@@ -207,15 +207,20 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
     iwork = (int *)std::calloc(maxp, sizeof(int));
     cplx = (complex_t *)std::calloc(n, sizeof(complex_t));
 
-    for (i = 0; i < n; i++) {
-      cplx[i].r = z[i].real();
-      cplx[i].i = z[i].imag();
-    }
+    if (cplx == nullptr) {
+      Rcout << "fail to alloc cplx vector" << std::endl;
+    } else {
 
-    fft_work(&cplx[0].r, &cplx[0].i, 1, n, 1, inv, work, iwork);
+      for (i = 0; i < n; i++) {
+        cplx[i].r = z[i].real();
+        cplx[i].i = z[i].imag();
+      }
 
-    for (i = 0; i < n; i++) {
-      res[i] = std::complex<double>(cplx[i].r, cplx[i].i) / f;
+      fft_work(&cplx[0].r, &cplx[0].i, 1, n, 1, inv, work, iwork);
+
+      for (i = 0; i < n; i++) {
+        res[i] = std::complex<double>(cplx[i].r, cplx[i].i) / f;
+      }
     }
 
     if (work != nullptr) {

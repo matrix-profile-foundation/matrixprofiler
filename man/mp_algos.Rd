@@ -23,7 +23,8 @@ stomp(
   query = NULL,
   exclusion_zone = 0.5,
   n_workers = 1,
-  progress = TRUE
+  progress = TRUE,
+  left_right_profile = FALSE
 )
 
 scrimp(
@@ -67,6 +68,8 @@ Default is \code{1.0} (means 100\%).}
 
 \item{progress}{A logical. If \code{TRUE} (the default) will show a progress bar. Useful for long computations. (See
 details)}
+
+\item{left_right_profile}{(\code{stomp()} only) A boolean. If \code{TRUE}, the function will return the left and right profiles.}
 
 \item{pre_scrimp}{A numeric. If not zero, pre_scrimp is computed, using a fraction of the data. Default is \code{0.25}.
 This parameter is ignored when using multithread or AB-join.}
@@ -136,7 +139,7 @@ on Ogita's work for better precision computing mean and standard deviation (part
 }
 }
 \section{This document}{
-Last updated on 2022-08-05 using R version 4.2.1.
+Last updated on 2023-01-23 using R version 4.2.2.
 }
 
 \examples{
