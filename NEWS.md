@@ -2,9 +2,13 @@ NEWS
 ================
 Francisco Bischoff
 
-23 Jan 2023
+25 Jan 2023
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+## matrixprofiler 0.1.9
+
+-   Small fixes for cran
 
 ## matrixprofiler 0.1.8
 

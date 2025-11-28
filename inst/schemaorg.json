@@ -54,12 +54,6 @@
     "name": "R",
     "url": "https://r-project.org"
   },
-  "provider": {
-    "id": "https://cran.r-project.org",
-    "type": "Organization",
-    "name": "Comprehensive R Archive Network (CRAN)",
-    "url": "https://cran.r-project.org"
-  },
   "runtimePlatform": "R version 4.2.2 Patched (2022-11-10 r83330)",
-  "version": "0.1.8.9000"
+  "version": "0.1.9"
 }
