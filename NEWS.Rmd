@@ -22,6 +22,10 @@ knitr::opts_chunk$set(
 )
 ```
 
+## matrixprofiler 0.1.9
+
+-   Small fixes for cran
+
 ## matrixprofiler 0.1.8
 
 -   Fixed memory leak on mpx_rcpp_parallel().

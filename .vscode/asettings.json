@@ -211,8 +211,6 @@
   "r.lsp.diagnostics": false,
   "r.rmarkdown.knit.focusOutputChannel": false,
   "r.rpath.linux": "/usr/bin/R",
-  "r.rpath.windows": "C:\\Program Files\\R\\R-4.2.1\\bin\\R.exe",
-  "r.rterm.windows": "C:\\Program Files\\R\\R-4.2.1\\bin\\R.exe",
   "r.session.levelOfObjectDetail": "Detailed",
   "reflowMarkdown.preferredLineLength": 120,
   "search.exclude": {
@@ -243,7 +241,6 @@
   "taskExplorer.enablePowershell": false,
   "taskExplorer.enablePython": false,
   "taskExplorer.enableRuby": false,
-  "taskExplorer.enableSideBar": true,
   "taskExplorer.enableTsc": false,
   "taskExplorer.exclude": [
     "**/dist/**",
@@ -258,7 +255,6 @@
     "**/dev/**"
   ],
   "taskExplorer.groupMaxLevel": 2,
-  "taskExplorer.groupSeparator": ": ",
   "taskExplorer.showLastTasks": false,
   "terminal.integrated.shellIntegration.enabled": false,
   "testing.enableProblemDiagnostics": true,
@@ -299,5 +295,19 @@
     "cppcoreguidelines-avoid-magic-numbers",
     "readability-else-after-return",
     "bugprone-easily-swappable-parameters"
-  ]
+  ],
+  "taskExplorer.enabledTasks": {
+    "ant": false,
+    "composer": false,
+    "gradle": false,
+    "grunt": false,
+    "gulp": false,
+    "maven": false,
+    "npm": false,
+    "perl": false,
+    "pipenv": false,
+    "powershell": false,
+    "tsc": false
+  },
+  // "r.rterm.linux": "/usr/bin/R"
 }

@@ -31,6 +31,7 @@
 ^matrixprofiler\.Rcheck$
 ^API$
 ^\.github$
+^\.trunk$
 ^codecov\.yml$
 \.clang-format
 \.clang-tidy
@@ -42,3 +43,4 @@
 ^_pkgdown\.yml$
 ^strace_out$
 ^src/PVS-Studio\..*$
+^CRAN-SUBMISSION$
