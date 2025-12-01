@@ -1,18 +1,18 @@
 # nolint start
-options(repos = c(CRAN = "https://cran.rstudio.org"))
-
-if (.Platform$OS.type == "windows") {
-  Sys.setenv(LC_CTYPE = "C")
-}
-
-# options(error = renv:::renv_error_handler_call())
-# options(warn = 2L)
-
-# Activate renv for all kind of environments
-source("renv/activate.R")
-cat("Renv activated from .Rprofile\n")
-
 if (Sys.getenv("CI") == "") {
+  options(repos = c(CRAN = "https://cran.rstudio.org"))
+
+  if (.Platform$OS.type == "windows") {
+    Sys.setenv(LC_CTYPE = "C")
+  }
+
+  # options(error = renv:::renv_error_handler_call())
+  # options(warn = 2L)
+
+  # Activate renv for all kind of environments
+  source("renv/activate.R")
+  cat("Renv activated from .Rprofile\n")
+
   # not CI
   if (interactive()) {
     if (Sys.getenv("RSTUDIO") == "") {

@@ -7,15 +7,15 @@ Also, some old links were fixed.
 
 ## Test environments
 
-- GitHub Actions (ubuntu-16.04): devel, release, oldrel
-- GitHub Actions (windows): release, oldrel
-- GitHub Actions (macos): release
 - rhub: all platforms (\*nix, solaris, macos, windows, with gcc and clang), all ok,
-  except:
-  - `solaris-x86-patched-ods` in which a dependency fails, not this package.
-  - `linux-x86_64-centos-epel`: not available: 'spelling'; found 'abort'; found 'printf'. I could not find why the code behaves like this on this distribution.
-  - `ubuntu-rchk`: Bioconductor does not yet build and check packages for R version 4.2; see
-    <https://bioconductor.org/install>. There is nothing in the package code that asks for R 4.2 version.
+  -  3 [VM] macos          R-* (any version)                     macos-13 on GitHub
+  -  9 [CT] clang-ubsan    R-devel (2025-11-30 r89082)           Ubuntu 22.04.5 LTS
+  - 10 [CT] clang16        R-devel (2025-11-29 r89077)           Ubuntu 22.04.5 LTS
+  - 16 [CT] gcc-asan       R-devel (2025-11-30 r89082)           Fedora Linux 40 (Container Image)
+  - 27 [CT] ubuntu-clang   R-devel (2025-11-30 r89082)           Ubuntu 22.04.5 LTS
+  - 30 [CT] ubuntu-release R-4.5.2 (2025-10-31)                  Ubuntu 24.04.3 LTS
+  - 31 [CT] valgrind       R-devel (2025-11-30 r89082)           Fedora Linux 38 (Container Image)
+
 - win-builder: devel, release, oldrel
 
 ## R CMD check results
