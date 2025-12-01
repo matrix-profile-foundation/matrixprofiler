@@ -4,7 +4,7 @@
 
 - C++11 flags are deprecated and defaults to C++17, so this requirement
   was removed from the package.
-- Sme old links were fixed.
+- Some old links were fixed.
 
 ## matrixprofiler 0.1.9
 
