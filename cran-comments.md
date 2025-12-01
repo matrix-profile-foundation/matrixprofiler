@@ -5,9 +5,11 @@
 C++11 flags are deprecated and defaults to C++17, so this requirement was removed from the package.
 Also, some old links were fixed.
 
+The new NOTE "‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’" appears only in my devcontainer, not on tested environments below, nevertheless seems ok
+
 ## Test environments
 
-- rhub: all platforms (\*nix, solaris, macos, windows, with gcc and clang), all ok,
+- rhub:
   -  3 [VM] macos          R-* (any version)                     macos-13 on GitHub
   -  9 [CT] clang-ubsan    R-devel (2025-11-30 r89082)           Ubuntu 22.04.5 LTS
   - 10 [CT] clang16        R-devel (2025-11-29 r89077)           Ubuntu 22.04.5 LTS
@@ -44,6 +46,7 @@ Duration: 1m 17s
 ## Known Issues (a.k.a NOTES)
 
 - GNU make is a SystemRequirements.
+- Package size
 
 ## Current comments
 
