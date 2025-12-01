@@ -7,7 +7,7 @@
       "command": "echo 'MingW does not support ASAN/UBSAN'",
       "linux": {
         "type": "process",
-        "command": "/usr/bin/Rscript",
+        "command": "/usr/local/bin/Rscript",
         "args": [
           "dev/check_asan.R"
         ]
@@ -74,7 +74,7 @@
       "label": "R: lint package",
       "command": "C:/Program Files/R/R-4.2.1/bin/x64/Rscript.exe",
       "linux": {
-        "command": "/usr/bin/Rscript"
+        "command": "/usr/local/bin/Rscript"
       },
       "args": [
         "-e",
@@ -126,7 +126,7 @@
       "label": "R: test units",
       "command": "C:/Program Files/R/R-4.2.1/bin/x64/Rscript.exe",
       "linux": {
-        "command": "/usr/bin/Rscript"
+        "command": "/usr/local/bin/Rscript"
       },
       "args": [
         "-e",
@@ -152,7 +152,7 @@
       "dependsOn": "R: test units",
       "command": "C:/Program Files/R/R-4.2.1/bin/x64/Rscript.exe",
       "linux": {
-        "command": "/usr/bin/Rscript"
+        "command": "/usr/local/bin/Rscript"
       },
       "args": [
         "-e",
@@ -175,7 +175,7 @@
       "command": "C:/Program Files/R/R-4.2.1/bin/x64/Rscript.exe",
       "linux": {
         "type": "process",
-        "command": "/usr/bin/Rscript",
+        "command": "/usr/local/bin/Rscript",
         "args": [
           "-e",
           "codemetar::write_codemeta(write_minimeta = TRUE); codemetar::give_opinions()"
@@ -200,7 +200,7 @@
       "label": "R: build current package",
       "command": "C:/Program Files/R/R-4.2.1/bin/x64/Rscript.exe",
       "linux": {
-        "command": "/usr/bin/Rscript"
+        "command": "/usr/local/bin/Rscript"
       },
       "detail": "compiler: Rcmd",
       "args": [

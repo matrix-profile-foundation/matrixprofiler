@@ -411,7 +411,7 @@ List mass_pre_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
 
   List data_avgsd = movmean_std_rcpp(data_ref, window_size); // precompute moving average and SD
 
-  uint32_t const pad_size = pow(2, ceil(log2(data_size)));   // padded to a power of 2
+  uint32_t const pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
 
   std::copy(data_ref.begin(), data_ref.end(), data_padded.begin());
@@ -480,7 +480,7 @@ List mass_pre_weighted_rcpp(const NumericVector data_ref, const NumericVector qu
 
   List data_avgsd = movmean_std_rcpp(data_ref, window_size); // precompute moving average and SD
 
-  uint32_t const pad_size = pow(2, ceil(log2(data_size)));   // padded to a power of 2
+  uint32_t const pad_size = pow(2, ceil(log2(data_size))); // padded to a power of 2
   NumericVector data_padded(pad_size);
   NumericVector rev_weight(pad_size);
   double const sumw = sum(weight);

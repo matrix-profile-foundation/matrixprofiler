@@ -3,6 +3,7 @@
 ^\.history$
 ^\.vscode$
 ^\.editorconfig$
+^\.radian_*$
 ^.*\.code-workspace$
 ^.*\.Rout$
 ^.*\.Rproj$

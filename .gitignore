@@ -4,7 +4,7 @@
 ### R ###
 # History files
 .Rhistory
-.Renviron
+.Renviron*
 .Rapp.history
 
 # Session Data files
@@ -82,6 +82,7 @@ docs
 .vscode/.pvsconfig
 .vscode/pvsconfig.cfg
 .gitignore
+.radian_history
 src/PVS-Studio.log
 src/PVS-Studio.json
 src/PVS-Studio.sarif
