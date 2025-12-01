@@ -1,11 +1,9 @@
 # CRAN Comments
 
-## Comments for this version (0.1.9)
+## Comments for this version (0.1.10)
 
-Due to CRAN policy, I had to remove the Makefile command --strip-debug.
-Therefore, the library now has more than 15MB in size on \*nix systems.
-
-Removed VignetteBuilder field since this package does not contain a vignette.
+C++11 flags are deprecated and defaults to C++17, so this requirement was removed from the package.
+Also, some old links were fixed.
 
 ## Test environments
 
@@ -18,23 +16,26 @@ Removed VignetteBuilder field since this package does not contain a vignette.
   - `linux-x86_64-centos-epel`: not available: 'spelling'; found 'abort'; found 'printf'. I could not find why the code behaves like this on this distribution.
   - `ubuntu-rchk`: Bioconductor does not yet build and check packages for R version 4.2; see
     <https://bioconductor.org/install>. There is nothing in the package code that asks for R 4.2 version.
-- Raspbian (armv7l-linux-gnueabihf, 32-bits): release
 - win-builder: devel, release, oldrel
 
 ## R CMD check results
 
-── R CMD check results ─── matrixprofiler 0.1.8.9000 ────
-Duration: 2m 15.1s
+── R CMD check results ──────────────────────────────────────── matrixprofiler 0.1.10 ────
+Duration: 1m 17s
 
 ❯ checking installed package size ... NOTE
-installed size is 16.5Mb
-sub-directories of 1Mb or more:
-libs 16.3Mb
+    installed size is 13.1Mb
+    sub-directories of 1Mb or more:
+      libs  12.9Mb
 
 ❯ checking for GNU extensions in Makefiles ... NOTE
-GNU make is a SystemRequirements.
+  GNU make is a SystemRequirements.
 
-0 errors ✔ | 0 warnings ✔ | 2 notes ✖
+❯ checking compilation flags used ... NOTE
+  Compilation used the following non-portable flag(s):
+    ‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’
+
+0 errors ✔ | 0 warnings ✔ | 3 notes ✖
 
 ## Downstream dependencies
 
@@ -49,6 +50,11 @@ GNU make is a SystemRequirements.
 - None yet.
 
 ## Old comments
+
+## Comments for this version (0.1.9)
+
+- [x] Due to CRAN policy, I had to remove the Makefile command --strip-debug. Therefore, the library now has more than
+      15MB in size on \*nix systems. Removed VignetteBuilder field since this package does not contain a vignette.
 
 - [x] I see that last version was archived due to OSX bug on compiling cpp code. I wasn't warned about it, at least I
       didn't see any e-mail in my inbox. Nevertheless, the "bug" is known and I fixed it in this version. Already tested on

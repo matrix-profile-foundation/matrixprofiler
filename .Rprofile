@@ -10,7 +10,7 @@ if (.Platform$OS.type == "windows") {
 
 # Activate renv for all kind of environments
 source("renv/activate.R")
-cli::cli_inform(c("i" = "Renv activated from .Rprofile"))
+cat("Renv activated from .Rprofile\n")
 
 if (Sys.getenv("CI") == "") {
   # not CI
@@ -18,7 +18,7 @@ if (Sys.getenv("CI") == "") {
     if (Sys.getenv("RSTUDIO") == "") {
       # interactive and not RSTUDIO ENV
       # This is the default terminal environment
-      # cli::cli_inform(c("i" = "INTERACTIVE; no RSTUDIO\n"))
+      # cat("INTERACTIVE; no RSTUDIO\n")
       options(
         warnPartialMatchArgs = FALSE,
         warnPartialMatchDollar = FALSE,
@@ -56,17 +56,18 @@ if (Sys.getenv("CI") == "") {
           require("testthat", quietly = TRUE)
           require("devtools", quietly = TRUE)
           require("usethis", quietly = TRUE)
-          require("conflicted", quietly = TRUE)
+          if (require("conflicted", quietly = TRUE)) {
+            suppressMessages({
+              conflicted::conflict_prefer("filter", "dplyr")
+              conflicted::conflict_prefer("box", "shinydashboard")
+              conflicted::conflict_prefer("notificationItem", "shinydashboard")
+            })
+          }
           require("here", quietly = TRUE)
           require("glue", quietly = TRUE)
         })
       )
 
-      suppressMessages({
-        conflicted::conflict_prefer("filter", "dplyr")
-        conflicted::conflict_prefer("box", "shinydashboard")
-        conflicted::conflict_prefer("notificationItem", "shinydashboard")
-      })
       options(dplyr.summarise.inform = FALSE)
 
       if (.Platform$OS.type != "windows") {
@@ -81,43 +82,44 @@ if (Sys.getenv("CI") == "") {
         # Cleaning up function
         .Last <- function() {
           savehistory() # comment this line if you don't want to save history
-          cli::cli_inform(c("i" = "bye bye...\n")) # print this so we see if any non-interactive session is lost here
+          cat("bye bye...\n") # print this so we see if any non-interactive session is lost here
         }
       }
     } else {
       # interactive and RSTUDIO ENV
       # This is supposed to be the RSTUDIO terminal
-      # cli::cli_inform(c("i" = "INTERACTIVE; RSTUDIO\n"))
+      # cat("INTERACTIVE; RSTUDIO\n")
       # is RSTUDIO
       suppressMessages(
         suppressWarnings({
           require("testthat", quietly = TRUE)
           require("devtools", quietly = TRUE)
           require("usethis", quietly = TRUE)
-          require("conflicted", quietly = TRUE)
+          if (require("conflicted", quietly = TRUE)) {
+            conflicted::conflict_prefer("filter", "dplyr")
+          }
           require("here", quietly = TRUE)
           require("glue", quietly = TRUE)
         })
       )
 
-      conflicted::conflict_prefer("filter", "dplyr")
       options(dplyr.summarise.inform = FALSE)
     }
   } else {
     if (Sys.getenv("RSTUDIO") == "") {
       # non-interactive and not RSTUDIO ENV
       # This is the default non-interactive environment
-      cli::cli_inform(c("i" = "NON-INTERACTIVE; no RSTUDIO\n"))
+      cat("NON-INTERACTIVE; no RSTUDIO\n")
       invisible(NULL)
     } else {
       # non-interactive and RSTUDIO ENV
       # This is the supposed to be the background RSTUDIO environment
-      cli::cli_inform(c("i" = "NON-INTERACTIVE; RSTUDIO\n"))
+      cat("NON-INTERACTIVE; RSTUDIO\n")
       invisible(NULL)
     }
   }
 } else {
-  cli::cli_inform(c("i" = "CI ENV\n"))
+  cat("CI ENV\n")
   invisible(NULL)
   # is CI
   # suppressMessages(

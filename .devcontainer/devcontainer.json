@@ -19,19 +19,24 @@
         "libudunits2-dev",
         "libgdal-dev",
         "libmagick++-dev",
-        "clang-format-14"
+        "libnode-dev", // needed for jsonld
+        "build-essential",
+        "clang-format-14",
+        "texlive-latex-base", // pdflatex
+        "fonts-inconsolata" // for inconsolata font in pdfs
       ]
     },
     "ghcr.io/rocker-org/devcontainer-features/pandoc:1": {
       "version": "latest"
     },
-    "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {
-      "installChromium": true,
-      "installTinyTex": true,
-      "version": "latest"
-    },
+    // "ghcr.io/rocker-org/devcontainer-features/quarto-cli:1": {
+    //   "installChromium": true,
+    //   "installTinyTex": true,
+    //   "version": "latest"
+    // },
     "ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
-      "packages": "jsonlite,languageserver,prompt,here,readr,covr"
+      "packages": "jsonlite,languageserver,conflicted,prompt,here,readr,covr,miniCRAN,httpgd",
+      "installSystemRequirements": true
     },
     "ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {},
     "ghcr.io/dhoeric/features/hadolint:1": {
@@ -49,7 +54,9 @@
         "RDebugger.r-debugger",
         "REditorSupport.r",
         "natqe.reload",
-        "ms-vscode.cpptools"
+        "ms-vscode.cpptools",
+        "eamodio.gitlens",
+        "spmeesseman.vscode-taskexplorer"
       ]
     }
   },
@@ -57,7 +64,7 @@
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
   // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "R -q -e 'renv::install()'",
+  "postCreateCommand": "R -q -e 'renv::install()'"
   // Configure tool-specific properties.
   // "customizations": {},
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.

@@ -7,13 +7,19 @@
   "codeRepository": "https://github.com/matrix-profile-foundation/matrixprofiler",
   "issueTracker": "\n    https://github.com/matrix-profile-foundation/matrixprofiler/issues",
   "license": "https://spdx.org/licenses/GPL-3.0",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.2.2 Patched (2022-11-10 r83330)",
+  "runtimePlatform": "R version 4.2.3 (2023-03-15)",
+  "provider": {
+    "@id": "https://cran.r-project.org",
+    "@type": "Organization",
+    "name": "Comprehensive R Archive Network (CRAN)",
+    "url": "https://cran.r-project.org"
+  },
   "author": [
     {
       "@type": "Person",
@@ -171,10 +177,11 @@
     },
     "SystemRequirements": "GNU make"
   },
-  "fileSize": "76726.727KB",
-  "releaseNotes": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/master/NEWS.md",
-  "readme": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/README.md",
+  "fileSize": "84930.048KB",
+  "releaseNotes": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/NEWS.md",
+  "readme": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/fix/cppversion/README.md",
   "contIntegration": "https://app.codecov.io/gh/matrix-profile-foundation/matrixprofiler",
   "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html",
-  "keywords": ["matrix-profile", "time-series", "r", "rcpp", "cran", "algorithm"]
+  "keywords": ["matrix-profile", "time-series", "r", "rcpp", "cran", "algorithm"],
+  "relatedLink": "https://CRAN.R-project.org/package=matrixprofiler"
 }
