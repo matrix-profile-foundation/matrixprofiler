@@ -13,13 +13,13 @@
 ^cran-comments\.md$
 ^CRAN-RELEASE$
 ^dev$
-^docs$
+^docs?$
 ^examples_.*$
 ^LICENSE\.md$
 ^LOCAL_APPDATA_FONTCONFIG_CACHE$
 ^NEWS\.Rmd$
 ^packrat$
-^pkgdown$
+^pkgdown(?:/|$)
 ^README-.*\.png$
 ^README\.Rmd$
 ^README_cache$

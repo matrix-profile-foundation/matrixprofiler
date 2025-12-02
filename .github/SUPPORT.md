@@ -15,7 +15,7 @@ site.
 
 Armed with your reprex, the next step is to figure out **where to ask**.
 
-- If it's a question: start with [Matrix Profile Foundation](https://matrixprofile.org/), and/or StackOverflow. There
+- If it's a question: start with [Matrix Profile Foundation](https://matrix-profile-foundation.github.io/), and/or StackOverflow. There
   are more people there to answer questions.
 
 - If it's a bug: you're in the right place, [file an issue](https://github.com/matrix-profile-foundation/matrixprofiler/issues/new).
