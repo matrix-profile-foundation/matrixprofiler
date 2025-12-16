@@ -100,7 +100,8 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
             s_size,
             as.logical(idxs),
             as.logical(dist),
-            as.logical(progress)
+            as.logical(progress),
+            60
           )
         }
       },

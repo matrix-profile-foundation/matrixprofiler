@@ -89,8 +89,8 @@ fft_rcpp <- function(z, invert) {
     .Call(`_matrixprofiler_fft_rcpp`, z, invert)
 }
 
-mpx_rcpp <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpx_rcpp`, data_ref, window_size, ez, s_size, idxs, euclidean, progress)
+mpx_rcpp <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress, wild_sigma_threshold) {
+    .Call(`_matrixprofiler_mpx_rcpp`, data_ref, window_size, ez, s_size, idxs, euclidean, progress, wild_sigma_threshold)
 }
 
 mpxab_rcpp <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {

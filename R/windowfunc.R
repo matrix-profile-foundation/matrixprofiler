@@ -53,7 +53,7 @@ mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", 
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   type <- match.arg(type)
@@ -101,7 +101,7 @@ mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   type <- match.arg(type)
@@ -148,7 +148,7 @@ mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   type <- match.arg(type)
@@ -196,7 +196,7 @@ mov_max <- function(data, window_size) {
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
 
@@ -236,7 +236,7 @@ mov_min <- function(data, window_size) {
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
 
@@ -280,7 +280,7 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
   data <- as.numeric(data)
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
 
@@ -289,18 +289,18 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
   tryCatch(
     {
       if (rcpp) {
-        data_sd <- movstd_rcpp(data, window_size)
+        data_sd <- movstd_rcpp(data, window_size) # nolint
       } else {
         # Improve the numerical analysis by subtracting off the series mean
         # this has no effect on the standard deviation.
         data <- data - mean(data)
 
-        data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+        data_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
         data_mean <- data_sum / window_size
 
-        data2 <- data^2
-        data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-        data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
+        data2 <- data^2.0
+        data2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
+        data_sd2 <- (data2_sum / window_size) - (data_mean^2.0) # variance
         data_sd <- sqrt(data_sd2)
       }
     },
@@ -319,30 +319,30 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
 #' @examples
 #' mov <- movmean_std(motifs_discords_small, 50)
 movmean_std <- function(data, window_size, rcpp = TRUE) {
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
 
   if (rcpp) {
-    result <- movmean_std_rcpp(data, window_size)
+    result <- movmean_std_rcpp(data, window_size) # nolint
   } else {
-    mov_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-    data2 <- data^2
-    mov2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
+    mov_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
+    data2 <- data^2.0
+    mov2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
     mov_mean <- mov_sum / window_size
     # Improve the numerical analysis by subtracting off the series mean
     # this has no effect on the standard deviation.
     dmean <- mean(data)
     data <- data - dmean
 
-    data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+    data_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
     data_mean <- data_sum / window_size
-    data2 <- data^2
-    data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-    data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
-    data_sd2[data_sd2 < 0] <- 0
+    data2 <- data^2.0
+    data2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
+    data_sd2 <- (data2_sum / window_size) - (data_mean^2.0) # variance
+    data_sd2[data_sd2 < 0.0] <- 0.0
     data_sd <- sqrt(data_sd2) # std deviation
-    data_sig <- sqrt(1 / (data_sd2 * window_size))
+    data_sig <- sqrt(1.0 / (data_sd2 * window_size))
 
     result <- list(avg = mov_mean, sd = data_sd, sig = data_sig, sum = mov_sum, sqrsum = mov2_sum)
   }
@@ -360,17 +360,21 @@ movmean_std <- function(data, window_size, rcpp = TRUE) {
 #' @order 8
 #' @examples
 #' mov <- muinvn(motifs_discords_small, 50)
-muinvn <- function(data, window_size, n_workers = 1) {
-  if (window_size < 2) {
+muinvn <- function(data, window_size, n_workers = 1L) {
+  if (!is.numeric(n_workers)) {
+    n_workers <- 1L
+  }
+
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
-  if (n_workers > 1) {
+  if (n_workers > 1L) {
     p <- RcppParallel::defaultNumThreads()
     n_workers <- min(n_workers, p)
     RcppParallel::setThreadOptions(numThreads = n_workers)
-    result <- muinvn_rcpp_parallel(data, window_size)
+    result <- muinvn_rcpp_parallel(data, window_size) # nolint
   } else {
-    result <- muinvn_rcpp(data, window_size)
+    result <- muinvn_rcpp(data, window_size) # nolint
   }
 
   return(result)
@@ -387,6 +391,6 @@ muinvn <- function(data, window_size, n_workers = 1) {
 zero_crossing <- function(data, window_size) {
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  result <- zero_crossing_rcpp(data, window_size)
+  result <- zero_crossing_rcpp(data, window_size) # nolint
   return(result)
 }

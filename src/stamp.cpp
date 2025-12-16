@@ -72,7 +72,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   try {
     uint64_t j = 1;
-    for (int32_t const i : order) {
+    for (int32_t const &i : order) {
       RcppThread::checkUserInterrupt();
       p.increment();
 

@@ -96,7 +96,7 @@ List stomp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       ceil((double)order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
   try {
-    for (int32_t const i : order) {
+    for (int32_t const &i : order) {
 
       if ((i % num_progress) == 0) {
         RcppThread::checkUserInterrupt();

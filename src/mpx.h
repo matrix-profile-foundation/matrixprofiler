@@ -19,7 +19,7 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5
 List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez = 0.5, uint64_t mp_time_constraint = 0,
                   double s_size = 1.0, bool idxs = true, bool euclidean = true, bool progress = false);
 List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, double s_size = 1.0, bool idxs = true,
-              bool euclidean = true, bool progress = false);
+              bool euclidean = true, bool progress = false, double wild_sigma_threshold = R_PosInf);
 List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size = 1.0,
                 bool idxs = true, bool euclidean = true, bool progress = false);
 #endif // __MPX__

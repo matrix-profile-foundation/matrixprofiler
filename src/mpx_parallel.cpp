@@ -67,7 +67,7 @@ public:
     std::vector<int> mpip(mp.size(), -1);
 
     try {
-      for (uint32_t dd = begin; dd < end; dd++) {
+      for (std::size_t dd = begin; dd < end; dd++) {
         uint32_t const diag = compute_order[dd];
 
         if ((diag % num_progress) == 0) {
@@ -262,7 +262,7 @@ public:
     try {
       if (ab_ba == 0) {
 
-        for (uint32_t diag = begin; diag < end; diag++) {
+        for (std::size_t diag = begin; diag < end; diag++) {
 
           if ((diag % num_progress) == 0) {
             RcppThread::checkUserInterrupt();
@@ -296,7 +296,7 @@ public:
           }
         }
       } else {
-        for (uint32_t diag = begin; diag < end; diag++) {
+        for (std::size_t diag = begin; diag < end; diag++) {
 
           if ((diag % num_progress) == 0) {
             RcppThread::checkUserInterrupt();
@@ -361,16 +361,16 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
   try {
     // matrix profile using cross correlation,
     bool partial = false;
-    uint32_t const a_len = data_ref.length();
-    uint32_t const b_len = query_ref.length();
+    uint32_t a_len = data_ref.length();
+    uint32_t b_len = query_ref.length();
 
     List msd_a = muinvn_rcpp_parallel(data_ref, window_size);
     List msd_b = muinvn_rcpp_parallel(query_ref, window_size);
 
     NumericVector mu_a = msd_a["avg"];
-    NumericVector const sig_a = msd_a["sig"];
+    NumericVector sig_a = msd_a["sig"];
     NumericVector mu_b = msd_b["avg"];
-    NumericVector const sig_b = msd_b["sig"];
+    NumericVector sig_b = msd_b["sig"];
 
     uint32_t const profile_len_a = a_len - window_size + 1;
     uint32_t const profile_len_b = b_len - window_size + 1;
@@ -378,8 +378,8 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     NumericVector mp_a(profile_len_a, -1.0);
     NumericVector mp_b(profile_len_b, -1.0);
 
-    IntegerVector const mpi_a(profile_len_a, -1);
-    IntegerVector const mpi_b(profile_len_b, -1);
+    IntegerVector mpi_a(profile_len_a, -1);
+    IntegerVector mpi_b(profile_len_b, -1);
 
     // differentials have 0 as their first entry. This simplifies index
     // calculations slightly and allows us to avoid special "first line"
@@ -396,11 +396,11 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
                          (query_ref[Range(0, b_len - window_size - 1)] - mu_b[Range(0, b_len - window_size - 1)]);
     dg_b.push_front(0);
 
-    NumericVector const ww_a = (data_ref[Range(0, window_size - 1)] - mu_a[0]);
-    NumericVector const ww_b = (query_ref[Range(0, window_size - 1)] - mu_b[0]);
+    NumericVector ww_a = (data_ref[Range(0, window_size - 1)] - mu_a[0]);
+    NumericVector ww_b = (query_ref[Range(0, window_size - 1)] - mu_b[0]);
 
-    uint64_t const num_progress = ceil(static_cast<double>(profile_len_a + profile_len_b) /
-                                       100.0); // added double inside sqrt to avoid ambiguity on Solaris
+    uint64_t num_progress = ceil(static_cast<double>(profile_len_a + profile_len_b) /
+                                 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress p(100, progress);
 

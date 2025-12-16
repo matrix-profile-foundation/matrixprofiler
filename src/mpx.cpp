@@ -22,7 +22,7 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
     uint32_t off_min = 0UL, off_diag = 0UL, offset = 0UL, off_start = 0UL;
     uint32_t data_size = 0UL, window_size = 0UL, exclusion_zone = 0UL, profile_len = 0UL;
     uint64_t mp_offset = 0UL;
-    NumericVector const data, ddf_t, ddg_t;
+    NumericVector data, ddf_t, ddg_t;
     bool initial = false;
     bool partial = false;
 
@@ -50,13 +50,13 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
     double *dg = &ddg[0];
 
     uint32_t diag_start = 0;
-    uint32_t const diag_end = data_size - window_size - exclusion_zone;
+    uint32_t diag_end = data_size - window_size - exclusion_zone;
 
     if (mp_time_constraint > 0) {
       diag_start = data_size - mp_time_constraint - window_size;
     }
 
-    IntegerVector const compute_order = Range(diag_start, diag_end);
+    IntegerVector compute_order = Range(diag_start, diag_end);
 
     NumericVector rmmp(profile_len, -1.0);
     IntegerVector rmmpi(profile_len, -1);
@@ -71,18 +71,18 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
     int *rpi = &rmmpi[0];
 
     // added double inside sqrt to avoid ambiguity on Solaris
-    uint64_t const num_progress = ceil(static_cast<double>(compute_order.size()) / 100.0);
+    uint64_t num_progress = ceil(static_cast<double>(compute_order.size()) / 100.0);
 
     Progress prog(100, progress);
 
     // compute_order = sample(compute_order, compute_order.size());
 
-    uint64_t const stop = 0;
+    uint64_t stop = 0;
 
     try {
       uint64_t it = 1;
       // first window demeaned
-      NumericVector const ww = (data_ref[Range(data_size - window_size, data_size - 1)] - mmu[data_size - window_size]);
+      NumericVector ww = (data_ref[Range(data_size - window_size, data_size - 1)] - mmu[data_size - window_size]);
 
       for (int32_t const &diag : compute_order) {
 
@@ -166,8 +166,8 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
 
     if (history > 0 && (data_size > history)) {
       // data_ref = tail(data_ref, history);
-      uint64_t const mp_new_size = history - window_size + 1;
-      uint32_t const diff = data_size - history;
+      uint64_t mp_new_size = history - window_size + 1;
+      uint32_t diff = data_size - history;
       // ddf = tail(ddf, mp_new_size);
       // ddg = tail(ddg, mp_new_size);
       // mmu = tail(mmu, mp_new_size);
@@ -185,7 +185,7 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
                          //  Rcpp::Named("data") = data_ref,
                          Rcpp::Named("partial") = partial));
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
 
@@ -243,10 +243,10 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
     double *mu = &mmu[0];
     double *sig = &ssig[0];
 
-    uint32_t const profile_len = data_ref_size - window_size + 1;
+    uint32_t profile_len = data_ref_size - window_size + 1;
 
     uint32_t diag_start = 0;
-    uint32_t const diag_end = data_size - window_size - exclusion_zone;
+    uint32_t diag_end = data_size - window_size - exclusion_zone;
 
     if (mp_time_constraint > 0) {
       diag_start = data_ref_size - mp_time_constraint - window_size;
@@ -291,14 +291,14 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
     double *df = &ddf[0];
     double *dg = &ddg[0];
 
-    uint64_t const num_progress =
+    uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress prog(100, progress);
 
     compute_order = sample(compute_order, compute_order.size());
 
-    uint64_t const stop = 0;
+    uint64_t stop = 0;
 
     try {
       uint64_t iteration = 1;
@@ -306,7 +306,7 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
       NumericVector const ww =
           (data_ref[Range(data_ref_size - window_size, data_ref_size - 1)] - mmu[data_ref_size - window_size]);
 
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((iteration % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
@@ -354,8 +354,8 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
 
     if (history > 0 && (data_ref_size > history)) {
       data_ref = tail(data_ref, history);
-      uint64_t const mp_new_size = history - window_size + 1;
-      uint32_t const diff = data_ref_size - history;
+      uint64_t mp_new_size = history - window_size + 1;
+      uint32_t diff = data_ref_size - history;
       ddf = tail(ddf, mp_new_size);
       ddg = tail(ddg, mp_new_size);
       mmu = tail(mmu, mp_new_size);
@@ -371,7 +371,7 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
                          Rcpp::Named("ddg") = ddg, Rcpp::Named("avg") = mmu, Rcpp::Named("offset") = mp_offset,
                          Rcpp::Named("sig") = ssig, Rcpp::Named("partial") = partial));
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
 
@@ -380,7 +380,7 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
 List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uint64_t mp_time_constraint, double s_size,
                     bool idxs, bool euclidean, bool progress, uint64_t start, List old) {
 
-  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
   try {
     double cc = 0.0, c_cmp = 0.0;
@@ -396,9 +396,9 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uin
     double *mu = &mmu[0];
     double *sig = &ssig[0];
 
-    uint32_t const profile_len = data_size - window_size + 1;
+    uint32_t profile_len = data_size - window_size + 1;
     uint32_t diag_start = 0;
-    uint32_t const diag_end = data_size - window_size - exclusion_zone;
+    uint32_t diag_end = data_size - window_size - exclusion_zone;
 
     if (mp_time_constraint > 0) {
       diag_start = data_size - mp_time_constraint - window_size;
@@ -436,7 +436,7 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uin
     double *df = &ddf[0];
     double *dg = &ddg[0];
 
-    uint64_t const num_progress =
+    uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress prog(100, progress);
@@ -454,7 +454,7 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uin
       // first window demeaned
       NumericVector const ww = (data_ref[Range(data_size - window_size, data_size - 1)] - mmu[data_size - window_size]);
 
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((it % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
@@ -518,7 +518,7 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uin
       return (List::create(Rcpp::Named("right_matrix_profile") = rmmp, Rcpp::Named("partial") = partial));
     }
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
 
@@ -527,7 +527,7 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uin
 List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean,
                    bool progress, uint64_t start, List old) {
 
-  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
   try {
     double cc = 0.0, c_cmp = 0.0;
@@ -543,7 +543,7 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, doub
     double *mu = &mmu[0];
     double *sig = &ssig[0];
 
-    uint32_t const profile_len = data_size - window_size + 1;
+    uint32_t profile_len = data_size - window_size + 1;
 
     IntegerVector compute_order = Range(exclusion_zone, profile_len - 1);
 
@@ -583,7 +583,7 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, doub
     double *df = &ddf[0];
     double *dg = &ddg[0];
 
-    uint64_t const num_progress =
+    uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress prog(100, progress);
@@ -601,7 +601,7 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, doub
       // first window demeaned
       NumericVector const ww = (data_ref[Range(0, window_size - 1)] - mmu[0]);
 
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((it % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
@@ -661,7 +661,7 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, doub
       return (List::create(Rcpp::Named("left_matrix_profile") = lmmp, Rcpp::Named("partial") = partial));
     }
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
 
@@ -672,10 +672,45 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, doub
 // CONCEPT: correction for noise: d_corrected = sqrt(d^2 - (2 + 2m) * std_n^2 / max(std_X, std_Y)^2)
 // (10.5220/0007314100830093)
 
+// ============================================================================
+// mpx_rcpp_new vs mpx_rcpp - DEVELOPMENT STATUS COMPARISON
+// ============================================================================
+// This is an EXPERIMENTAL version of mpx_rcpp with extended capabilities.
+// NOT exported to R (no [[Rcpp::export]]). Under active development.
+//
+// KEY DIFFERENCES from mpx_rcpp (stable version):
+//
+// 1. PARAMETERS (8 vs 7):
+//    + mp_time_constraint: Limits diagonal range for temporal windowing
+//
+// 2. PROFILES COMPUTED (3 vs 1):
+//    - mpx_rcpp: Only mmp (matrix profile - best matches)
+//    - mpx_rcpp_new: mmp + rmmp (right) + lmmp (left)
+//    Purpose: Directional profiles for semantic segmentation, asymmetric motif discovery
+//
+// 3. WILD SIGMA CHECK (NEW):
+//    if ((sig[offset] > 60) || (sig[off_diag] > 60)) continue;
+//    Prevents misleading correlations with abnormally high standard deviation
+//
+// 4. EXPERIMENTAL CODE:
+//    "FRANZ TEST" block (lines 779-801): Testing averaged profiles vs nearest neighbor
+//    Currently commented out - NOT validated yet
+//
+// 5. EXTENDED RETURN:
+//    Returns intermediate data (ddf, ddg, avg, sig) for incremental computation
+//    Used by mpxi_rcpp for streaming updates
+//
+// 6. EUCLIDEAN CONVERSION:
+//    Handles 3 profiles + sets R_PosInf for invalid indices (idxs < 0)
+//
+// DEVELOPMENT STATUS: Testing phase - do NOT export until FRANZ TEST validated
+// TARGET: Replace mpx_rcpp when complete and tested
+// ============================================================================
+
 List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint64_t mp_time_constraint, double s_size,
                   bool idxs, bool euclidean, bool progress) {
 
-  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
   try {
     double cc = 0.0, c_cmp = 0.0;
@@ -691,8 +726,8 @@ List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint6
     double *mu = &mmu[0];
     double *sig = &ssig[0];
 
-    uint32_t const profile_len = data_size - window_size + 1;
-    uint32_t const diag_start = exclusion_zone;
+    uint32_t profile_len = data_size - window_size + 1;
+    uint32_t diag_start = exclusion_zone;
     uint32_t diag_end = profile_len - 1;
 
     if (mp_time_constraint > 0) {
@@ -731,7 +766,7 @@ List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint6
 
     NumericVector const ww = (data_ref[Range(0, window_size - 1)] - mmu[0]);
 
-    uint64_t const num_progress =
+    uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress prog(100, progress);
@@ -746,7 +781,7 @@ List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint6
 
     try {
       uint64_t it = 1;
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((it % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
@@ -866,7 +901,7 @@ List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint6
                            Rcpp::Named("left_matrix_profile") = lmmp, Rcpp::Named("partial") = partial));
     }
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
 
@@ -875,12 +910,19 @@ List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint6
 // MPX
 //
 // @param data_ref Time Series
+// @param window_size Window size
+// @param ez Exclusion zone
+// @param s_size Sample size (0-1)
+// @param idxs Return indices
+// @param euclidean Convert to Euclidean distance
+// @param progress Show progress bar
+// @param wild_sigma_threshold Skip pairs with sigma > threshold (default: Inf, disabled)
 // @return data_ref List
 // [[Rcpp::export]]
 List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean,
-              bool progress) {
+              bool progress, double wild_sigma_threshold) {
 
-  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
   try {
     double cc = 0.0, c_cmp = 0.0;
@@ -896,7 +938,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
     double *mu = &mmu[0];
     double *sig = &ssig[0];
 
-    uint32_t const profile_len = data_size - window_size + 1;
+    uint32_t profile_len = data_size - window_size + 1;
     IntegerVector compute_order = Range(exclusion_zone, profile_len - 1);
 
     NumericVector mmp(profile_len, -1.0);
@@ -921,7 +963,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
 
     NumericVector const ww = (data_ref[Range(0, window_size - 1)] - mmu[0]);
 
-    uint64_t const num_progress =
+    uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress prog(100, progress);
@@ -936,7 +978,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
 
     try {
       uint64_t it = 1;
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((it % num_progress) == 0) {
           RcppThread::checkUserInterrupt();
@@ -950,6 +992,12 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
         for (offset = 0; offset < off_max; offset++) {
           off_diag = offset + diag;
           cc = cc + df[offset] * dg[off_diag] + df[off_diag] * dg[offset];
+
+          // Wild sigma check: skip pairs with abnormally high standard deviation
+          if ((sig[offset] > wild_sigma_threshold) || (sig[off_diag] > wild_sigma_threshold)) {
+            continue;
+          }
+
           c_cmp = cc * sig[offset] * sig[off_diag];
           if (c_cmp > mp[offset]) {
             mp[offset] = c_cmp;
@@ -991,7 +1039,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
       return (List::create(Rcpp::Named("matrix_profile") = mmp, Rcpp::Named("partial") = partial));
     }
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
 
@@ -1000,13 +1048,13 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
                 bool euclidean, bool progress) {
 
   try {
-    uint64_t const exclusion_zone = 0;
+    uint64_t exclusion_zone = 0;
     bool partial = false;
     double cc = 0.0, c_cmp = 0.0;
     uint32_t off_max = 0UL, off_diag = 0UL, offset = 0UL;
     // matrix profile using cross correlation,
-    uint32_t const a_len = data_ref.length();
-    uint32_t const b_len = query_ref.length();
+    uint32_t a_len = data_ref.length();
+    uint32_t b_len = query_ref.length();
 
     List msd_a = muinvn_rcpp(data_ref, window_size);
     List msd_b = muinvn_rcpp(query_ref, window_size);
@@ -1020,14 +1068,14 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     double *mu_b = &mmu_b[0];
     double *sig_b = &ssig_b[0];
 
-    uint32_t const profile_len_a = a_len - window_size + 1;
+    uint32_t profile_len_a = a_len - window_size + 1;
     NumericVector mmp_a(profile_len_a, -1.0);
     IntegerVector mmpi_a(profile_len_a, -1);
 
     double *mp_a = &mmp_a[0];
     int *mpi_a = &mmpi_a[0];
 
-    uint32_t const profile_len_b = b_len - window_size + 1;
+    uint32_t profile_len_b = b_len - window_size + 1;
     NumericVector mmp_b(profile_len_b, -1.0);
     IntegerVector mmpi_b(profile_len_b, -1);
 
@@ -1059,14 +1107,14 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     IntegerVector compute_order = Range(exclusion_zone, profile_len_a - 1);
     compute_order = sample(compute_order, compute_order.size());
 
-    uint64_t const num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * exclusion_zone) /
-                                       100); // added double inside sqrt to avoid ambiguity on Solaris
+    uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * exclusion_zone) /
+                                 100); // added double inside sqrt to avoid ambiguity on Solaris
 
     Progress prog(100, progress);
 
     try {
       //// AB ----
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((diag % num_progress) == 10) {
           prog.increment();
@@ -1114,7 +1162,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
       compute_order = Range(exclusion_zone, profile_len_b - 1);
       compute_order = sample(compute_order, compute_order.size());
 
-      for (int32_t const diag : compute_order) {
+      for (int32_t const &diag : compute_order) {
 
         if ((diag % num_progress) == 10) {
           prog.increment();
@@ -1169,6 +1217,6 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
                            Rcpp::Named("partial") = partial));
     }
   } catch (...) {
-    Rcpp::stop("c++ exception (unknown reason)");
+    ::Rf_error("c++ exception (unknown reason)");
   }
 }
