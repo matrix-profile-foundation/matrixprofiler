@@ -317,6 +317,39 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mpxis_rcpp
+List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List stats, uint64_t history, uint64_t mp_time_constraint, bool progress, float threshold);
+RcppExport SEXP _matrixprofiler_mpxis_rcpp(SEXP data_refSEXP, SEXP batch_sizeSEXP, SEXP objectSEXP, SEXP statsSEXP, SEXP historySEXP, SEXP mp_time_constraintSEXP, SEXP progressSEXP, SEXP thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type batch_size(batch_sizeSEXP);
+    Rcpp::traits::input_parameter< List >::type object(objectSEXP);
+    Rcpp::traits::input_parameter< List >::type stats(statsSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type history(historySEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type mp_time_constraint(mp_time_constraintSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    Rcpp::traits::input_parameter< float >::type threshold(thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpxis_rcpp(data_ref, batch_size, object, stats, history, mp_time_constraint, progress, threshold));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mpxi_rcpp
+List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t mp_time_constraint, bool progress);
+RcppExport SEXP _matrixprofiler_mpxi_rcpp(SEXP new_dataSEXP, SEXP objectSEXP, SEXP historySEXP, SEXP mp_time_constraintSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type new_data(new_dataSEXP);
+    Rcpp::traits::input_parameter< List >::type object(objectSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type history(historySEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type mp_time_constraint(mp_time_constraintSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpxi_rcpp(new_data, object, history, mp_time_constraint, progress));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mpx_rcpp
 List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean, bool progress, double wild_sigma_threshold);
 RcppExport SEXP _matrixprofiler_mpx_rcpp(SEXP data_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP s_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP, SEXP progressSEXP, SEXP wild_sigma_thresholdSEXP) {
@@ -755,6 +788,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_inner_product", (DL_FUNC) &_matrixprofiler_inner_product, 2},
     {"_matrixprofiler_sum_of_squares", (DL_FUNC) &_matrixprofiler_sum_of_squares, 1},
     {"_matrixprofiler_fft_rcpp", (DL_FUNC) &_matrixprofiler_fft_rcpp, 2},
+    {"_matrixprofiler_mpxis_rcpp", (DL_FUNC) &_matrixprofiler_mpxis_rcpp, 8},
+    {"_matrixprofiler_mpxi_rcpp", (DL_FUNC) &_matrixprofiler_mpxi_rcpp, 5},
     {"_matrixprofiler_mpx_rcpp", (DL_FUNC) &_matrixprofiler_mpx_rcpp, 8},
     {"_matrixprofiler_mpxab_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_rcpp, 7},
     {"_matrixprofiler_mpx_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_rcpp_parallel, 7},

@@ -13,7 +13,7 @@
 #include <RcppThread.h>
 
 // MPX stream version for the right side, getting stats from input, in review
-
+// [[Rcpp::export]]
 List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List stats, uint64_t history,
                 uint64_t mp_time_constraint, bool progress, float threshold) {
 
@@ -190,7 +190,7 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
 }
 
 // MPX stream version for the right side, aiming to compute only the necessary. MP is in pearson values, in review
-
+// [[Rcpp::export]]
 List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t mp_time_constraint, bool progress) {
 
   try {

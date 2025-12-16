@@ -147,3 +147,32 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
     "!DEBUG End AB-Join"
   }
 }
+
+#' @param new_data a vector with the new data
+#' @param start_obj obj from another run
+#' @param mp_time_constraint time constraint for the mp update in terms of indices.
+#'   This parameter specifies how far back in the time series the algorithm will search
+#'   for the nearest neighbor. A value of 0 (default) means no constraint and the algorithm
+#'   will check the entire time series. Higher values limit the search to a window
+#'   that extends `mp_time_constraint` indices into the past.
+#' @param history an `int`. Max distance where to look for the best match in matrix profile.
+#' (default is NULL).
+#' @export
+#' @rdname mp_algos
+
+
+mpx_stream_right <- function(new_data, start_obj, history = 0, mp_time_constraint = 0, progress = TRUE) {
+  mpxi_rcpp(new_data, start_obj, history, mp_time_constraint, progress)
+}
+
+#' @param batch_size size of the new data
+#' @param start_obj obj from another run
+#' @param stats obj with stats for mpx
+#' @param history an `int`. Max distance where to look for the best match in matrix profile.
+#' (default is NULL).
+#' @export
+#' @rdname mp_algos
+
+mpx_stream_s_right <- function(data, batch_size, start_obj, stats, history = 0, mp_time_constraint = 0, progress = TRUE, threshold = -1.0) {
+  mpxis_rcpp(data, batch_size, start_obj, stats, history, mp_time_constraint, progress, threshold)
+}
