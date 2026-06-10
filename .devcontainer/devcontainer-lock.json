@@ -1,0 +1,29 @@
+{
+  "features": {
+    "ghcr.io/dhoeric/features/hadolint:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/dhoeric/features/hadolint@sha256:993e7e6f14b7f53aafefb081eb8396ea08f3d48aebb23c91fbaa10651ca0a835",
+      "integrity": "sha256:993e7e6f14b7f53aafefb081eb8396ea08f3d48aebb23c91fbaa10651ca0a835"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+      "version": "1.0.2",
+      "resolved": "ghcr.io/rocker-org/devcontainer-features/apt-packages@sha256:87a4d7750a596a5db034ba8508782f31aebdc2ffe955c66aaecb33d9de2ecdae",
+      "integrity": "sha256:87a4d7750a596a5db034ba8508782f31aebdc2ffe955c66aaecb33d9de2ecdae"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/pandoc:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/rocker-org/devcontainer-features/pandoc@sha256:f748017491dfbc2962c32a5d34614ca25bef94cc76ecfb295f3566910926dead",
+      "integrity": "sha256:f748017491dfbc2962c32a5d34614ca25bef94cc76ecfb295f3566910926dead"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
+      "version": "1.1.0",
+      "resolved": "ghcr.io/rocker-org/devcontainer-features/r-packages@sha256:1a4ec64c4d2060e78e9c812bd3b3622c7e008465d566a2781c0e2b17a82592e5",
+      "integrity": "sha256:1a4ec64c4d2060e78e9c812bd3b3622c7e008465d566a2781c0e2b17a82592e5"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {
+      "version": "0.1.2",
+      "resolved": "ghcr.io/rocker-org/devcontainer-features/renv-cache@sha256:705bba0c78d4caf33a57c9a88bbe8e6e10ca944886c5209f2cf84757a6b8cf73",
+      "integrity": "sha256:705bba0c78d4caf33a57c9a88bbe8e6e10ca944886c5209f2cf84757a6b8cf73"
+    }
+  }
+}
