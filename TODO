@@ -1,0 +1,1 @@
+2026-06-10 migrate from RcppParallel to RcppThreads, it is simpler and comes with progression bar!
