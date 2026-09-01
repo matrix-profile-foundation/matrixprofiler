@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.5.3",
+    "Version": "4.6.1",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -11,10 +11,10 @@
   "Packages": {
     "Rcpp": {
       "Package": "Rcpp",
-      "Version": "1.1.1-1.1",
+      "Version": "1.1.2",
       "Source": "Repository",
       "Title": "Seamless R and C++ Integration",
-      "Date": "2026-04-19",
+      "Date": "2026-07-01",
       "Authors@R": "c(person(\"Dirk\", \"Eddelbuettel\", role = c(\"aut\", \"cre\"), email = \"edd@debian.org\", comment = c(ORCID = \"0000-0001-6419-907X\")), person(\"Romain\", \"Francois\", role = \"aut\", comment = c(ORCID = \"0000-0002-2444-4226\")), person(\"JJ\", \"Allaire\", role = \"aut\", comment = c(ORCID = \"0000-0003-0174-9868\")), person(\"Kevin\", \"Ushey\", role = \"aut\", comment = c(ORCID = \"0000-0003-2880-7407\")), person(\"Qiang\", \"Kou\", role = \"aut\", comment = c(ORCID = \"0000-0001-6786-5453\")), person(\"Nathan\", \"Russell\", role = \"aut\"), person(\"Iñaki\", \"Ucar\", role = \"aut\", comment = c(ORCID = \"0000-0001-6403-5550\")), person(\"Doug\", \"Bates\", role = \"aut\", comment = c(ORCID = \"0000-0001-8316-9503\")), person(\"John\", \"Chambers\", role = \"aut\"))",
       "Description": "The 'Rcpp' package provides R functions as well as C++ classes which offer a seamless integration of R and C++. Many R data types and objects can be mapped back and forth to C++ equivalents which facilitates both writing of new code as well as easier integration of third-party libraries. Documentation about 'Rcpp' is provided by several vignettes included in this package, via the 'Rcpp Gallery' site at <https://gallery.rcpp.org>, the paper by Eddelbuettel and Francois (2011, <doi:10.18637/jss.v040.i08>), the book by Eddelbuettel (2013, <doi:10.1007/978-1-4614-6868-4>) and the paper by Eddelbuettel and Balamuta (2018, <doi:10.1080/00031305.2017.1375990>); see 'citation(\"Rcpp\")' for details.",
       "Depends": [
@@ -33,7 +33,6 @@
       "URL": "https://www.rcpp.org, https://dirk.eddelbuettel.com/code/rcpp.html, https://github.com/RcppCore/Rcpp",
       "License": "GPL (>= 2)",
       "BugReports": "https://github.com/RcppCore/Rcpp/issues",
-      "MailingList": "rcpp-devel@lists.r-forge.r-project.org",
       "RoxygenNote": "6.1.1",
       "Encoding": "UTF-8",
       "VignetteBuilder": "Rcpp",
@@ -44,31 +43,30 @@
     },
     "RcppParallel": {
       "Package": "RcppParallel",
-      "Version": "5.1.11-2",
+      "Version": "6.2.0",
       "Source": "Repository",
       "Type": "Package",
       "Title": "Parallel Programming Tools for 'Rcpp'",
-      "Authors@R": "c( person(\"JJ\", \"Allaire\", role = c(\"aut\"), email = \"jj@rstudio.com\"), person(\"Romain\", \"Francois\", role = c(\"aut\", \"cph\")), person(\"Kevin\", \"Ushey\", role = c(\"aut\", \"cre\"), email = \"kevin@rstudio.com\"), person(\"Gregory\", \"Vandenbrouck\", role = \"aut\"), person(\"Marcus\", \"Geelnard\", role = c(\"aut\", \"cph\"), comment = \"TinyThread library, https://tinythreadpp.bitsnbites.eu/\"), person(\"Hamada S.\", \"Badr\", email = \"badr@jhu.edu\", role = c(\"ctb\"), comment = c(ORCID = \"0000-0002-9808-2344\")), person(family = \"Posit, PBC\", role = \"cph\"), person(family = \"Intel\", role = c(\"aut\", \"cph\"), comment = \"Intel TBB library, https://www.threadingbuildingblocks.org/\"), person(family = \"Microsoft\", role = \"cph\") )",
+      "Authors@R": "c( person(\"Kevin\", \"Ushey\", role = c(\"aut\", \"cre\"), email = \"kevin@rstudio.com\", comment = c(ORCID = \"0000-0003-2880-7407\")), person(\"JJ\", \"Allaire\", role = c(\"aut\"), email = \"jj@rstudio.com\"), person(\"Romain\", \"Francois\", role = c(\"aut\", \"cph\")), person(\"Gregory\", \"Vandenbrouck\", role = \"aut\"), person(\"Marcus\", \"Geelnard\", role = c(\"aut\", \"cph\"), comment = \"TinyThread library, https://tinythreadpp.bitsnbites.eu/\"), person(\"Hamada S.\", \"Badr\", email = \"badr@jhu.edu\", role = c(\"ctb\"), comment = c(ORCID = \"0000-0002-9808-2344\")), person(\"Dirk\", \"Eddelbuettel\", role = c(\"aut\"), email = \"edd@debian.org\", comment = c(ORCID = \"0000-0001-6419-907X\")), person(family = \"Intel\", role = c(\"aut\", \"cph\"), comment = \"oneTBB library\"), person(family = \"UXL Foundation\", role = c(\"aut\", \"cph\"), comment = \"oneTBB library\"), person(family = \"Microsoft\", role = \"cph\"), person(family = \"Posit, PBC\", role = \"cph\") )",
       "Description": "High level functions for parallel programming with 'Rcpp'. For example, the 'parallelFor()' function can be used to convert the work of a standard serial \"for\" loop into a parallel one and the 'parallelReduce()' function can be used for accumulating aggregate or other values.",
       "Depends": [
-        "R (>= 3.0.2)"
+        "R (>= 3.6.0)"
       ],
       "Suggests": [
         "Rcpp",
-        "RUnit",
         "knitr",
         "rmarkdown"
       ],
-      "SystemRequirements": "GNU make, Intel TBB, Windows: cmd.exe and cscript.exe, Solaris: g++ is required",
+      "SystemRequirements": "CMake (>= 3.5)",
       "License": "GPL (>= 3)",
       "URL": "https://rcppcore.github.io/RcppParallel/, https://github.com/RcppCore/RcppParallel",
       "BugReports": "https://github.com/RcppCore/RcppParallel/issues",
       "Biarch": "TRUE",
-      "RoxygenNote": "7.1.1",
+      "RoxygenNote": "7.3.3",
       "Encoding": "UTF-8",
       "NeedsCompilation": "yes",
+      "Author": "Kevin Ushey [aut, cre] (ORCID: <https://orcid.org/0000-0003-2880-7407>), JJ Allaire [aut], Romain Francois [aut, cph], Gregory Vandenbrouck [aut], Marcus Geelnard [aut, cph] (TinyThread library, https://tinythreadpp.bitsnbites.eu/), Hamada S. Badr [ctb] (ORCID: <https://orcid.org/0000-0002-9808-2344>), Dirk Eddelbuettel [aut] (ORCID: <https://orcid.org/0000-0001-6419-907X>), Intel [aut, cph] (oneTBB library), UXL Foundation [aut, cph] (oneTBB library), Microsoft [cph], Posit, PBC [cph]",
       "Maintainer": "Kevin Ushey <kevin@rstudio.com>",
-      "Author": "JJ Allaire [aut], Romain Francois [aut, cph], Kevin Ushey [aut, cre], Gregory Vandenbrouck [aut], Marcus Geelnard [aut, cph] (TinyThread library, https://tinythreadpp.bitsnbites.eu/), Hamada S. Badr [ctb] (ORCID: <https://orcid.org/0000-0002-9808-2344>), Posit, PBC [cph], Intel [aut, cph] (Intel TBB library, https://www.threadingbuildingblocks.org/), Microsoft [cph]",
       "Repository": "CRAN"
     },
     "RcppProgress": {
@@ -98,7 +96,7 @@
     },
     "RcppThread": {
       "Package": "RcppThread",
-      "Version": "2.3.0",
+      "Version": "2.4.0",
       "Source": "Repository",
       "Title": "R-Friendly Threading in C++",
       "Authors@R": "c( person(\"Thomas\", \"Nagler\",, \"mail@tnagler.com\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0003-1855-0046\")) )",
@@ -110,13 +108,13 @@
       "Encoding": "UTF-8",
       "URL": "https://github.com/tnagler/RcppThread",
       "BugReports": "https://github.com/tnagler/RcppThread/issues",
-      "RoxygenNote": "7.3.3",
       "Suggests": [
         "testthat",
         "R.rsp",
         "Rcpp"
       ],
       "VignetteBuilder": "R.rsp",
+      "Config/roxygen2/version": "8.0.0",
       "NeedsCompilation": "yes",
       "Author": "Thomas Nagler [aut, cre] (ORCID: <https://orcid.org/0000-0003-1855-0046>)",
       "Maintainer": "Thomas Nagler <mail@tnagler.com>",

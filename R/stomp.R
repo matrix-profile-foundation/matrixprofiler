@@ -68,6 +68,7 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
         "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
+          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
           result <- stomp_rcpp_parallel(
@@ -78,7 +79,6 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
             as.logical(progress),
             as.logical(left_right_profile)
           )
-          RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- stomp_rcpp(
             data,
@@ -109,6 +109,7 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
         "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
+          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
           result <- stomp_rcpp_parallel(
@@ -116,9 +117,9 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
             query,
             window_size,
             ez,
-            as.logical(progress)
+            as.logical(progress),
+            as.logical(FALSE)
           )
-          RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- stomp_rcpp(
             data,

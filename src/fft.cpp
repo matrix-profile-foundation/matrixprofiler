@@ -40,11 +40,7 @@
 // NOLINTBEGIN(*)
 
 #include "fft.h"
-#include <iostream>
-
-#include <Rcpp.h>
-// [[Rcpp::plugins(cpp11)]]
-using namespace Rcpp;
+#include <stdexcept>
 
 namespace FFT {
 
@@ -195,12 +191,12 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
   if (n > 1) {
     fft_factor(n, &maxf, &maxp);
     if (maxf == 0) {
-      Rcout << "fft factorization error" << std::endl;
+      throw std::runtime_error("fft factorization error");
     }
 
     smaxf = maxf;
     if (smaxf > maxsize) {
-      Rcout << "fft too large" << std::endl;
+      throw std::runtime_error("fft too large");
     }
 
     work = (double *)std::calloc(4 * smaxf, sizeof(double));
@@ -208,7 +204,7 @@ std::vector<std::complex<double>> fftw::fft(std::vector<std::complex<double>> z,
     cplx = (complex_t *)std::calloc(n, sizeof(complex_t));
 
     if (cplx == nullptr) {
-      Rcout << "fail to alloc cplx vector" << std::endl;
+      throw std::bad_alloc();
     } else {
 
       for (i = 0; i < n; i++) {

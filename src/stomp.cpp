@@ -6,6 +6,7 @@
 #include "stomp.h"
 #include "mass.h"
 #include <numeric>
+#include <mutex>
 #include <cfloat> // DBL_EPSILON when STRICT_R_HEADERS
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
@@ -198,11 +199,13 @@ private:
   const RVector<double> first_product;
   const uint64_t ez;
 
-  Progress *p;
-  uint64_t num_progress;
-
   RVector<double> mp;
   RVector<int> pi;
+  const bool left_right_profile;
+  RVector<double> rmp;
+  RVector<int> rpi;
+  RVector<double> lmp;
+  RVector<int> lpi;
 
 #if RCPP_PARALLEL_USE_TBB
   tbb::spin_mutex m;
@@ -216,11 +219,12 @@ public:
   StompWorker(const NumericVector &data_ref, const NumericVector &window_ref, const uint64_t w_size,
               const uint64_t d_size, const NumericVector &d_mean, const NumericVector &d_std,
               const NumericVector &q_mean, const NumericVector &q_std, const IntegerVector &skip_location,
-              const NumericVector &first_product, const uint64_t ez, Progress *progr, uint64_t num_progress,
-              const NumericVector &mp, const IntegerVector &pi)
+              const NumericVector &first_product, const uint64_t ez, const NumericVector &mp, const IntegerVector &pi,
+              const bool left_right_profile, const NumericVector &rmp, const IntegerVector &rpi,
+              const NumericVector &lmp, const IntegerVector &lpi)
       : data_ref(data_ref), window_ref(window_ref), w_size(w_size), d_size(d_size), d_mean(d_mean), d_std(d_std),
-        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), p(progr),
-        num_progress(num_progress), mp(mp), pi(pi) {}
+        q_mean(q_mean), q_std(q_std), skip_location(skip_location), first_product(first_product), ez(ez), mp(mp), pi(pi),
+        left_right_profile(left_right_profile), rmp(rmp), rpi(rpi), lmp(lmp), lpi(lpi) {}
 
   ~StompWorker() override = default;
 
@@ -228,42 +232,23 @@ public:
   void operator()(std::size_t begin, std::size_t end) override {
     // begin and end are the query window
 
-    // index of sliding window
-    try {
-      RcppThread::checkUserInterrupt();
+    uint64_t const grain = set_k_cpp(w_size * 2, d_size, w_size);
+    Mass3Result nn = mass3_cpp_result(window_ref.begin() + begin, data_ref.begin(), d_size, w_size, d_mean.begin(),
+                                      d_std.begin(), q_mean[begin], q_std[begin], grain);
+    std::vector<double> distance_profile = std::move(nn.distance_profile);
+    std::vector<double> last_product = std::move(nn.last_product);
 
-      uint64_t const chunk = (end - begin);
+    std::vector<double> matrix_profile(d_mean.size(), R_PosInf);
+    std::vector<int> profile_index(d_mean.size(), -1);
+    std::vector<double> right_matrix_profile(left_right_profile ? d_mean.size() : 0, R_PosInf);
+    std::vector<int> right_profile_index(left_right_profile ? d_mean.size() : 0, -1);
+    std::vector<double> left_matrix_profile(left_right_profile ? d_mean.size() : 0, R_PosInf);
+    std::vector<int> left_profile_index(left_right_profile ? d_mean.size() : 0, -1);
+    double drop_value = 0;
+    uint32_t exc_st = 0;
+    uint32_t exc_ed = 0;
 
-      if (chunk <= w_size) {
-        Rcout << "Chunk size is too small (" << chunk << ") for a window size of " << w_size << std::endl;
-        return;
-      }
-
-      uint64_t const grain = set_k_rcpp(w_size * 2, chunk, w_size);
-
-      m.lock();
-      List nn = mass3_cpp(window_ref.begin() + begin, data_ref.begin(), d_size, w_size, d_mean.begin(), d_std.begin(),
-                          q_mean[begin], q_std[begin], grain);
-      m.unlock();
-      std::vector<double> distance_profile(as<NumericVector>(nn["distance_profile"]).begin(),
-                                           as<NumericVector>(nn["distance_profile"]).end());
-      std::vector<double> last_product(as<NumericVector>(nn["last_product"]).begin(),
-                                       as<NumericVector>(nn["last_product"]).end());
-
-      std::vector<double> matrix_profile(d_mean.size(), R_PosInf);
-      std::vector<int> profile_index(d_mean.size(), -1);
-      double drop_value = 0;
-      uint32_t exc_st = 0;
-      uint32_t exc_ed = 0;
-
-      for (uint64_t i = begin; i < end; i++) {
-
-        if ((i % num_progress) == 0) {
-          RcppThread::checkUserInterrupt();
-          m.lock();
-          p->increment();
-          m.unlock();
-        }
+    for (uint64_t i = begin; i < end; i++) {
 
         // compute the distance profile
         if (i > begin) {
@@ -286,34 +271,43 @@ public:
           } else if (ez == 0 || j < exc_st || j > exc_ed) {
             double const dp = 2 * (w_size - (last_product[j] - w_size * d_mean[j] * q_mean[i]) / (d_std[j] * q_std[i]));
             distance_profile[j] = (dp > 0) ? dp : 0;
-          } else if (i == begin) {
+          } else {
             distance_profile[j] = R_PosInf;
-            continue;
           }
         }
 
         drop_value = window_ref[i];
 
-        for (uint64_t j = 0; j < d_mean.size(); j++) {
-          if (distance_profile[j] < matrix_profile[j]) {
-            matrix_profile[j] = distance_profile[j];
-            profile_index[j] = i + 1;
-          }
-        }
-      }
-
-      m.lock();
       for (uint64_t j = 0; j < d_mean.size(); j++) {
-        if (matrix_profile[j] < mp[j]) {
-          mp[j] = matrix_profile[j];
-          pi[j] = profile_index[j];
+        if (distance_profile[j] < matrix_profile[j]) {
+          matrix_profile[j] = distance_profile[j];
+          profile_index[j] = i + 1;
+        }
+        if (left_right_profile && j >= i && distance_profile[j] < left_matrix_profile[j]) {
+          left_matrix_profile[j] = distance_profile[j];
+          left_profile_index[j] = i;
+        }
+        if (left_right_profile && j <= i && distance_profile[j] < right_matrix_profile[j]) {
+          right_matrix_profile[j] = distance_profile[j];
+          right_profile_index[j] = i;
         }
       }
-      m.unlock();
-    } catch (RcppThread::UserInterruptException &e) {
-      Rcout << "Computation interrupted by the user." << std::endl;
-      Rcout << "Please wait for other threads to stop." << std::endl;
-      throw;
+    }
+
+    std::lock_guard<decltype(m)> lock(m);
+    for (uint64_t j = 0; j < d_mean.size(); j++) {
+      if (matrix_profile[j] < mp[j]) {
+        mp[j] = matrix_profile[j];
+        pi[j] = profile_index[j];
+      }
+      if (left_right_profile && right_matrix_profile[j] < rmp[j]) {
+        rmp[j] = right_matrix_profile[j];
+        rpi[j] = right_profile_index[j];
+      }
+      if (left_right_profile && left_matrix_profile[j] < lmp[j]) {
+        lmp[j] = left_matrix_profile[j];
+        lpi[j] = left_profile_index[j];
+      }
     }
   }
 };
@@ -348,6 +342,10 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
 
   NumericVector const matrix_profile(matrix_profile_size, R_PosInf);
   IntegerVector const profile_index(matrix_profile_size, -1);
+  NumericVector const right_matrix_profile(matrix_profile_size, R_PosInf);
+  IntegerVector const right_profile_index(matrix_profile_size, -1);
+  NumericVector const left_matrix_profile(matrix_profile_size, R_PosInf);
+  IntegerVector const left_profile_index(matrix_profile_size, -1);
 
   uint64_t grain = set_k_rcpp(256, data_size, window_size);
 
@@ -362,13 +360,12 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
 
   List pre = mass_pre_rcpp(data, query, window_size);
 
-  uint64_t const num_progress = num_queries / 100;
-
   Progress p(100, progress);
 
   StompWorker stomp_worker(data, query, pre["window_size"], data_size, pre["data_mean"], pre["data_sd"],
-                           pre["query_mean"], pre["query_sd"], skip_location, first_product, exclusion_zone, &p,
-                           num_progress, matrix_profile, profile_index);
+                           pre["query_mean"], pre["query_sd"], skip_location, first_product, exclusion_zone,
+                           matrix_profile, profile_index, left_right_profile, right_matrix_profile, right_profile_index,
+                           left_matrix_profile, left_profile_index);
 
   grain = set_k_rcpp(1024, num_queries, window_size);
 
@@ -380,6 +377,8 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
     RcppParallel2::ttParallelFor(0, num_queries, stomp_worker, 2 * grain);
 #endif
 
+    p.increment(100);
+
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Process terminated by the user successfully, partial results "
@@ -388,7 +387,17 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
     Rcpp::stop("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
-                       Rcpp::Named("profile_index") = profile_index, Rcpp::Named("partial") = partial,
-                       Rcpp::Named("ez") = ez));
+  if (left_right_profile) {
+    return List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
+                        Rcpp::Named("profile_index") = profile_index,
+                        Rcpp::Named("right_matrix_profile") = sqrt(right_matrix_profile),
+                        Rcpp::Named("right_profile_index") = right_profile_index,
+                        Rcpp::Named("left_matrix_profile") = sqrt(left_matrix_profile),
+                        Rcpp::Named("left_profile_index") = left_profile_index, Rcpp::Named("partial") = partial,
+                        Rcpp::Named("ez") = ez);
+  }
+
+  return List::create(Rcpp::Named("matrix_profile") = sqrt(matrix_profile),
+                      Rcpp::Named("profile_index") = profile_index, Rcpp::Named("partial") = partial,
+                      Rcpp::Named("ez") = ez);
 }

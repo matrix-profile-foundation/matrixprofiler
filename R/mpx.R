@@ -34,6 +34,10 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
     checkmate::qassert(query, c("0", "N>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
+  checkmate::qassert(s_size, "N1")
+  if (s_size < 0 || s_size > 1) {
+    stop("`s_size` must be between 0 and 1.", call. = FALSE)
+  }
   checkmate::qassert(idxs, "B+")
   distance <- match.arg(distance)
   if (distance == "euclidean") {
@@ -80,6 +84,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
         "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
+          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
           result <- mpx_rcpp_parallel(
@@ -91,7 +96,6 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
             as.logical(dist),
             as.logical(progress)
           )
-          RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- mpx_rcpp(
             data,
@@ -118,6 +122,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
         "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
+          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
           result <- mpxab_rcpp_parallel(
@@ -129,7 +134,6 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
             as.logical(dist),
             as.logical(progress)
           )
-          RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- mpxab_rcpp(
             data,

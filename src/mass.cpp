@@ -345,16 +345,7 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
 //[[Rcpp::export]]
 uint32_t set_k_rcpp(uint32_t grain, uint64_t data_size, uint64_t window_size) {
   try {
-    if (grain > data_size) {
-      grain = pow(2, ceil(log2(sqrt((double)data_size)))); // added double inside sqrt to avoid ambiguity on Solaris
-    }
-
-    if (grain <= window_size) {
-      grain = pow(2, (ceil(log2(window_size)) + 1));
-      if (grain > data_size) {
-        grain = data_size;
-      }
-    }
+    grain = set_k_cpp(grain, data_size, window_size);
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
   } catch (...) {

@@ -41,6 +41,15 @@ if (Sys.getenv("CI") == "") {
         style
       })
 
+      vscode_init <- file.path(Sys.getenv("HOME"), ".vscode-R", "init.R")
+      if (interactive() && file.exists(vscode_init)) {
+        source(vscode_init)
+        if (exists(".First.sys", envir = globalenv(), inherits = FALSE)) {
+          .First.sys()
+        }
+      }
+
+
       # if httpgd is installed, let's use it
       # This breaks rendering video
       # if ("httpgd" %in% .packages(all.available = TRUE)) {

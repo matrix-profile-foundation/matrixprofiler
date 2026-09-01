@@ -22,6 +22,17 @@ knitr::opts_chunk$set(
 )
 ```
 
+## matrixprofiler 0.1.11.9000
+
+-   Fixed parallel STOMP silently returning incomplete profiles when a worker received fewer query windows than the window size.
+-   Fixed `SIGFPE` crashes in parallel STOMP and MPX for computations with fewer than 100 query windows or diagonals.
+-   Fixed unsafe R and Rcpp API calls from TBB workers, including MASS result allocation and progress reporting, which could cause stack imbalance and abort forked workers.
+-   Fixed the public parallel STOMP AB-join call omitting the `left_right_profile` native argument.
+-   Added left and right profile computation to parallel STOMP and corrected exclusion-zone handling.
+-   Fixed parallel MPX ignoring `s_size` and added validation for values outside the `[0, 1]` interval.
+-   Fixed parallel thread options not being restored when STOMP or MPX failed or was interrupted.
+-   Added regression coverage for short parallel joins, small MPX/STOMP inputs, partial MPX computations, STOMP AB-joins, and left/right profiles.
+
 ## matrixprofiler 0.1.10
 
 -   C++11 flags are deprecated and defaults to C++17, so this requirement was removed from the package.

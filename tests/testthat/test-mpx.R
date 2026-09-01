@@ -54,3 +54,33 @@ test_that("MPXs are equal", {
 test_that("MPXABs are equal", {
   expect_identical(mpxab_res, mpxab_res_par)
 })
+
+test_that("parallel MPX handles fewer than 100 diagonals", {
+  set.seed(2001)
+  data <- rnorm(100)
+
+  set.seed(2002)
+  serial <- matrixprofiler:::mpx_rcpp(data, 40L, 0.5, 1, TRUE, TRUE, FALSE, 60)
+  set.seed(2002)
+  parallel <- matrixprofiler:::mpx_rcpp_parallel(data, 40L, 0.5, 1, TRUE, TRUE, FALSE)
+
+  expect_equal(parallel, serial, tolerance = 1e-10)
+})
+
+test_that("parallel MPX honors partial sample size", {
+  set.seed(2003)
+  data <- rnorm(1000)
+
+  set.seed(2004)
+  serial <- matrixprofiler:::mpx_rcpp(data, 100L, 0.5, 0.25, TRUE, TRUE, FALSE, 60)
+  set.seed(2004)
+  parallel <- matrixprofiler:::mpx_rcpp_parallel(data, 100L, 0.5, 0.25, TRUE, TRUE, FALSE)
+
+  expect_true(parallel$partial)
+  expect_equal(parallel, serial, tolerance = 1e-10)
+})
+
+test_that("mpx validates sample size", {
+  expect_error(mpx(rnorm(100), 40L, s_size = -0.1), "between 0 and 1", fixed = TRUE)
+  expect_error(mpx(rnorm(100), 40L, s_size = 1.1), "between 0 and 1", fixed = TRUE)
+})
