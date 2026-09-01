@@ -31,7 +31,14 @@ knitr::opts_chunk$set(
 -   Added left and right profile computation to parallel STOMP and corrected exclusion-zone handling.
 -   Fixed parallel MPX ignoring `s_size` and added validation for values outside the `[0, 1]` interval.
 -   Fixed parallel thread options not being restored when STOMP or MPX failed or was interrupted.
+-   Added the serial `mpx_na_rcpp()` implementation, which excludes windows containing `NA`, `NaN`, or infinite samples while allowing later valid windows to recover.
+-   Added `mpx_na_rcpp_parallel()` with the same missing-data semantics as the serial implementation and support for partial computations through `s_size`.
+-   Added the bidirectional `mpxab_na_rcpp()` AB-join for independently masking non-finite windows in both input series.
+-   Added `mpxab_na_rcpp_parallel()` with matching bidirectional masks and partial-computation behavior.
+-   Fixed serial STAMP modifying input vectors in place while sanitizing non-finite samples.
+-   Fixed serial STAMP AB-joins using the data validity mask for query windows instead of maintaining separate masks.
 -   Added regression coverage for short parallel joins, small MPX/STOMP inputs, partial MPX computations, STOMP AB-joins, and left/right profiles.
+-   Added randomized MPX missing-data stress tests against serial STAMP and an independent brute-force implementation.
 
 ## matrixprofiler 0.1.10
 

@@ -36,6 +36,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
 
   // check skip position
   LogicalVector skip_location(matrix_profile_size);
+  LogicalVector skip_query(num_queries);
 
   for (uint64_t i = 0; i < matrix_profile_size; i++) {
     NumericVector const range = data_ref[Range(i, (i + window_size - 1))];
@@ -43,9 +44,17 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       skip_location[i] = TRUE;
     }
   }
+  for (uint64_t i = 0; i < num_queries; i++) {
+    NumericVector const range = query_ref[Range(i, (i + window_size - 1))];
+    if (any(is_na(range) | is_infinite(range))) {
+      skip_query[i] = TRUE;
+    }
+  }
 
-  NumericVector data = data_ref;
-  NumericVector query = query_ref;
+  // Rcpp vectors are shallow handles. Clone before sanitizing non-finite
+  // values so STAMP does not overwrite vectors supplied by the R caller.
+  NumericVector data = clone(data_ref);
+  NumericVector query = clone(query_ref);
 
   data[is_na(data)] = 0;
   data[is_infinite(data)] = 0;
@@ -91,7 +100,7 @@ List stamp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uin
       }
 
       distance_profile[as<NumericVector>(pre["data_sd"]) < DBL_EPSILON] = R_PosInf;
-      if ((skip_location[i] != 0) || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
+      if ((skip_query[i] != 0) || as<NumericVector>(pre["query_sd"])[i] < DBL_EPSILON) {
         distance_profile.fill(R_PosInf);
       }
       distance_profile[skip_location] = R_PosInf;

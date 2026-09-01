@@ -907,6 +907,135 @@ List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez, uint6
 
 // FIXME: check skip_locations in mpx
 
+// MPX with explicit support for non-finite samples.
+//
+// Non-finite samples are replaced by zero only for the numerical recurrence.
+// Windows containing a non-finite sample, constant windows, and otherwise
+// non-normalizable windows are excluded from comparisons and returned as NA.
+// [[Rcpp::export]]
+List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean,
+                 bool progress) {
+  uint64_t const data_size = data_ref.length();
+
+  if (window_size < 2 || window_size >= data_size) {
+    Rcpp::stop("window_size must leave at least two subsequences");
+  }
+  if (!std::isfinite(ez) || ez < 0.0) {
+    Rcpp::stop("ez must be finite and non-negative");
+  }
+  if (!std::isfinite(s_size) || s_size < 0.0 || s_size > 1.0) {
+    Rcpp::stop("s_size must be between 0 and 1");
+  }
+
+  uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
+  uint64_t const profile_len = data_size - window_size + 1;
+  bool partial = false;
+
+  List const stats = muinvn_na(data_ref, window_size);
+  NumericVector data = stats["data"];
+  NumericVector mu = stats["avg"];
+  NumericVector sig = stats["sig"];
+  LogicalVector valid_window = stats["valid_window"];
+
+  NumericVector mp(profile_len, R_NegInf);
+  IntegerVector mpi(profile_len, NA_INTEGER);
+  for (uint64_t i = 0; i < profile_len; i++) {
+    if (!valid_window[i]) {
+      mp[i] = NA_REAL;
+    }
+  }
+
+  NumericVector df = 0.5 * (data[Range(window_size, data_size - 1)] -
+                            data[Range(0, data_size - window_size - 1)]);
+  df.push_front(0);
+  NumericVector dg = (data[Range(window_size, data_size - 1)] - mu[Range(1, profile_len - 1)]) +
+                     (data[Range(0, data_size - window_size - 1)] - mu[Range(0, profile_len - 2)]);
+  dg.push_front(0);
+
+  NumericVector const first_window = data[Range(0, window_size - 1)] - mu[0];
+  IntegerVector compute_order;
+  if (exclusion_zone < profile_len) {
+    compute_order = Range(exclusion_zone, profile_len - 1);
+    compute_order = sample(compute_order, compute_order.size());
+  }
+
+  uint64_t work_size = compute_order.size();
+  if (s_size > 0.0 && s_size < 1.0) {
+    work_size = static_cast<uint64_t>(round(work_size * s_size + DBL_EPSILON));
+    partial = work_size < static_cast<uint64_t>(compute_order.size());
+  }
+
+  Progress prog(work_size, progress);
+
+  try {
+    for (uint64_t k = 0; k < work_size; k++) {
+      RcppThread::checkUserInterrupt();
+      prog.increment();
+
+      uint64_t const diag = compute_order[k];
+      double covariance = inner_product(data[Range(diag, diag + window_size - 1)] - mu[diag], first_window);
+      uint64_t const diagonal_length = profile_len - diag;
+
+      for (uint64_t offset = 0; offset < diagonal_length; offset++) {
+        uint64_t const off_diag = offset + diag;
+        covariance = covariance + df[offset] * dg[off_diag] + df[off_diag] * dg[offset];
+
+        if (!valid_window[offset] || !valid_window[off_diag]) {
+          continue;
+        }
+
+        double const correlation = covariance * sig[offset] * sig[off_diag];
+        if (!std::isfinite(correlation)) {
+          continue;
+        }
+
+        if (correlation > mp[offset]) {
+          mp[offset] = correlation;
+          if (idxs) {
+            mpi[offset] = off_diag + 1;
+          }
+        }
+        if (correlation > mp[off_diag]) {
+          mp[off_diag] = correlation;
+          if (idxs) {
+            mpi[off_diag] = offset + 1;
+          }
+        }
+      }
+    }
+  } catch (RcppThread::UserInterruptException &ex) {
+    partial = true;
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
+  }
+
+  for (uint64_t i = 0; i < profile_len; i++) {
+    if (!valid_window[i]) {
+      mp[i] = NA_REAL;
+      mpi[i] = NA_INTEGER;
+      continue;
+    }
+
+    if (!std::isfinite(mp[i])) {
+      mp[i] = NA_REAL;
+      mpi[i] = NA_INTEGER;
+      continue;
+    }
+
+    mp[i] = std::max(-1.0, std::min(1.0, mp[i]));
+    if (euclidean) {
+      mp[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp[i])));
+    }
+  }
+
+  if (idxs) {
+    return List::create(Rcpp::Named("matrix_profile") = mp, Rcpp::Named("profile_index") = mpi,
+                        Rcpp::Named("valid_window") = valid_window, Rcpp::Named("partial") = partial);
+  }
+
+  return List::create(Rcpp::Named("matrix_profile") = mp, Rcpp::Named("valid_window") = valid_window,
+                      Rcpp::Named("partial") = partial);
+}
+
 // MPX
 //
 // @param data_ref Time Series
@@ -1041,6 +1170,163 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
   } catch (...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
+}
+
+// MPX AB-join with explicit support for non-finite samples in both series.
+// [[Rcpp::export]]
+List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size, bool idxs,
+                   bool euclidean, bool progress) {
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
+  if (window_size < 2 || window_size >= data_size || window_size >= query_size) {
+    Rcpp::stop("window_size must leave at least two subsequences in each series");
+  }
+  if (!std::isfinite(s_size) || s_size < 0.0 || s_size > 1.0) {
+    Rcpp::stop("s_size must be between 0 and 1");
+  }
+
+  uint32_t const profile_len_a = data_size - window_size + 1;
+  uint32_t const profile_len_b = query_size - window_size + 1;
+  bool partial = false;
+
+  List const stats_a = muinvn_na(data_ref, window_size);
+  List const stats_b = muinvn_na(query_ref, window_size);
+  NumericVector data = stats_a["data"];
+  NumericVector query = stats_b["data"];
+  NumericVector mu_a = stats_a["avg"];
+  NumericVector mu_b = stats_b["avg"];
+  NumericVector sig_a = stats_a["sig"];
+  NumericVector sig_b = stats_b["sig"];
+  LogicalVector valid_a = stats_a["valid_window"];
+  LogicalVector valid_b = stats_b["valid_window"];
+
+  NumericVector mp_a(profile_len_a, R_NegInf);
+  NumericVector mp_b(profile_len_b, R_NegInf);
+  IntegerVector mpi_a(profile_len_a, NA_INTEGER);
+  IntegerVector mpi_b(profile_len_b, NA_INTEGER);
+
+  NumericVector df_a = 0.5 * (data[Range(window_size, data_size - 1)] -
+                              data[Range(0, data_size - window_size - 1)]);
+  df_a.push_front(0);
+  NumericVector dg_a = (data[Range(window_size, data_size - 1)] - mu_a[Range(1, profile_len_a - 1)]) +
+                       (data[Range(0, data_size - window_size - 1)] - mu_a[Range(0, profile_len_a - 2)]);
+  dg_a.push_front(0);
+
+  NumericVector df_b = 0.5 * (query[Range(window_size, query_size - 1)] -
+                              query[Range(0, query_size - window_size - 1)]);
+  df_b.push_front(0);
+  NumericVector dg_b = (query[Range(window_size, query_size - 1)] - mu_b[Range(1, profile_len_b - 1)]) +
+                       (query[Range(0, query_size - window_size - 1)] - mu_b[Range(0, profile_len_b - 2)]);
+  dg_b.push_front(0);
+
+  IntegerVector order_a = Range(0, profile_len_a - 1);
+  IntegerVector order_b = Range(0, profile_len_b - 1);
+  order_a = sample(order_a, order_a.size());
+  order_b = sample(order_b, order_b.size());
+  uint64_t work_a = order_a.size();
+  uint64_t work_b = order_b.size();
+  if (s_size > 0.0 && s_size < 1.0) {
+    work_a = static_cast<uint64_t>(round(work_a * s_size + DBL_EPSILON));
+    work_b = static_cast<uint64_t>(round(work_b * s_size + DBL_EPSILON));
+    partial = work_a < static_cast<uint64_t>(order_a.size()) || work_b < static_cast<uint64_t>(order_b.size());
+  }
+
+  Progress prog(work_a + work_b, progress);
+  try {
+    NumericVector const first_b = query[Range(0, window_size - 1)] - mu_b[0];
+    for (uint64_t order_index = 0; order_index < work_a; order_index++) {
+      RcppThread::checkUserInterrupt();
+      prog.increment();
+      uint32_t const diag = order_a[order_index];
+      uint32_t const diagonal_length = MIN(profile_len_a - diag, profile_len_b);
+      double covariance = inner_product(data[Range(diag, diag + window_size - 1)] - mu_a[diag], first_b);
+
+      for (uint32_t offset = 0; offset < diagonal_length; offset++) {
+        uint32_t const off_diag = offset + diag;
+        covariance = covariance + df_a[off_diag] * dg_b[offset] + dg_a[off_diag] * df_b[offset];
+        if (!valid_a[off_diag] || !valid_b[offset]) {
+          continue;
+        }
+        double const correlation = covariance * sig_a[off_diag] * sig_b[offset];
+        if (!std::isfinite(correlation)) {
+          continue;
+        }
+        if (correlation > mp_a[off_diag]) {
+          mp_a[off_diag] = correlation;
+          mpi_a[off_diag] = offset + 1;
+        }
+        if (correlation > mp_b[offset]) {
+          mp_b[offset] = correlation;
+          mpi_b[offset] = off_diag + 1;
+        }
+      }
+    }
+
+    NumericVector const first_a = data[Range(0, window_size - 1)] - mu_a[0];
+    for (uint64_t order_index = 0; order_index < work_b; order_index++) {
+      RcppThread::checkUserInterrupt();
+      prog.increment();
+      uint32_t const diag = order_b[order_index];
+      uint32_t const diagonal_length = MIN(profile_len_b - diag, profile_len_a);
+      double covariance = inner_product(query[Range(diag, diag + window_size - 1)] - mu_b[diag], first_a);
+
+      for (uint32_t offset = 0; offset < diagonal_length; offset++) {
+        uint32_t const off_diag = offset + diag;
+        covariance = covariance + df_b[off_diag] * dg_a[offset] + dg_b[off_diag] * df_a[offset];
+        if (!valid_b[off_diag] || !valid_a[offset]) {
+          continue;
+        }
+        double const correlation = covariance * sig_b[off_diag] * sig_a[offset];
+        if (!std::isfinite(correlation)) {
+          continue;
+        }
+        if (correlation > mp_b[off_diag]) {
+          mp_b[off_diag] = correlation;
+          mpi_b[off_diag] = offset + 1;
+        }
+        if (correlation > mp_a[offset]) {
+          mp_a[offset] = correlation;
+          mpi_a[offset] = off_diag + 1;
+        }
+      }
+    }
+  } catch (RcppThread::UserInterruptException &ex) {
+    partial = true;
+    Rcout << "Process terminated by the user successfully, partial results were returned." << std::endl;
+  }
+
+  for (uint32_t i = 0; i < profile_len_a; i++) {
+    if (!valid_a[i] || !std::isfinite(mp_a[i])) {
+      mp_a[i] = NA_REAL;
+      mpi_a[i] = NA_INTEGER;
+      continue;
+    }
+    mp_a[i] = std::max(-1.0, std::min(1.0, mp_a[i]));
+    if (euclidean) {
+      mp_a[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_a[i])));
+    }
+  }
+  for (uint32_t i = 0; i < profile_len_b; i++) {
+    if (!valid_b[i] || !std::isfinite(mp_b[i])) {
+      mp_b[i] = NA_REAL;
+      mpi_b[i] = NA_INTEGER;
+      continue;
+    }
+    mp_b[i] = std::max(-1.0, std::min(1.0, mp_b[i]));
+    if (euclidean) {
+      mp_b[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_b[i])));
+    }
+  }
+
+  if (idxs) {
+    return List::create(Rcpp::Named("matrix_profile") = mp_a, Rcpp::Named("profile_index") = mpi_a,
+                        Rcpp::Named("mpb") = mp_b, Rcpp::Named("pib") = mpi_b,
+                        Rcpp::Named("valid_window_a") = valid_a, Rcpp::Named("valid_window_b") = valid_b,
+                        Rcpp::Named("partial") = partial);
+  }
+  return List::create(Rcpp::Named("matrix_profile") = mp_a, Rcpp::Named("mpb") = mp_b,
+                      Rcpp::Named("valid_window_a") = valid_a, Rcpp::Named("valid_window_b") = valid_b,
+                      Rcpp::Named("partial") = partial);
 }
 
 // [[Rcpp::export]]

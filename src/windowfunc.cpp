@@ -466,6 +466,68 @@ List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
   return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
 
+// Precondition data for MPX joins containing non-finite samples. This follows
+// the MATLAB implementation: non-finite samples are zeroed only for the
+// recurrence, the rolling mean is compensated, and each centered norm is
+// computed directly instead of being derived from rolling sums of squares.
+List muinvn_na(NumericVector data_ref, uint32_t window_size) {
+  uint32_t const data_size = data_ref.length();
+  uint32_t const profile_len = data_size - window_size + 1;
+  NumericVector data = clone(data_ref);
+  LogicalVector valid_window(profile_len, true);
+
+  uint32_t non_finite_count = 0;
+  for (uint32_t i = 0; i < data_size; i++) {
+    if (!std::isfinite(data[i])) {
+      non_finite_count++;
+      data[i] = 0.0;
+    }
+    if (i >= window_size && !std::isfinite(data_ref[i - window_size])) {
+      non_finite_count--;
+    }
+    if (i >= window_size - 1) {
+      valid_window[i - window_size + 1] = non_finite_count == 0;
+    }
+  }
+
+  NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
+  NumericVector sig(profile_len, R_NaN);
+  for (uint32_t i = 0; i < profile_len; i++) {
+    if (!valid_window[i] || !std::isfinite(mu[i])) {
+      valid_window[i] = false;
+      continue;
+    }
+
+    double scale = 0.0;
+    double sum_squares = 1.0;
+    for (uint32_t j = 0; j < window_size; j++) {
+      double const centered = std::abs(data[i + j] - mu[i]);
+      if (centered == 0.0) {
+        continue;
+      }
+      if (scale < centered) {
+        double const ratio = scale / centered;
+        sum_squares = 1.0 + sum_squares * ratio * ratio;
+        scale = centered;
+      } else {
+        double const ratio = centered / scale;
+        sum_squares += ratio * ratio;
+      }
+    }
+
+    double const centered_norm = scale * sqrt(sum_squares);
+    double const inverse_norm = 1.0 / centered_norm;
+    if (!std::isfinite(centered_norm) || !std::isfinite(inverse_norm)) {
+      valid_window[i] = false;
+      continue;
+    }
+    sig[i] = inverse_norm;
+  }
+
+  return List::create(Rcpp::Named("data") = data, Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig,
+                      Rcpp::Named("valid_window") = valid_window);
+}
+
 struct MuinWorker : public Worker {
 
 private:
