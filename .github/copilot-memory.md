@@ -29,15 +29,7 @@
    - Changed to ::Rf_error
    - All IntegerVector loops use const & pattern
 
-5. **mpx_rcpp_new** (lines 675-907) - Experimental 3-profile version
-   - Removed const from: exclusion_zone, profile_len, diag_start, num_progress
-   - Changed to ::Rf_error
-   - **Features:** Calculates mmp + rmmp + lmmp, wild sigma check (sig > 60), mp_time_constraint parameter
-   - **Status:** NOT exported (no [[Rcpp::export]]) - under active development
-   - **FRANZ TEST block:** Experimental averaged profiles code (commented out, not validated)
-   - **Documentation added:** Comprehensive comparison comments explaining differences vs mpx_rcpp
-
-6. **mpx_rcpp** (lines 915-1032) - Stable exported version
+5. **mpx_rcpp** (stable exported version)
    - Removed const from: exclusion_zone, profile_len, num_progress
    - Changed to ::Rf_error
    - **NEW FEATURE:** wild_sigma_threshold parameter (default R_PosInf, disabled)
@@ -124,7 +116,7 @@
 #### Wild Sigma Check Feature
 **Purpose:** Prevents misleading correlations with abnormally high standard deviation
 **Implementation:** `if ((sig[offset] > threshold) || (sig[off_diag] > threshold)) continue;`
-**Threshold:** 60.0 used in mpx_rcpp_new (experimental), configurable in mpx_rcpp (default disabled)
+**Threshold:** Configurable in mpx_rcpp (default disabled)
 **Use cases:** Sensor data, financial data, IoT data prone to outliers
 
 ## Code Style Guidelines Established
@@ -148,7 +140,6 @@
 ## Known Issues/Next Steps
 - mpx.cpp optimization complete - ready for unit testing
 - wild_sigma_threshold feature needs validation with test datasets
-- mpx_rcpp_new FRANZ TEST block needs validation before export
 - Consider documenting wild sigma threshold scientific basis (UCR papers)
 
 ## Project Context

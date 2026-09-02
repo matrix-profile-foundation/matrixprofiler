@@ -94,6 +94,54 @@ with_mpx_test_threads <- function(code, n = 4L) {
   force(code)
 }
 
+test_that("public mpx routes non-finite self-joins to NA implementations", {
+  set.seed(2100)
+  data <- rnorm(120)
+  data[c(4, 35, 80, 119)] <- c(NA_real_, NaN, Inf, -Inf)
+
+  set.seed(2101)
+  serial <- mpx(data, 12L, n_workers = 1, progress = FALSE)
+  set.seed(2101)
+  parallel <- mpx(data, 12L, n_workers = 2, progress = FALSE)
+
+  expect_identical(serial$valid_window, parallel$valid_window)
+  expect_equal(serial$matrix_profile, parallel$matrix_profile, tolerance = 1e-10)
+  expect_identical(serial$profile_index, parallel$profile_index)
+  expect_true(all(is.na(serial$matrix_profile[!serial$valid_window])))
+})
+
+test_that("public mpx routes non-finite AB-joins to NA implementations", {
+  set.seed(2102)
+  data <- rnorm(120)
+  query <- rnorm(90)
+  query[c(3, 40, 89)] <- c(NA_real_, NaN, Inf)
+
+  set.seed(2103)
+  serial <- mpx(data, 12L, query = query, n_workers = 1, progress = FALSE)
+  set.seed(2103)
+  parallel <- mpx(data, 12L, query = query, n_workers = 2, progress = FALSE)
+
+  expect_identical(serial$valid_window_a, parallel$valid_window_a)
+  expect_identical(serial$valid_window_b, parallel$valid_window_b)
+  expect_equal(serial$matrix_profile, parallel$matrix_profile, tolerance = 1e-10)
+  expect_equal(serial$mpb, parallel$mpb, tolerance = 1e-10)
+  expect_identical(serial$profile_index, parallel$profile_index)
+  expect_identical(serial$pib, parallel$pib)
+})
+
+test_that("public mpx keeps finite inputs on regular implementations", {
+  set.seed(2104)
+  data <- rnorm(100)
+  query <- rnorm(80)
+
+  self_join <- mpx(data, 10L, n_workers = 1, progress = FALSE)
+  ab_join <- mpx(data, 10L, query = query, n_workers = 2, progress = FALSE)
+
+  expect_null(self_join$valid_window)
+  expect_null(ab_join$valid_window_a)
+  expect_null(ab_join$valid_window_b)
+})
+
 test_that("mpx_na_rcpp masks non-finite windows and recovers afterwards", {
   data <- sin(seq(0, 12, length.out = 60))
   data[c(18, 36, 50)] <- c(NA_real_, NaN, Inf)

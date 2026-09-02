@@ -49,13 +49,14 @@ mpx(
   n_workers = 1,
   progress = TRUE
 )
+
 }
 \arguments{
 \item{data}{Required. Any 1-dimension series of numbers (\code{matrix}, \code{vector}, \code{ts} etc.) (See details).}
 
 \item{window_size}{Required. An integer defining the rolling window size.}
 
-\item{query}{(not yet on \code{scrimp()}) Optional. Another 1-dimension series of numbers for an AB-join similarity.
+\item{query}{Optional. Another 1-dimension series of numbers for an AB-join similarity.
 Default is \code{NULL} (See details).}
 
 \item{exclusion_zone}{A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
@@ -78,6 +79,7 @@ This parameter is ignored when using multithread or AB-join.}
 \code{TRUE}.}
 
 \item{distance}{(\code{mpx()} only) A string. Currently accepts \code{euclidean} and \code{pearson}. Defaults to \code{euclidean}.}
+
 }
 \value{
 Returns a \code{list} with the \code{matrix_profile}, \code{profile_index} (if \code{idxs} is \code{TRUE} in \code{mpx()}), and some
@@ -126,9 +128,9 @@ the user, but the result is not considered anytime, just incomplete. For a anyti
 \subsection{scrimp}{
 
 The SCRIMP algorithm was the anytime solution for stomp. It is as fast as stomp but allows the user to cancel the
-computation and get an approximation of the final result. This implementation uses the SCRIMP++ code. This means
-that, at first, it will compute the pre-scrimp (a very fast and good approximation), and continue improving with
-scrimp. The exception is if you use multithreading, that skips the pre-scrimp stage.
+computation and get an approximation of the final result. The exact SCRIMP phase shares the NA-aware diagonal
+recurrence used by MPX. In serial mode, pre-scrimp first seeds the profile from sampled distance profiles; the
+multithreaded implementation skips this pre-scrimp stage.
 }
 
 \subsection{mpx}{
@@ -136,6 +138,9 @@ scrimp. The exception is if you use multithreading, that skips the pre-scrimp st
 This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
 least in one part of the process. This algorithm doesn't use FFT at all and is several times faster. It also relies
 on Ogita's work for better precision computing mean and standard deviation (part of the process).
+
+Inputs containing \code{NA}, \code{NaN}, \code{Inf}, or \code{-Inf} are automatically routed to the missing-data implementation. Fully
+finite inputs continue to use the faster regular MPX implementation.
 }
 }
 \section{This document}{

@@ -27,7 +27,7 @@
 #'
 #' @param data Required. Any 1-dimension series of numbers (`matrix`, `vector`, `ts` etc.) (See details).
 #' @param window_size Required. An integer defining the rolling window size.
-#' @param query (not yet on `scrimp()`) Optional. Another 1-dimension series of numbers for an AB-join similarity.
+#' @param query Optional. Another 1-dimension series of numbers for an AB-join similarity.
 #'   Default is `NULL` (See details).
 #' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
 #'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
@@ -66,13 +66,17 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
   "!!!DEBUG Parsing Arguments"
 
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   if (!is.null(query)) {
     query <- as.numeric(query)
-    checkmate::qassert(query, c("0", "N>=4"))
+    checkmate::qassert(query, c("0", "n>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
+  checkmate::qassert(s_size, "N1")
+  if (s_size < 0 || s_size > 1) {
+    stop("`s_size` must be between 0 and 1.", call. = FALSE)
+  }
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
   checkmate::qassert(progress, "B+")
 
@@ -111,6 +115,7 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
         "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
+          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
           result <- stamp_rcpp_parallel(
@@ -121,7 +126,6 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
             s_size,
             as.logical(progress)
           )
-          RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- stamp_rcpp(
             data,
@@ -146,6 +150,7 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
         "!DEBUG n_workers = `n_workers`"
         if (n_workers > 1) {
           p <- RcppParallel::defaultNumThreads()
+          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
           result <- stamp_rcpp_parallel(
@@ -156,7 +161,6 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
             s_size,
             as.logical(progress)
           )
-          RcppParallel::setThreadOptions(numThreads = p)
         } else {
           result <- stamp_rcpp(
             data,

@@ -2,7 +2,7 @@ NEWS
 ================
 Francisco Bischoff
 
-01 Sep 2026
+02 Sep 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
@@ -23,9 +23,47 @@ Francisco Bischoff
   outside the `[0, 1]` interval.
 - Fixed parallel thread options not being restored when STOMP or MPX
   failed or was interrupted.
+- Added the serial `mpx_na_rcpp()` implementation, which excludes
+  windows containing `NA`, `NaN`, or infinite samples while allowing
+  later valid windows to recover.
+- Added `mpx_na_rcpp_parallel()` with the same missing-data semantics as
+  the serial implementation and support for partial computations through
+  `s_size`.
+- Added the bidirectional `mpxab_na_rcpp()` AB-join for independently
+  masking non-finite windows in both input series.
+- Added `mpxab_na_rcpp_parallel()` with matching bidirectional masks and
+  partial-computation behavior.
+- Updated `mpx()` to route self-joins and AB-joins automatically to the
+  serial or parallel missing-data implementation whenever either input
+  contains `NA`, `NaN`, or infinite values.
+- Fixed serial STAMP modifying input vectors in place while sanitizing
+  non-finite samples.
+- Fixed serial STAMP AB-joins using the data validity mask for query
+  windows instead of maintaining separate masks.
+- Fixed parallel STAMP modifying input vectors, ignoring invalid query
+  windows, ignoring `s_size`, and calling unsafe R APIs from worker
+  threads.
+- Fixed STAMP failures on short inputs by removing the runtime MASS
+  grain-size benchmark and validating native arguments before index
+  arithmetic.
+- Fixed serial and parallel SCRIMP failures on non-finite and constant
+  windows, including a parallel segmentation fault caused by
+  zero-variance divisions and worker-thread R API calls.
+- Fixed parallel SCRIMP ignoring `s_size`; its diagonal computation now
+  shares the validated NA-aware MPX recurrence while serial PRE-SCRIMP
+  still seeds sampled distance profiles.
+- Fixed SCRIMP AB-joins skipping diagonals, omitting `s_size` in the
+  R-to-C++ call, rejecting unequal input lengths, and failing to mask
+  non-finite windows independently in both series.
+- Fixed STAMP and SCRIMP thread options not being restored when a
+  parallel computation failed.
 - Added regression coverage for short parallel joins, small MPX/STOMP
   inputs, partial MPX computations, STOMP AB-joins, and left/right
   profiles.
+- Added STAMP and SCRIMP regression tests against MPX/MPXAB for serial,
+  parallel, AB-join, non-finite, constant-window, and anytime cases.
+- Added randomized MPX missing-data stress tests against serial STAMP
+  and an independent brute-force implementation.
 
 ## matrixprofiler 0.1.10
 

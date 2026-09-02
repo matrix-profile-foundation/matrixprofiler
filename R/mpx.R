@@ -11,6 +11,9 @@
 #' least in one part of the process. This algorithm doesn't use FFT at all and is several times faster. It also relies
 #' on Ogita's work for better precision computing mean and standard deviation (part of the process).
 #'
+#' Inputs containing `NA`, `NaN`, `Inf`, or `-Inf` are automatically routed to the missing-data implementation. Fully
+#' finite inputs continue to use the faster regular MPX implementation.
+#'
 #' @seealso `mpxab()` for the forward and reverse join-similarity.
 #'
 #' @details # This document
@@ -27,11 +30,11 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
   "!!!DEBUG Parsing Arguments"
 
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   if (!is.null(query)) {
     query <- as.numeric(query)
-    checkmate::qassert(query, c("0", "N>=4"))
+    checkmate::qassert(query, c("0", "n>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
   checkmate::qassert(s_size, "N1")
@@ -50,6 +53,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
 
   ez <- exclusion_zone
   result <- NULL
+  has_non_finite <- any(!is.finite(data)) || (!is.null(query) && any(!is.finite(query)))
 
   query_size <- ifelse(is.null(query), length(data),
     ifelse(length(data) > length(query), length(query),
@@ -87,26 +91,50 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
           on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- mpx_rcpp_parallel(
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
+          if (has_non_finite) {
+            result <- mpx_na_rcpp_parallel(
+              data,
+              window_size,
+              ez,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else {
+            result <- mpx_rcpp_parallel(
+              data,
+              window_size,
+              ez,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          }
         } else {
-          result <- mpx_rcpp(
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress),
-            60
-          )
+          if (has_non_finite) {
+            result <- mpx_na_rcpp(
+              data,
+              window_size,
+              ez,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else {
+            result <- mpx_rcpp(
+              data,
+              window_size,
+              ez,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress),
+              60
+            )
+          }
         }
       },
       error = print
@@ -125,25 +153,49 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
           on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- mpxab_rcpp_parallel(
-            data,
-            query,
-            window_size,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
+          if (has_non_finite) {
+            result <- mpxab_na_rcpp_parallel(
+              data,
+              query,
+              window_size,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else {
+            result <- mpxab_rcpp_parallel(
+              data,
+              query,
+              window_size,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          }
         } else {
-          result <- mpxab_rcpp(
-            data,
-            query,
-            window_size,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
+          if (has_non_finite) {
+            result <- mpxab_na_rcpp(
+              data,
+              query,
+              window_size,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else {
+            result <- mpxab_rcpp(
+              data,
+              query,
+              window_size,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          }
         }
       },
       error = print

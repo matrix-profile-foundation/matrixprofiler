@@ -16,8 +16,6 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.
                     uint64_t start = 1, List old = R_NilValue);
 List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, double s_size = 1.0, bool idxs = true,
                    bool euclidean = true, bool progress = false, uint64_t start = 1, List old = R_NilValue);
-List mpx_rcpp_new(NumericVector data_ref, uint64_t window_size, double ez = 0.5, uint64_t mp_time_constraint = 0,
-                  double s_size = 1.0, bool idxs = true, bool euclidean = true, bool progress = false);
 List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, double s_size = 1.0, bool idxs = true,
               bool euclidean = true, bool progress = false, double wild_sigma_threshold = R_PosInf);
 List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez = 0.5, double s_size = 1.0, bool idxs = true,
