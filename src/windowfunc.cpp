@@ -17,6 +17,7 @@
 
 #include "mathtools.h" // math first to fix OSX error
 #include "windowfunc.h"
+#include <limits>
 
 // [[Rcpp::depends(RcppParallel)]]
 #include <RcppParallel.h>
@@ -466,66 +467,133 @@ List muinvn_rcpp(const NumericVector data, uint32_t window_size) {
   return (List::create(Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig));
 }
 
+inline bool inverse_centered_norm(const double *data, uint32_t start, uint32_t window_size, double mean,
+                                  double &inverse_norm) {
+  if (!std::isfinite(mean)) {
+    return false;
+  }
+
+  double scale = 0.0;
+  double sum_squares = 1.0;
+  for (uint32_t j = 0; j < window_size; j++) {
+    double const centered = std::abs(data[start + j] - mean);
+    if (centered == 0.0) {
+      continue;
+    }
+    if (scale < centered) {
+      double const ratio = scale / centered;
+      sum_squares = 1.0 + sum_squares * ratio * ratio;
+      scale = centered;
+    } else {
+      double const ratio = centered / scale;
+      sum_squares += ratio * ratio;
+    }
+  }
+
+  double const centered_norm = scale * sqrt(sum_squares);
+  inverse_norm = 1.0 / centered_norm;
+  return std::isfinite(centered_norm) && std::isfinite(inverse_norm);
+}
+
+struct MuinvnNAWorker : public Worker {
+private:
+  const RVector<double> data;
+  const RVector<double> mu;
+  const uint32_t window_size;
+  RVector<int> valid_window;
+  RVector<double> sig;
+
+public:
+  MuinvnNAWorker(const NumericVector &data, const NumericVector &mu, uint32_t window_size,
+                 const LogicalVector &valid_window, const NumericVector &sig)
+      : data(data), mu(mu), window_size(window_size), valid_window(valid_window), sig(sig) {}
+
+  void operator()(std::size_t begin, std::size_t end) override {
+    double const *const data_ptr = data.begin();
+    double const *const mu_ptr = mu.begin();
+    int *const valid_window_ptr = valid_window.begin();
+    double *const sig_ptr = sig.begin();
+
+    for (std::size_t i = begin; i < end; i++) {
+      if (!valid_window_ptr[i]) {
+        continue;
+      }
+
+      double inverse_norm = std::numeric_limits<double>::quiet_NaN();
+      if (!inverse_centered_norm(data_ptr, i, window_size, mu_ptr[i], inverse_norm)) {
+        valid_window_ptr[i] = false;
+        continue;
+      }
+      sig_ptr[i] = inverse_norm;
+    }
+  }
+};
+
 // Precondition data for MPX joins containing non-finite samples. This follows
 // the MATLAB implementation: non-finite samples are zeroed only for the
 // recurrence, the rolling mean is compensated, and each centered norm is
 // computed directly instead of being derived from rolling sums of squares.
-List muinvn_na(NumericVector data_ref, uint32_t window_size) {
+List muinvn_na_impl(NumericVector data_ref, uint32_t window_size, bool parallel) {
   uint32_t const data_size = data_ref.length();
   uint32_t const profile_len = data_size - window_size + 1;
   NumericVector data = clone(data_ref);
   LogicalVector valid_window(profile_len, true);
 
+  double const *const data_ref_ptr = data_ref.begin();
+  double *const data_ptr = data.begin();
+  int *const valid_window_ptr = valid_window.begin();
+
   uint32_t non_finite_count = 0;
   for (uint32_t i = 0; i < data_size; i++) {
-    if (!std::isfinite(data[i])) {
+    if (!std::isfinite(data_ptr[i])) {
       non_finite_count++;
-      data[i] = 0.0;
+      data_ptr[i] = 0.0;
     }
-    if (i >= window_size && !std::isfinite(data_ref[i - window_size])) {
+    if (i >= window_size && !std::isfinite(data_ref_ptr[i - window_size])) {
       non_finite_count--;
     }
     if (i >= window_size - 1) {
-      valid_window[i - window_size + 1] = non_finite_count == 0;
+      valid_window_ptr[i - window_size + 1] = non_finite_count == 0;
     }
   }
 
   NumericVector mu = movsum_ogita_rcpp(data, window_size) / window_size;
   NumericVector sig(profile_len, R_NaN);
-  for (uint32_t i = 0; i < profile_len; i++) {
-    if (!valid_window[i] || !std::isfinite(mu[i])) {
-      valid_window[i] = false;
-      continue;
-    }
+  double const *const mu_ptr = mu.begin();
+  double *const sig_ptr = sig.begin();
 
-    double scale = 0.0;
-    double sum_squares = 1.0;
-    for (uint32_t j = 0; j < window_size; j++) {
-      double const centered = std::abs(data[i + j] - mu[i]);
-      if (centered == 0.0) {
+  uint64_t const norm_work = static_cast<uint64_t>(profile_len) * window_size;
+  if (parallel && norm_work >= 1000000ULL) {
+    MuinvnNAWorker worker(data, mu, window_size, valid_window, sig);
+    std::size_t const grain_size = std::max<std::size_t>(1, 32768 / window_size);
+#if RCPP_PARALLEL_USE_TBB
+    RcppParallel::parallelFor(0, profile_len, worker, grain_size);
+#else
+    RcppParallel2::ttParallelFor(0, profile_len, worker, grain_size);
+#endif
+  } else {
+    for (uint32_t i = 0; i < profile_len; i++) {
+      if (!valid_window_ptr[i]) {
         continue;
       }
-      if (scale < centered) {
-        double const ratio = scale / centered;
-        sum_squares = 1.0 + sum_squares * ratio * ratio;
-        scale = centered;
-      } else {
-        double const ratio = centered / scale;
-        sum_squares += ratio * ratio;
-      }
-    }
 
-    double const centered_norm = scale * sqrt(sum_squares);
-    double const inverse_norm = 1.0 / centered_norm;
-    if (!std::isfinite(centered_norm) || !std::isfinite(inverse_norm)) {
-      valid_window[i] = false;
-      continue;
+      double inverse_norm = std::numeric_limits<double>::quiet_NaN();
+      if (!inverse_centered_norm(data_ptr, i, window_size, mu_ptr[i], inverse_norm)) {
+        valid_window_ptr[i] = false;
+        continue;
+      }
+      sig_ptr[i] = inverse_norm;
     }
-    sig[i] = inverse_norm;
   }
 
   return List::create(Rcpp::Named("data") = data, Rcpp::Named("avg") = mu, Rcpp::Named("sig") = sig,
                       Rcpp::Named("valid_window") = valid_window);
+}
+
+List muinvn_na(NumericVector data_ref, uint32_t window_size) { return muinvn_na_impl(data_ref, window_size, false); }
+
+List muinvn_na_parallel(NumericVector data_ref, uint32_t window_size) {
+  return muinvn_na_impl(data_ref, window_size, true);
 }
 
 struct MuinWorker : public Worker {

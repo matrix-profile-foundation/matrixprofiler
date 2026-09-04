@@ -2,7 +2,7 @@ NEWS
 ================
 Francisco Bischoff
 
-02 Sep 2026
+04 Sep 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
@@ -25,14 +25,21 @@ Francisco Bischoff
   failed or was interrupted.
 - Added the serial `mpx_na_rcpp()` implementation, which excludes
   windows containing `NA`, `NaN`, or infinite samples while allowing
-  later valid windows to recover.
+  later valid windows to recover, and optimized its quadratic kernel to
+  avoid costly Rcpp proxy accesses.
+- Optimized NA-aware moving normalization with direct contiguous storage
+  and a hybrid parallel implementation; parallel MPX and MPXAB use it
+  automatically for sufficiently large window workloads.
 - Added `mpx_na_rcpp_parallel()` with the same missing-data semantics as
   the serial implementation and support for partial computations through
-  `s_size`.
+  `s_size`; its worker kernel uses direct contiguous storage without R
+  API calls.
 - Added the bidirectional `mpxab_na_rcpp()` AB-join for independently
-  masking non-finite windows in both input series.
+  masking non-finite windows in both input series, with direct storage
+  access in its quadratic kernel.
 - Added `mpxab_na_rcpp_parallel()` with matching bidirectional masks and
-  partial-computation behavior.
+  partial-computation behavior, using direct contiguous storage inside
+  its workers.
 - Updated `mpx()` to route self-joins and AB-joins automatically to the
   serial or parallel missing-data implementation whenever either input
   contains `NA`, `NaN`, or infinite values.

@@ -134,24 +134,36 @@ public:
     std::vector<double> local_mp(profile_len, R_NegInf);
     std::vector<int> local_mpi(profile_len, NA_INTEGER);
 
+    double const *const data_ptr = data.begin();
+    int const *const compute_order_ptr = compute_order.begin();
+    double const *const df_ptr = df.begin();
+    double const *const dg_ptr = dg.begin();
+    double const *const mu_ptr = mu.begin();
+    double const *const sig_ptr = sig.begin();
+    double const *const first_window_ptr = first_window.begin();
+    int const *const valid_window_ptr = valid_window.begin();
+    double *const mp_ptr = mp.begin();
+    int *const mpi_ptr = mpi.begin();
+
     for (std::size_t order_index = begin; order_index < end; order_index++) {
-      uint32_t const diag = compute_order[order_index];
+      uint32_t const diag = compute_order_ptr[order_index];
       for (uint64_t i = 0; i < window_size; i++) {
-        centered_window[i] = data[diag + i] - mu[diag];
+        centered_window[i] = data_ptr[diag + i] - mu_ptr[diag];
       }
 
-      double covariance = std::inner_product(centered_window.begin(), centered_window.end(), first_window.begin(), 0.0);
+      double covariance =
+          std::inner_product(centered_window.begin(), centered_window.end(), first_window_ptr, 0.0);
       uint32_t const diagonal_length = profile_len - diag;
 
       for (uint32_t offset = 0; offset < diagonal_length; offset++) {
         uint32_t const off_diag = offset + diag;
-        covariance = covariance + df[offset] * dg[off_diag] + df[off_diag] * dg[offset];
+        covariance = covariance + df_ptr[offset] * dg_ptr[off_diag] + df_ptr[off_diag] * dg_ptr[offset];
 
-        if (!valid_window[offset] || !valid_window[off_diag]) {
+        if (!valid_window_ptr[offset] || !valid_window_ptr[off_diag]) {
           continue;
         }
 
-        double const correlation = covariance * sig[offset] * sig[off_diag];
+        double const correlation = covariance * sig_ptr[offset] * sig_ptr[off_diag];
         if (!std::isfinite(correlation)) {
           continue;
         }
@@ -169,9 +181,9 @@ public:
 
     std::lock_guard<decltype(mutex)> lock(mutex);
     for (uint32_t i = 0; i < profile_len; i++) {
-      if (local_mp[i] > mp[i]) {
-        mp[i] = local_mp[i];
-        mpi[i] = local_mpi[i];
+      if (local_mp[i] > mp_ptr[i]) {
+        mp_ptr[i] = local_mp[i];
+        mpi_ptr[i] = local_mpi[i];
       }
     }
   }
@@ -274,7 +286,7 @@ List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double e
   uint32_t const profile_len = data_size - window_size + 1;
   bool partial = false;
 
-  List const stats = muinvn_na(data_ref, window_size);
+  List const stats = muinvn_na_parallel(data_ref, window_size);
   NumericVector data = stats["data"];
   NumericVector mu = stats["avg"];
   NumericVector sig = stats["sig"];
@@ -319,15 +331,18 @@ List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double e
     Rcpp::stop("c++ exception (unknown reason)");
   }
 
+  double *const mp_ptr = mp.begin();
+  int *const mpi_ptr = mpi.begin();
+  int const *const valid_window_ptr = valid_window.begin();
   for (uint32_t i = 0; i < profile_len; i++) {
-    if (!valid_window[i] || !std::isfinite(mp[i])) {
-      mp[i] = NA_REAL;
-      mpi[i] = NA_INTEGER;
+    if (!valid_window_ptr[i] || !std::isfinite(mp_ptr[i])) {
+      mp_ptr[i] = NA_REAL;
+      mpi_ptr[i] = NA_INTEGER;
       continue;
     }
-    mp[i] = std::max(-1.0, std::min(1.0, mp[i]));
+    mp_ptr[i] = std::max(-1.0, std::min(1.0, mp_ptr[i]));
     if (euclidean) {
-      mp[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp[i])));
+      mp_ptr[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_ptr[i])));
     }
   }
 
@@ -535,22 +550,44 @@ public:
     std::vector<int> local_mpi_a(profile_len_a, NA_INTEGER);
     std::vector<int> local_mpi_b(profile_len_b, NA_INTEGER);
 
+    double const *const data_ptr = data.begin();
+    double const *const query_ptr = query.begin();
+    double const *const df_a_ptr = df_a.begin();
+    double const *const df_b_ptr = df_b.begin();
+    double const *const dg_a_ptr = dg_a.begin();
+    double const *const dg_b_ptr = dg_b.begin();
+    double const *const mu_a_ptr = mu_a.begin();
+    double const *const mu_b_ptr = mu_b.begin();
+    double const *const sig_a_ptr = sig_a.begin();
+    double const *const sig_b_ptr = sig_b.begin();
+    double const *const first_a_ptr = first_a.begin();
+    double const *const first_b_ptr = first_b.begin();
+    int const *const valid_a_ptr = valid_a.begin();
+    int const *const valid_b_ptr = valid_b.begin();
+    int const *const order_a_ptr = order_a.begin();
+    int const *const order_b_ptr = order_b.begin();
+    double *const mp_a_ptr = mp_a.begin();
+    double *const mp_b_ptr = mp_b.begin();
+    int *const mpi_a_ptr = mpi_a.begin();
+    int *const mpi_b_ptr = mpi_b.begin();
+
     if (!ba) {
       for (std::size_t order_index = begin; order_index < end; order_index++) {
-        uint32_t const diag = order_a[order_index];
+        uint32_t const diag = order_a_ptr[order_index];
         for (uint64_t i = 0; i < window_size; i++) {
-          centered_window[i] = data[diag + i] - mu_a[diag];
+          centered_window[i] = data_ptr[diag + i] - mu_a_ptr[diag];
         }
-        double covariance = std::inner_product(centered_window.begin(), centered_window.end(), first_b.begin(), 0.0);
+        double covariance = std::inner_product(centered_window.begin(), centered_window.end(), first_b_ptr, 0.0);
         uint32_t const diagonal_length = MIN(profile_len_a - diag, profile_len_b);
 
         for (uint32_t offset = 0; offset < diagonal_length; offset++) {
           uint32_t const off_diag = offset + diag;
-          covariance = covariance + df_a[off_diag] * dg_b[offset] + dg_a[off_diag] * df_b[offset];
-          if (!valid_a[off_diag] || !valid_b[offset]) {
+          covariance =
+              covariance + df_a_ptr[off_diag] * dg_b_ptr[offset] + dg_a_ptr[off_diag] * df_b_ptr[offset];
+          if (!valid_a_ptr[off_diag] || !valid_b_ptr[offset]) {
             continue;
           }
-          double const correlation = covariance * sig_a[off_diag] * sig_b[offset];
+          double const correlation = covariance * sig_a_ptr[off_diag] * sig_b_ptr[offset];
           if (!std::isfinite(correlation)) {
             continue;
           }
@@ -566,20 +603,21 @@ public:
       }
     } else {
       for (std::size_t order_index = begin; order_index < end; order_index++) {
-        uint32_t const diag = order_b[order_index];
+        uint32_t const diag = order_b_ptr[order_index];
         for (uint64_t i = 0; i < window_size; i++) {
-          centered_window[i] = query[diag + i] - mu_b[diag];
+          centered_window[i] = query_ptr[diag + i] - mu_b_ptr[diag];
         }
-        double covariance = std::inner_product(centered_window.begin(), centered_window.end(), first_a.begin(), 0.0);
+        double covariance = std::inner_product(centered_window.begin(), centered_window.end(), first_a_ptr, 0.0);
         uint32_t const diagonal_length = MIN(profile_len_b - diag, profile_len_a);
 
         for (uint32_t offset = 0; offset < diagonal_length; offset++) {
           uint32_t const off_diag = offset + diag;
-          covariance = covariance + df_b[off_diag] * dg_a[offset] + dg_b[off_diag] * df_a[offset];
-          if (!valid_b[off_diag] || !valid_a[offset]) {
+          covariance =
+              covariance + df_b_ptr[off_diag] * dg_a_ptr[offset] + dg_b_ptr[off_diag] * df_a_ptr[offset];
+          if (!valid_b_ptr[off_diag] || !valid_a_ptr[offset]) {
             continue;
           }
-          double const correlation = covariance * sig_b[off_diag] * sig_a[offset];
+          double const correlation = covariance * sig_b_ptr[off_diag] * sig_a_ptr[offset];
           if (!std::isfinite(correlation)) {
             continue;
           }
@@ -597,15 +635,15 @@ public:
 
     std::lock_guard<decltype(mutex)> lock(mutex);
     for (uint32_t i = 0; i < profile_len_a; i++) {
-      if (local_mp_a[i] > mp_a[i]) {
-        mp_a[i] = local_mp_a[i];
-        mpi_a[i] = local_mpi_a[i];
+      if (local_mp_a[i] > mp_a_ptr[i]) {
+        mp_a_ptr[i] = local_mp_a[i];
+        mpi_a_ptr[i] = local_mpi_a[i];
       }
     }
     for (uint32_t i = 0; i < profile_len_b; i++) {
-      if (local_mp_b[i] > mp_b[i]) {
-        mp_b[i] = local_mp_b[i];
-        mpi_b[i] = local_mpi_b[i];
+      if (local_mp_b[i] > mp_b_ptr[i]) {
+        mp_b_ptr[i] = local_mp_b[i];
+        mpi_b_ptr[i] = local_mpi_b[i];
       }
     }
   }
@@ -735,8 +773,8 @@ List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uin
   uint32_t const profile_len_b = query_size - window_size + 1;
   bool partial = false;
 
-  List const stats_a = muinvn_na(data_ref, window_size);
-  List const stats_b = muinvn_na(query_ref, window_size);
+  List const stats_a = muinvn_na_parallel(data_ref, window_size);
+  List const stats_b = muinvn_na_parallel(query_ref, window_size);
   NumericVector data = stats_a["data"];
   NumericVector query = stats_b["data"];
   NumericVector mu_a = stats_a["avg"];
@@ -813,26 +851,32 @@ List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uin
     Rcpp::stop("c++ exception (unknown reason)");
   }
 
+  double *const mp_a_ptr = mp_a.begin();
+  double *const mp_b_ptr = mp_b.begin();
+  int *const mpi_a_ptr = mpi_a.begin();
+  int *const mpi_b_ptr = mpi_b.begin();
+  int const *const valid_a_ptr = valid_a.begin();
+  int const *const valid_b_ptr = valid_b.begin();
   for (uint32_t i = 0; i < profile_len_a; i++) {
-    if (!valid_a[i] || !std::isfinite(mp_a[i])) {
-      mp_a[i] = NA_REAL;
-      mpi_a[i] = NA_INTEGER;
+    if (!valid_a_ptr[i] || !std::isfinite(mp_a_ptr[i])) {
+      mp_a_ptr[i] = NA_REAL;
+      mpi_a_ptr[i] = NA_INTEGER;
       continue;
     }
-    mp_a[i] = std::max(-1.0, std::min(1.0, mp_a[i]));
+    mp_a_ptr[i] = std::max(-1.0, std::min(1.0, mp_a_ptr[i]));
     if (euclidean) {
-      mp_a[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_a[i])));
+      mp_a_ptr[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_a_ptr[i])));
     }
   }
   for (uint32_t i = 0; i < profile_len_b; i++) {
-    if (!valid_b[i] || !std::isfinite(mp_b[i])) {
-      mp_b[i] = NA_REAL;
-      mpi_b[i] = NA_INTEGER;
+    if (!valid_b_ptr[i] || !std::isfinite(mp_b_ptr[i])) {
+      mp_b_ptr[i] = NA_REAL;
+      mpi_b_ptr[i] = NA_INTEGER;
       continue;
     }
-    mp_b[i] = std::max(-1.0, std::min(1.0, mp_b[i]));
+    mp_b_ptr[i] = std::max(-1.0, std::min(1.0, mp_b_ptr[i]));
     if (euclidean) {
-      mp_b[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_b[i])));
+      mp_b_ptr[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_b_ptr[i])));
     }
   }
 

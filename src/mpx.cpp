@@ -706,9 +706,17 @@ List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double
 
   NumericVector mp(profile_len, R_NegInf);
   IntegerVector mpi(profile_len, NA_INTEGER);
+
+  // Keep Rcpp objects alive for ownership, but use their contiguous storage
+  // directly in the quadratic kernel. Rcpp vector proxies in this loop are
+  // substantially more expensive and inhibit useful compiler optimizations.
+  double *const mp_ptr = mp.begin();
+  int *const mpi_ptr = mpi.begin();
+  int const *const valid_window_ptr = valid_window.begin();
+
   for (uint64_t i = 0; i < profile_len; i++) {
-    if (!valid_window[i]) {
-      mp[i] = NA_REAL;
+    if (!valid_window_ptr[i]) {
+      mp_ptr[i] = NA_REAL;
     }
   }
 
@@ -718,6 +726,10 @@ List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double
   NumericVector dg = (data[Range(window_size, data_size - 1)] - mu[Range(1, profile_len - 1)]) +
                      (data[Range(0, data_size - window_size - 1)] - mu[Range(0, profile_len - 2)]);
   dg.push_front(0);
+
+  double const *const df_ptr = df.begin();
+  double const *const dg_ptr = dg.begin();
+  double const *const sig_ptr = sig.begin();
 
   NumericVector const first_window = data[Range(0, window_size - 1)] - mu[0];
   IntegerVector compute_order;
@@ -745,27 +757,27 @@ List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double
 
       for (uint64_t offset = 0; offset < diagonal_length; offset++) {
         uint64_t const off_diag = offset + diag;
-        covariance = covariance + df[offset] * dg[off_diag] + df[off_diag] * dg[offset];
+        covariance = covariance + df_ptr[offset] * dg_ptr[off_diag] + df_ptr[off_diag] * dg_ptr[offset];
 
-        if (!valid_window[offset] || !valid_window[off_diag]) {
+        if (!valid_window_ptr[offset] || !valid_window_ptr[off_diag]) {
           continue;
         }
 
-        double const correlation = covariance * sig[offset] * sig[off_diag];
+        double const correlation = covariance * sig_ptr[offset] * sig_ptr[off_diag];
         if (!std::isfinite(correlation)) {
           continue;
         }
 
-        if (correlation > mp[offset]) {
-          mp[offset] = correlation;
+        if (correlation > mp_ptr[offset]) {
+          mp_ptr[offset] = correlation;
           if (idxs) {
-            mpi[offset] = off_diag + 1;
+            mpi_ptr[offset] = off_diag + 1;
           }
         }
-        if (correlation > mp[off_diag]) {
-          mp[off_diag] = correlation;
+        if (correlation > mp_ptr[off_diag]) {
+          mp_ptr[off_diag] = correlation;
           if (idxs) {
-            mpi[off_diag] = offset + 1;
+            mpi_ptr[off_diag] = offset + 1;
           }
         }
       }
@@ -776,21 +788,21 @@ List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double
   }
 
   for (uint64_t i = 0; i < profile_len; i++) {
-    if (!valid_window[i]) {
-      mp[i] = NA_REAL;
-      mpi[i] = NA_INTEGER;
+    if (!valid_window_ptr[i]) {
+      mp_ptr[i] = NA_REAL;
+      mpi_ptr[i] = NA_INTEGER;
       continue;
     }
 
-    if (!std::isfinite(mp[i])) {
-      mp[i] = NA_REAL;
-      mpi[i] = NA_INTEGER;
+    if (!std::isfinite(mp_ptr[i])) {
+      mp_ptr[i] = NA_REAL;
+      mpi_ptr[i] = NA_INTEGER;
       continue;
     }
 
-    mp[i] = std::max(-1.0, std::min(1.0, mp[i]));
+    mp_ptr[i] = std::max(-1.0, std::min(1.0, mp_ptr[i]));
     if (euclidean) {
-      mp[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp[i])));
+      mp_ptr[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_ptr[i])));
     }
   }
 
@@ -972,6 +984,13 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
   IntegerVector mpi_a(profile_len_a, NA_INTEGER);
   IntegerVector mpi_b(profile_len_b, NA_INTEGER);
 
+  double *const mp_a_ptr = mp_a.begin();
+  double *const mp_b_ptr = mp_b.begin();
+  int *const mpi_a_ptr = mpi_a.begin();
+  int *const mpi_b_ptr = mpi_b.begin();
+  int const *const valid_a_ptr = valid_a.begin();
+  int const *const valid_b_ptr = valid_b.begin();
+
   NumericVector df_a = 0.5 * (data[Range(window_size, data_size - 1)] -
                               data[Range(0, data_size - window_size - 1)]);
   df_a.push_front(0);
@@ -985,6 +1004,13 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
   NumericVector dg_b = (query[Range(window_size, query_size - 1)] - mu_b[Range(1, profile_len_b - 1)]) +
                        (query[Range(0, query_size - window_size - 1)] - mu_b[Range(0, profile_len_b - 2)]);
   dg_b.push_front(0);
+
+  double const *const df_a_ptr = df_a.begin();
+  double const *const df_b_ptr = df_b.begin();
+  double const *const dg_a_ptr = dg_a.begin();
+  double const *const dg_b_ptr = dg_b.begin();
+  double const *const sig_a_ptr = sig_a.begin();
+  double const *const sig_b_ptr = sig_b.begin();
 
   IntegerVector order_a = Range(0, profile_len_a - 1);
   IntegerVector order_b = Range(0, profile_len_b - 1);
@@ -1010,21 +1036,21 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
 
       for (uint32_t offset = 0; offset < diagonal_length; offset++) {
         uint32_t const off_diag = offset + diag;
-        covariance = covariance + df_a[off_diag] * dg_b[offset] + dg_a[off_diag] * df_b[offset];
-        if (!valid_a[off_diag] || !valid_b[offset]) {
+        covariance = covariance + df_a_ptr[off_diag] * dg_b_ptr[offset] + dg_a_ptr[off_diag] * df_b_ptr[offset];
+        if (!valid_a_ptr[off_diag] || !valid_b_ptr[offset]) {
           continue;
         }
-        double const correlation = covariance * sig_a[off_diag] * sig_b[offset];
+        double const correlation = covariance * sig_a_ptr[off_diag] * sig_b_ptr[offset];
         if (!std::isfinite(correlation)) {
           continue;
         }
-        if (correlation > mp_a[off_diag]) {
-          mp_a[off_diag] = correlation;
-          mpi_a[off_diag] = offset + 1;
+        if (correlation > mp_a_ptr[off_diag]) {
+          mp_a_ptr[off_diag] = correlation;
+          mpi_a_ptr[off_diag] = offset + 1;
         }
-        if (correlation > mp_b[offset]) {
-          mp_b[offset] = correlation;
-          mpi_b[offset] = off_diag + 1;
+        if (correlation > mp_b_ptr[offset]) {
+          mp_b_ptr[offset] = correlation;
+          mpi_b_ptr[offset] = off_diag + 1;
         }
       }
     }
@@ -1039,21 +1065,21 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
 
       for (uint32_t offset = 0; offset < diagonal_length; offset++) {
         uint32_t const off_diag = offset + diag;
-        covariance = covariance + df_b[off_diag] * dg_a[offset] + dg_b[off_diag] * df_a[offset];
-        if (!valid_b[off_diag] || !valid_a[offset]) {
+        covariance = covariance + df_b_ptr[off_diag] * dg_a_ptr[offset] + dg_b_ptr[off_diag] * df_a_ptr[offset];
+        if (!valid_b_ptr[off_diag] || !valid_a_ptr[offset]) {
           continue;
         }
-        double const correlation = covariance * sig_b[off_diag] * sig_a[offset];
+        double const correlation = covariance * sig_b_ptr[off_diag] * sig_a_ptr[offset];
         if (!std::isfinite(correlation)) {
           continue;
         }
-        if (correlation > mp_b[off_diag]) {
-          mp_b[off_diag] = correlation;
-          mpi_b[off_diag] = offset + 1;
+        if (correlation > mp_b_ptr[off_diag]) {
+          mp_b_ptr[off_diag] = correlation;
+          mpi_b_ptr[off_diag] = offset + 1;
         }
-        if (correlation > mp_a[offset]) {
-          mp_a[offset] = correlation;
-          mpi_a[offset] = off_diag + 1;
+        if (correlation > mp_a_ptr[offset]) {
+          mp_a_ptr[offset] = correlation;
+          mpi_a_ptr[offset] = off_diag + 1;
         }
       }
     }
@@ -1063,25 +1089,25 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
   }
 
   for (uint32_t i = 0; i < profile_len_a; i++) {
-    if (!valid_a[i] || !std::isfinite(mp_a[i])) {
-      mp_a[i] = NA_REAL;
-      mpi_a[i] = NA_INTEGER;
+    if (!valid_a_ptr[i] || !std::isfinite(mp_a_ptr[i])) {
+      mp_a_ptr[i] = NA_REAL;
+      mpi_a_ptr[i] = NA_INTEGER;
       continue;
     }
-    mp_a[i] = std::max(-1.0, std::min(1.0, mp_a[i]));
+    mp_a_ptr[i] = std::max(-1.0, std::min(1.0, mp_a_ptr[i]));
     if (euclidean) {
-      mp_a[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_a[i])));
+      mp_a_ptr[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_a_ptr[i])));
     }
   }
   for (uint32_t i = 0; i < profile_len_b; i++) {
-    if (!valid_b[i] || !std::isfinite(mp_b[i])) {
-      mp_b[i] = NA_REAL;
-      mpi_b[i] = NA_INTEGER;
+    if (!valid_b_ptr[i] || !std::isfinite(mp_b_ptr[i])) {
+      mp_b_ptr[i] = NA_REAL;
+      mpi_b_ptr[i] = NA_INTEGER;
       continue;
     }
-    mp_b[i] = std::max(-1.0, std::min(1.0, mp_b[i]));
+    mp_b_ptr[i] = std::max(-1.0, std::min(1.0, mp_b_ptr[i]));
     if (euclidean) {
-      mp_b[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_b[i])));
+      mp_b_ptr[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_b_ptr[i])));
     }
   }
 
