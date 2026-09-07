@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
@@ -602,86 +603,6 @@ public:
     uint32_t const profile_len_a = mp_a.size();
     uint32_t const profile_len_b = mp_b.size();
 
-    // TBB may invoke this operator many times on the same executor thread.
-    // Keep one set of scratch buffers per thread instead of allocating and
-    // initializing full profiles for every scheduler task. Only the ranges
-    // touched by the previous task are reset before reuse.
-    thread_local std::vector<double> inn;
-    thread_local std::vector<double> mpp_a;
-    thread_local std::vector<int> mpip_a;
-    thread_local std::vector<double> mpp_b;
-    thread_local std::vector<int> mpip_b;
-    thread_local uint32_t previous_a_begin = 0;
-    thread_local uint32_t previous_a_end = 0;
-    thread_local uint32_t previous_b_begin = 0;
-    thread_local uint32_t previous_b_end = 0;
-    thread_local bool previous_keep_indices = false;
-
-    if (inn.size() != window_size) {
-      inn.resize(window_size);
-      if (instrument) {
-        task_stats.scratch_initialized += window_size;
-      }
-    }
-    if (mpp_a.size() != profile_len_a || mpp_b.size() != profile_len_b) {
-      mpp_a.assign(profile_len_a, -1.0);
-      mpp_b.assign(profile_len_b, -1.0);
-      if (instrument) {
-        task_stats.scratch_initialized += profile_len_a + profile_len_b;
-      }
-      if (keep_indices) {
-        mpip_a.assign(profile_len_a, -1);
-        mpip_b.assign(profile_len_b, -1);
-        if (instrument) {
-          task_stats.scratch_initialized += profile_len_a + profile_len_b;
-        }
-      }
-      previous_a_begin = previous_a_end = previous_b_begin = previous_b_end = 0;
-    } else {
-      if (keep_indices && (mpip_a.size() != profile_len_a || mpip_b.size() != profile_len_b)) {
-        mpip_a.assign(profile_len_a, -1);
-        mpip_b.assign(profile_len_b, -1);
-        if (instrument) {
-          task_stats.scratch_initialized += profile_len_a + profile_len_b;
-        }
-        previous_a_begin = previous_a_end = previous_b_begin = previous_b_end = 0;
-      } else if (keep_indices && !previous_keep_indices) {
-        std::fill(mpip_a.begin(), mpip_a.end(), -1);
-        std::fill(mpip_b.begin(), mpip_b.end(), -1);
-        if (instrument) {
-          task_stats.scratch_reset += profile_len_a + profile_len_b;
-        }
-      }
-      if (previous_a_begin < previous_a_end) {
-        std::fill(mpp_a.begin() + previous_a_begin, mpp_a.begin() + previous_a_end, -1.0);
-        if (instrument) {
-          task_stats.scratch_reset += previous_a_end - previous_a_begin;
-        }
-        if (keep_indices) {
-          std::fill(mpip_a.begin() + previous_a_begin, mpip_a.begin() + previous_a_end, -1);
-          if (instrument) {
-            task_stats.scratch_reset += previous_a_end - previous_a_begin;
-          }
-        }
-      }
-      if (previous_b_begin < previous_b_end) {
-        std::fill(mpp_b.begin() + previous_b_begin, mpp_b.begin() + previous_b_end, -1.0);
-        if (instrument) {
-          task_stats.scratch_reset += previous_b_end - previous_b_begin;
-        }
-        if (keep_indices) {
-          std::fill(mpip_b.begin() + previous_b_begin, mpip_b.begin() + previous_b_end, -1);
-          if (instrument) {
-            task_stats.scratch_reset += previous_b_end - previous_b_begin;
-          }
-        }
-      }
-    }
-
-    if (instrument) {
-      scratch_done = MatrixProfileClock::now();
-    }
-
     uint32_t current_a_begin = profile_len_a;
     uint32_t current_a_end = 0;
     uint32_t current_b_begin = profile_len_b;
@@ -708,6 +629,64 @@ public:
       }
     }
 
+    // Keep scratch storage relative to the output range touched by this
+    // scheduler task. In an unequal AB join, this avoids retaining a full
+    // profile-B buffer per executor thread when only a much smaller slice is
+    // ever read or merged. Reusing vector capacity preserves the allocation
+    // benefit of the previous thread-local implementation, while initializing
+    // the current range removes the need to reset the preceding range.
+    thread_local std::vector<double> inn;
+    thread_local std::vector<double> mpp_a;
+    thread_local std::vector<int> mpip_a;
+    thread_local std::vector<double> mpp_b;
+    thread_local std::vector<int> mpip_b;
+
+    if (inn.size() != window_size) {
+      inn.resize(window_size);
+      if (instrument) {
+        task_stats.scratch_initialized += window_size;
+      }
+    }
+
+    uint32_t const local_a_size = current_a_end - current_a_begin;
+    uint32_t const local_b_size = current_b_end - current_b_begin;
+    if (mpp_a.capacity() < local_a_size) {
+      if (instrument) {
+        task_stats.scratch_initialized += local_a_size;
+      }
+    }
+    if (mpp_b.capacity() < local_b_size) {
+      if (instrument) {
+        task_stats.scratch_initialized += local_b_size;
+      }
+    }
+    mpp_a.assign(local_a_size, -1.0);
+    mpp_b.assign(local_b_size, -1.0);
+    if (instrument) {
+      task_stats.scratch_reset += local_a_size + local_b_size;
+    }
+    if (keep_indices) {
+      if (mpip_a.capacity() < local_a_size) {
+        if (instrument) {
+          task_stats.scratch_initialized += local_a_size;
+        }
+      }
+      if (mpip_b.capacity() < local_b_size) {
+        if (instrument) {
+          task_stats.scratch_initialized += local_b_size;
+        }
+      }
+      mpip_a.assign(local_a_size, -1);
+      mpip_b.assign(local_b_size, -1);
+      if (instrument) {
+        task_stats.scratch_reset += local_a_size + local_b_size;
+      }
+    }
+
+    if (instrument) {
+      scratch_done = MatrixProfileClock::now();
+    }
+
     if (ab_ba == 0) {
 
         for (std::size_t diag = begin; diag < end; diag++) {
@@ -730,16 +709,16 @@ public:
             c = c + df_a[off_diag] * dg_b[offset] + dg_a[off_diag] * df_b[offset];
             c_cmp = c * sig_b[offset] * sig_a[off_diag];
 
-            if (c_cmp > mpp_b[offset]) {
-              mpp_b[offset] = c_cmp;
+            if (c_cmp > mpp_b[offset - current_b_begin]) {
+              mpp_b[offset - current_b_begin] = c_cmp;
               if (keep_indices) {
-                mpip_b[offset] = off_diag + 1;
+                mpip_b[offset - current_b_begin] = off_diag + 1;
               }
             }
-            if (c_cmp > mpp_a[off_diag]) {
-              mpp_a[off_diag] = c_cmp;
+            if (c_cmp > mpp_a[off_diag - current_a_begin]) {
+              mpp_a[off_diag - current_a_begin] = c_cmp;
               if (keep_indices) {
-                mpip_a[off_diag] = offset + 1;
+                mpip_a[off_diag - current_a_begin] = offset + 1;
               }
             }
           }
@@ -766,16 +745,16 @@ public:
             c = c + df_b[off_diag] * dg_a[offset] + dg_b[off_diag] * df_a[offset];
             c_cmp = c * sig_a[offset] * sig_b[off_diag];
 
-            if (c_cmp > mpp_a[offset]) {
-              mpp_a[offset] = c_cmp;
+            if (c_cmp > mpp_a[offset - current_a_begin]) {
+              mpp_a[offset - current_a_begin] = c_cmp;
               if (keep_indices) {
-                mpip_a[offset] = off_diag + 1;
+                mpip_a[offset - current_a_begin] = off_diag + 1;
               }
             }
-            if (c_cmp > mpp_b[off_diag]) {
-              mpp_b[off_diag] = c_cmp;
+            if (c_cmp > mpp_b[off_diag - current_b_begin]) {
+              mpp_b[off_diag - current_b_begin] = c_cmp;
               if (keep_indices) {
-                mpip_b[off_diag] = offset + 1;
+                mpip_b[off_diag - current_b_begin] = offset + 1;
               }
             }
           }
@@ -792,18 +771,18 @@ public:
           lock_acquired = MatrixProfileClock::now();
         }
         for (uint32_t i = current_a_begin; i < current_a_end; i++) {
-          if (mpp_a[i] > mp_a[i]) {
-            mp_a[i] = mpp_a[i];
+          if (mpp_a[i - current_a_begin] > mp_a[i]) {
+            mp_a[i] = mpp_a[i - current_a_begin];
             if (keep_indices) {
-              mpi_a[i] = mpip_a[i];
+              mpi_a[i] = mpip_a[i - current_a_begin];
             }
           }
         }
         for (uint32_t i = current_b_begin; i < current_b_end; i++) {
-          if (mpp_b[i] > mp_b[i]) {
-            mp_b[i] = mpp_b[i];
+          if (mpp_b[i - current_b_begin] > mp_b[i]) {
+            mp_b[i] = mpp_b[i - current_b_begin];
             if (keep_indices) {
-              mpi_b[i] = mpip_b[i];
+              mpi_b[i] = mpip_b[i - current_b_begin];
             }
           }
         }
@@ -817,12 +796,6 @@ public:
           merge_done = MatrixProfileClock::now();
         }
     }
-
-    previous_a_begin = current_a_begin;
-    previous_a_end = current_a_end;
-    previous_b_begin = current_b_begin;
-    previous_b_end = current_b_end;
-    previous_keep_indices = keep_indices;
 
     if (instrument) {
       task_done = MatrixProfileClock::now();
@@ -907,82 +880,6 @@ public:
 
     uint32_t const profile_len_a = mp_a.size();
     uint32_t const profile_len_b = mp_b.size();
-    thread_local std::vector<double> centered_window;
-    thread_local std::vector<double> local_mp_a;
-    thread_local std::vector<double> local_mp_b;
-    thread_local std::vector<int> local_mpi_a;
-    thread_local std::vector<int> local_mpi_b;
-    thread_local uint32_t previous_a_begin = 0;
-    thread_local uint32_t previous_a_end = 0;
-    thread_local uint32_t previous_b_begin = 0;
-    thread_local uint32_t previous_b_end = 0;
-    thread_local bool previous_keep_indices = false;
-
-    if (centered_window.size() != window_size) {
-      centered_window.resize(window_size);
-      if (instrument) {
-        task_stats.scratch_initialized += window_size;
-      }
-    }
-    if (local_mp_a.size() != profile_len_a || local_mp_b.size() != profile_len_b) {
-      local_mp_a.assign(profile_len_a, R_NegInf);
-      local_mp_b.assign(profile_len_b, R_NegInf);
-      if (instrument) {
-        task_stats.scratch_initialized += profile_len_a + profile_len_b;
-      }
-      if (keep_indices) {
-        local_mpi_a.assign(profile_len_a, NA_INTEGER);
-        local_mpi_b.assign(profile_len_b, NA_INTEGER);
-        if (instrument) {
-          task_stats.scratch_initialized += profile_len_a + profile_len_b;
-        }
-      }
-      previous_a_begin = previous_a_end = previous_b_begin = previous_b_end = 0;
-    } else {
-      if (keep_indices && (local_mpi_a.size() != profile_len_a || local_mpi_b.size() != profile_len_b)) {
-        local_mpi_a.assign(profile_len_a, NA_INTEGER);
-        local_mpi_b.assign(profile_len_b, NA_INTEGER);
-        if (instrument) {
-          task_stats.scratch_initialized += profile_len_a + profile_len_b;
-        }
-        previous_a_begin = previous_a_end = previous_b_begin = previous_b_end = 0;
-      } else if (keep_indices && !previous_keep_indices) {
-        std::fill(local_mpi_a.begin(), local_mpi_a.end(), NA_INTEGER);
-        std::fill(local_mpi_b.begin(), local_mpi_b.end(), NA_INTEGER);
-        if (instrument) {
-          task_stats.scratch_reset += profile_len_a + profile_len_b;
-        }
-      }
-      if (previous_a_begin < previous_a_end) {
-        std::fill(local_mp_a.begin() + previous_a_begin, local_mp_a.begin() + previous_a_end, R_NegInf);
-        if (instrument) {
-          task_stats.scratch_reset += previous_a_end - previous_a_begin;
-        }
-        if (keep_indices) {
-          std::fill(local_mpi_a.begin() + previous_a_begin, local_mpi_a.begin() + previous_a_end, NA_INTEGER);
-          if (instrument) {
-            task_stats.scratch_reset += previous_a_end - previous_a_begin;
-          }
-        }
-      }
-      if (previous_b_begin < previous_b_end) {
-        std::fill(local_mp_b.begin() + previous_b_begin, local_mp_b.begin() + previous_b_end, R_NegInf);
-        if (instrument) {
-          task_stats.scratch_reset += previous_b_end - previous_b_begin;
-        }
-        if (keep_indices) {
-          std::fill(local_mpi_b.begin() + previous_b_begin, local_mpi_b.begin() + previous_b_end, NA_INTEGER);
-          if (instrument) {
-            task_stats.scratch_reset += previous_b_end - previous_b_begin;
-          }
-        }
-      }
-    }
-
-    if (instrument) {
-      scratch_done = MatrixProfileClock::now();
-    }
-
     double const *const data_ptr = data.begin();
     double const *const query_ptr = query.begin();
     double const *const df_a_ptr = df_a.begin();
@@ -1028,6 +925,61 @@ public:
       }
     }
 
+    // Allocate only the output spans touched by this task. The vector capacity
+    // remains thread-local and is reused by TBB, but the active working set is
+    // bounded by the task's diagonal range rather than by both full profiles.
+    thread_local std::vector<double> centered_window;
+    thread_local std::vector<double> local_mp_a;
+    thread_local std::vector<double> local_mp_b;
+    thread_local std::vector<int> local_mpi_a;
+    thread_local std::vector<int> local_mpi_b;
+
+    if (centered_window.size() != window_size) {
+      centered_window.resize(window_size);
+      if (instrument) {
+        task_stats.scratch_initialized += window_size;
+      }
+    }
+
+    uint32_t const local_a_size = current_a_end - current_a_begin;
+    uint32_t const local_b_size = current_b_end - current_b_begin;
+    if (local_mp_a.capacity() < local_a_size) {
+      if (instrument) {
+        task_stats.scratch_initialized += local_a_size;
+      }
+    }
+    if (local_mp_b.capacity() < local_b_size) {
+      if (instrument) {
+        task_stats.scratch_initialized += local_b_size;
+      }
+    }
+    local_mp_a.assign(local_a_size, R_NegInf);
+    local_mp_b.assign(local_b_size, R_NegInf);
+    if (instrument) {
+      task_stats.scratch_reset += local_a_size + local_b_size;
+    }
+    if (keep_indices) {
+      if (local_mpi_a.capacity() < local_a_size) {
+        if (instrument) {
+          task_stats.scratch_initialized += local_a_size;
+        }
+      }
+      if (local_mpi_b.capacity() < local_b_size) {
+        if (instrument) {
+          task_stats.scratch_initialized += local_b_size;
+        }
+      }
+      local_mpi_a.assign(local_a_size, NA_INTEGER);
+      local_mpi_b.assign(local_b_size, NA_INTEGER);
+      if (instrument) {
+        task_stats.scratch_reset += local_a_size + local_b_size;
+      }
+    }
+
+    if (instrument) {
+      scratch_done = MatrixProfileClock::now();
+    }
+
     if (!ba) {
       for (std::size_t order_index = begin; order_index < end; order_index++) {
         uint32_t const diag = order_a_ptr[order_index];
@@ -1057,16 +1009,16 @@ public:
                   task_stats.nonfinite_pairs++;
                 }
               } else {
-                if (correlation > local_mp_a[off_diag]) {
-                  local_mp_a[off_diag] = correlation;
+                if (correlation > local_mp_a[off_diag - current_a_begin]) {
+                  local_mp_a[off_diag - current_a_begin] = correlation;
                   if (keep_indices) {
-                    local_mpi_a[off_diag] = offset + 1;
+                    local_mpi_a[off_diag - current_a_begin] = offset + 1;
                   }
                 }
-                if (correlation > local_mp_b[offset]) {
-                  local_mp_b[offset] = correlation;
+                if (correlation > local_mp_b[offset - current_b_begin]) {
+                  local_mp_b[offset - current_b_begin] = correlation;
                   if (keep_indices) {
-                    local_mpi_b[offset] = off_diag + 1;
+                    local_mpi_b[offset - current_b_begin] = off_diag + 1;
                   }
                 }
               }
@@ -1122,16 +1074,16 @@ public:
                 task_stats.nonfinite_pairs++;
               }
             } else {
-              if (correlation > local_mp_a[off_diag]) {
-                local_mp_a[off_diag] = correlation;
+              if (correlation > local_mp_a[off_diag - current_a_begin]) {
+                local_mp_a[off_diag - current_a_begin] = correlation;
                 if (keep_indices) {
-                  local_mpi_a[off_diag] = offset + 1;
+                  local_mpi_a[off_diag - current_a_begin] = offset + 1;
                 }
               }
-              if (correlation > local_mp_b[offset]) {
-                local_mp_b[offset] = correlation;
+              if (correlation > local_mp_b[offset - current_b_begin]) {
+                local_mp_b[offset - current_b_begin] = correlation;
                 if (keep_indices) {
-                  local_mpi_b[offset] = off_diag + 1;
+                  local_mpi_b[offset - current_b_begin] = off_diag + 1;
                 }
               }
             }
@@ -1172,16 +1124,16 @@ public:
                   task_stats.nonfinite_pairs++;
                 }
               } else {
-                if (correlation > local_mp_b[off_diag]) {
-                  local_mp_b[off_diag] = correlation;
+                if (correlation > local_mp_b[off_diag - current_b_begin]) {
+                  local_mp_b[off_diag - current_b_begin] = correlation;
                   if (keep_indices) {
-                    local_mpi_b[off_diag] = offset + 1;
+                    local_mpi_b[off_diag - current_b_begin] = offset + 1;
                   }
                 }
-                if (correlation > local_mp_a[offset]) {
-                  local_mp_a[offset] = correlation;
+                if (correlation > local_mp_a[offset - current_a_begin]) {
+                  local_mp_a[offset - current_a_begin] = correlation;
                   if (keep_indices) {
-                    local_mpi_a[offset] = off_diag + 1;
+                    local_mpi_a[offset - current_a_begin] = off_diag + 1;
                   }
                 }
               }
@@ -1231,16 +1183,16 @@ public:
                 task_stats.nonfinite_pairs++;
               }
             } else {
-              if (correlation > local_mp_b[off_diag]) {
-                local_mp_b[off_diag] = correlation;
+              if (correlation > local_mp_b[off_diag - current_b_begin]) {
+                local_mp_b[off_diag - current_b_begin] = correlation;
                 if (keep_indices) {
-                  local_mpi_b[off_diag] = offset + 1;
+                  local_mpi_b[off_diag - current_b_begin] = offset + 1;
                 }
               }
-              if (correlation > local_mp_a[offset]) {
-                local_mp_a[offset] = correlation;
+              if (correlation > local_mp_a[offset - current_a_begin]) {
+                local_mp_a[offset - current_a_begin] = correlation;
                 if (keep_indices) {
-                  local_mpi_a[offset] = off_diag + 1;
+                  local_mpi_a[offset - current_a_begin] = off_diag + 1;
                 }
               }
             }
@@ -1267,18 +1219,18 @@ public:
         lock_acquired = MatrixProfileClock::now();
       }
       for (uint32_t i = current_a_begin; i < current_a_end; i++) {
-        if (local_mp_a[i] > mp_a_ptr[i]) {
-          mp_a_ptr[i] = local_mp_a[i];
+        if (local_mp_a[i - current_a_begin] > mp_a_ptr[i]) {
+          mp_a_ptr[i] = local_mp_a[i - current_a_begin];
           if (keep_indices) {
-            mpi_a_ptr[i] = local_mpi_a[i];
+            mpi_a_ptr[i] = local_mpi_a[i - current_a_begin];
           }
         }
       }
       for (uint32_t i = current_b_begin; i < current_b_end; i++) {
-        if (local_mp_b[i] > mp_b_ptr[i]) {
-          mp_b_ptr[i] = local_mp_b[i];
+        if (local_mp_b[i - current_b_begin] > mp_b_ptr[i]) {
+          mp_b_ptr[i] = local_mp_b[i - current_b_begin];
           if (keep_indices) {
-            mpi_b_ptr[i] = local_mpi_b[i];
+            mpi_b_ptr[i] = local_mpi_b[i - current_b_begin];
           }
         }
       }
@@ -1292,12 +1244,6 @@ public:
         merge_done = MatrixProfileClock::now();
       }
     }
-
-    previous_a_begin = current_a_begin;
-    previous_a_end = current_a_end;
-    previous_b_begin = current_b_begin;
-    previous_b_end = current_b_end;
-    previous_keep_indices = keep_indices;
 
     if (instrument) {
       task_done = MatrixProfileClock::now();
@@ -1433,6 +1379,775 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
   } catch (...) {
     Rcpp::stop("c++ exception (unknown reason)");
   }
+}
+
+struct MatrixProfileFiniteSegment {
+  uint32_t sample_begin;
+  uint32_t sample_end;
+
+  uint32_t profile_length(uint32_t window_size) const { return sample_end - sample_begin - window_size + 1; }
+};
+
+// The segmented implementation is deliberately restricted to data for which
+// invalid subsequences are caused solely by non-finite samples.  This check
+// keeps its contract explicit: unlike the monolithic NA-aware implementation,
+// it does not also model constant or otherwise non-normalizable windows.
+static bool matrix_profile_validity_is_only_nonfinite(const NumericVector &series, uint32_t window_size,
+                                                       const LogicalVector &valid_window) {
+  uint32_t nonfinite_count = 0;
+  for (uint32_t i = 0; i < series.length(); i++) {
+    nonfinite_count += std::isfinite(series[i]) ? 0 : 1;
+    if (i >= window_size) {
+      nonfinite_count -= std::isfinite(series[i - window_size]) ? 0 : 1;
+    }
+    if (i >= window_size - 1) {
+      uint32_t const profile_index = i - window_size + 1;
+      if ((nonfinite_count == 0) != static_cast<bool>(valid_window[profile_index])) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+static std::vector<MatrixProfileFiniteSegment> matrix_profile_finite_segments(const NumericVector &series,
+                                                                                 uint32_t window_size) {
+  std::vector<MatrixProfileFiniteSegment> segments;
+  uint32_t position = 0;
+  uint32_t const size = series.length();
+  while (position < size) {
+    while (position < size && !std::isfinite(series[position])) {
+      position++;
+    }
+    uint32_t const begin = position;
+    while (position < size && std::isfinite(series[position])) {
+      position++;
+    }
+    if (position - begin >= window_size) {
+      segments.push_back(MatrixProfileFiniteSegment{begin, position});
+    }
+  }
+  return segments;
+}
+
+static double matrix_profile_segment_correlation(const NumericVector &a, uint32_t a_start, const NumericVector &b,
+                                                 uint32_t b_start, uint32_t window_size) {
+  double mean_a = 0.0;
+  double mean_b = 0.0;
+  for (uint32_t k = 0; k < window_size; k++) {
+    mean_a += a[a_start + k];
+    mean_b += b[b_start + k];
+  }
+  mean_a /= window_size;
+  mean_b /= window_size;
+
+  double dot = 0.0;
+  double norm_a = 0.0;
+  double norm_b = 0.0;
+  for (uint32_t k = 0; k < window_size; k++) {
+    double const centered_a = a[a_start + k] - mean_a;
+    double const centered_b = b[b_start + k] - mean_b;
+    dot += centered_a * centered_b;
+    norm_a += centered_a * centered_a;
+    norm_b += centered_b * centered_b;
+  }
+  return dot / sqrt(norm_a * norm_b);
+}
+
+struct MatrixProfileSegmentPairTask {
+  MatrixProfileFiniteSegment a;
+  MatrixProfileFiniteSegment b;
+  uint32_t diagonal_begin = 0;
+  uint32_t diagonal_end = 0;
+};
+
+static uint32_t matrix_profile_native_thread_hint() {
+  const char *value = std::getenv("RCPP_PARALLEL_NUM_THREADS");
+  if (value != nullptr && value[0] != '\0') {
+    char *end = nullptr;
+    long parsed = std::strtol(value, &end, 10);
+    if (end != value && parsed > 0 && parsed <= std::numeric_limits<uint32_t>::max()) {
+      return static_cast<uint32_t>(parsed);
+    }
+  }
+  return 4;
+}
+
+static void matrix_profile_add_native_ab_tasks(const std::vector<MatrixProfileFiniteSegment> &segments_a,
+                                               const std::vector<MatrixProfileFiniteSegment> &segments_b,
+                                               uint32_t window_size, double s_size,
+                                               std::vector<MatrixProfileSegmentPairTask> &tasks, bool &partial) {
+  uint64_t const pair_count = static_cast<uint64_t>(segments_a.size()) * segments_b.size();
+  uint64_t const target_tasks = std::max<uint64_t>(1, 4ULL * matrix_profile_native_thread_hint());
+  uint64_t const split_factor = pair_count < target_tasks ? (target_tasks + pair_count - 1) / pair_count : 1;
+  for (MatrixProfileFiniteSegment const &a : segments_a) {
+    for (MatrixProfileFiniteSegment const &b : segments_b) {
+      uint32_t const diagonal_count = a.profile_length(window_size) + b.profile_length(window_size) - 1;
+      uint32_t const parts = static_cast<uint32_t>(std::min<uint64_t>(split_factor, diagonal_count));
+      uint32_t const tile_size = (diagonal_count + parts - 1) / parts;
+      uint32_t const tile_count = (diagonal_count + tile_size - 1) / tile_size;
+      uint32_t const keep_tiles = static_cast<uint32_t>(round(tile_count * s_size + DBL_EPSILON));
+      if (keep_tiles < tile_count) partial = true;
+      IntegerVector order = Range(0, tile_count - 1);
+      if (keep_tiles < tile_count && keep_tiles > 0) {
+        order = sample(order, order.size());
+      }
+      std::vector<unsigned char> selected(tile_count, 0);
+      for (uint32_t i = 0; i < keep_tiles; i++) selected[order[i]] = 1;
+      for (uint32_t tile = 0; tile < tile_count; tile++) {
+        if (selected[tile]) {
+          uint32_t const begin = tile * tile_size;
+          uint32_t const end = std::min(diagonal_count, begin + tile_size);
+          tasks.push_back(MatrixProfileSegmentPairTask{a, b, begin, end});
+        }
+      }
+    }
+  }
+}
+
+static void matrix_profile_add_native_aa_tasks(const std::vector<MatrixProfileFiniteSegment> &segments,
+                                               uint32_t window_size, uint32_t exclusion, double s_size,
+                                               std::vector<MatrixProfileSegmentPairTask> &tasks, bool &partial) {
+  uint64_t const pair_count = static_cast<uint64_t>(segments.size()) * (segments.size() + 1) / 2;
+  uint64_t const target_tasks = std::max<uint64_t>(1, 4ULL * matrix_profile_native_thread_hint());
+  uint64_t const split_factor = pair_count < target_tasks ? (target_tasks + pair_count - 1) / pair_count : 1;
+  for (std::size_t a_index = 0; a_index < segments.size(); a_index++) {
+    for (std::size_t b_index = a_index; b_index < segments.size(); b_index++) {
+      MatrixProfileFiniteSegment const &a = segments[a_index];
+      MatrixProfileFiniteSegment const &b = segments[b_index];
+      uint32_t const a_profiles = a.profile_length(window_size);
+      uint32_t const b_profiles = b.profile_length(window_size);
+      bool const same_segment = a.sample_begin == b.sample_begin;
+      uint32_t const diagonal_begin = same_segment ? std::min(exclusion + 1, a_profiles) : 0;
+      uint32_t const diagonal_count = same_segment
+                                          ? a_profiles - diagonal_begin
+                                          : a_profiles + b_profiles - 1;
+      if (diagonal_count == 0) continue;
+      uint32_t const parts = static_cast<uint32_t>(std::min<uint64_t>(split_factor, diagonal_count));
+      uint32_t const tile_size = (diagonal_count + parts - 1) / parts;
+      uint32_t const tile_count = (diagonal_count + tile_size - 1) / tile_size;
+      uint32_t const keep_tiles = static_cast<uint32_t>(round(tile_count * s_size + DBL_EPSILON));
+      if (keep_tiles < tile_count) partial = true;
+      IntegerVector order = Range(0, tile_count - 1);
+      if (keep_tiles < tile_count && keep_tiles > 0) order = sample(order, order.size());
+      std::vector<unsigned char> selected(tile_count, 0);
+      for (uint32_t i = 0; i < keep_tiles; i++) selected[order[i]] = 1;
+      for (uint32_t tile = 0; tile < tile_count; tile++) {
+        if (selected[tile]) {
+          uint32_t const begin = diagonal_begin + tile * tile_size;
+          uint32_t const end = std::min(diagonal_begin + diagonal_count, begin + tile_size);
+          tasks.push_back(MatrixProfileSegmentPairTask{a, b, begin, end});
+        }
+      }
+    }
+  }
+}
+
+// This worker is the native counterpart to the R-level segment reduction.
+// Statistics are calculated once for the complete input, and every task
+// evaluates one finite A x B block directly against those global statistics.
+// It never calls an exported MPX routine from inside C++, avoiding repeated
+// normalization, R allocations, and nested RcppParallel scheduling.
+class MatrixProfileSegmentedNativeAB : public Worker {
+private:
+  const RVector<double> data;
+  const RVector<double> query;
+  const RVector<double> mu_a;
+  const RVector<double> mu_b;
+  const RVector<double> sig_a;
+  const RVector<double> sig_b;
+  const RVector<double> df_a;
+  const RVector<double> df_b;
+  const RVector<double> dg_a;
+  const RVector<double> dg_b;
+  const std::vector<MatrixProfileSegmentPairTask> &tasks;
+  const uint32_t window_size;
+  RVector<double> mp_a;
+  RVector<double> mp_b;
+  RVector<int> mpi_a;
+  RVector<int> mpi_b;
+  const bool keep_indices;
+
+#if RCPP_PARALLEL_USE_TBB
+  tbb::spin_mutex mutex;
+#else
+  tthread::mutex mutex;
+#endif
+
+  static double covariance_at(const double *data_ptr, const double *query_ptr, const double *mu_a_ptr,
+                              const double *mu_b_ptr, uint32_t a_start, uint32_t b_start, uint32_t window_size) {
+    double covariance = 0.0;
+    for (uint32_t k = 0; k < window_size; k++) {
+      covariance += (data_ptr[a_start + k] - mu_a_ptr[a_start]) * (query_ptr[b_start + k] - mu_b_ptr[b_start]);
+    }
+    return covariance;
+  }
+
+public:
+  MatrixProfileSegmentedNativeAB(const NumericVector &data, const NumericVector &query, const NumericVector &mu_a,
+                                 const NumericVector &mu_b, const NumericVector &sig_a, const NumericVector &sig_b,
+                                 const NumericVector &df_a, const NumericVector &df_b, const NumericVector &dg_a,
+                                 const NumericVector &dg_b, const std::vector<MatrixProfileSegmentPairTask> &tasks,
+                                 uint32_t window_size,
+                                 const NumericVector &mp_a, const NumericVector &mp_b, const IntegerVector &mpi_a,
+                                 const IntegerVector &mpi_b, bool idxs)
+      : data(data), query(query), mu_a(mu_a), mu_b(mu_b), sig_a(sig_a), sig_b(sig_b), df_a(df_a), df_b(df_b),
+        dg_a(dg_a), dg_b(dg_b), tasks(tasks), window_size(window_size), mp_a(mp_a), mp_b(mp_b), mpi_a(mpi_a),
+        mpi_b(mpi_b), keep_indices(idxs) {}
+
+  void operator()(std::size_t begin, std::size_t end) override {
+    double const *const data_ptr = data.begin();
+    double const *const query_ptr = query.begin();
+    double const *const mu_a_ptr = mu_a.begin();
+    double const *const mu_b_ptr = mu_b.begin();
+    double const *const sig_a_ptr = sig_a.begin();
+    double const *const sig_b_ptr = sig_b.begin();
+    double const *const df_a_ptr = df_a.begin();
+    double const *const df_b_ptr = df_b.begin();
+    double const *const dg_a_ptr = dg_a.begin();
+    double const *const dg_b_ptr = dg_b.begin();
+    double *const mp_a_ptr = mp_a.begin();
+    double *const mp_b_ptr = mp_b.begin();
+    int *const mpi_a_ptr = keep_indices ? mpi_a.begin() : nullptr;
+    int *const mpi_b_ptr = keep_indices ? mpi_b.begin() : nullptr;
+
+    thread_local std::vector<double> local_mp_a;
+    thread_local std::vector<double> local_mp_b;
+    thread_local std::vector<int> local_mpi_a;
+    thread_local std::vector<int> local_mpi_b;
+
+    for (std::size_t task_index = begin; task_index < end; task_index++) {
+      MatrixProfileSegmentPairTask const &task = tasks[task_index];
+      uint32_t const a_profiles = task.a.profile_length(window_size);
+      uint32_t const b_profiles = task.b.profile_length(window_size);
+      uint32_t const total_diagonals = a_profiles + b_profiles - 1;
+      uint32_t const diagonal_begin = std::min(task.diagonal_begin, total_diagonals);
+      uint32_t const diagonal_end = task.diagonal_end == 0
+                                        ? total_diagonals
+                                        : std::min(task.diagonal_end, total_diagonals);
+      local_mp_a.assign(a_profiles, R_NegInf);
+      local_mp_b.assign(b_profiles, R_NegInf);
+      if (keep_indices) {
+        local_mpi_a.assign(a_profiles, NA_INTEGER);
+        local_mpi_b.assign(b_profiles, NA_INTEGER);
+      }
+
+      auto update_diagonal = [&](uint32_t a_local_start, uint32_t b_local_start, uint32_t diagonal_length) {
+        uint32_t const a_start = task.a.sample_begin + a_local_start;
+        uint32_t const b_start = task.b.sample_begin + b_local_start;
+        double covariance = covariance_at(data_ptr, query_ptr, mu_a_ptr, mu_b_ptr, a_start, b_start, window_size);
+        for (uint32_t offset = 0; offset < diagonal_length; offset++) {
+          uint32_t const a_local = a_local_start + offset;
+          uint32_t const b_local = b_local_start + offset;
+          uint32_t const a_global = task.a.sample_begin + a_local;
+          uint32_t const b_global = task.b.sample_begin + b_local;
+          double const correlation = covariance * sig_a_ptr[a_global] * sig_b_ptr[b_global];
+          if (std::isfinite(correlation)) {
+            if (correlation > local_mp_a[a_local]) {
+              local_mp_a[a_local] = correlation;
+              if (keep_indices) local_mpi_a[a_local] = b_global + 1;
+            }
+            if (correlation > local_mp_b[b_local]) {
+              local_mp_b[b_local] = correlation;
+              if (keep_indices) local_mpi_b[b_local] = a_global + 1;
+            }
+          }
+          if (offset + 1 < diagonal_length) {
+            uint32_t const next_a = a_global + 1;
+            uint32_t const next_b = b_global + 1;
+            covariance += df_a_ptr[next_a] * dg_b_ptr[next_b] + dg_a_ptr[next_a] * df_b_ptr[next_b];
+          }
+        }
+      };
+
+      for (uint32_t diagonal = diagonal_begin; diagonal < diagonal_end; diagonal++) {
+        if (diagonal < a_profiles) {
+          update_diagonal(diagonal, 0, std::min(a_profiles - diagonal, b_profiles));
+        } else {
+          uint32_t const b_local = diagonal - a_profiles + 1;
+          update_diagonal(0, b_local, std::min(a_profiles, b_profiles - b_local));
+        }
+      }
+
+      std::lock_guard<decltype(mutex)> lock(mutex);
+      for (uint32_t a_local = 0; a_local < a_profiles; a_local++) {
+        uint32_t const a_global = task.a.sample_begin + a_local;
+        if (local_mp_a[a_local] > mp_a_ptr[a_global]) {
+          mp_a_ptr[a_global] = local_mp_a[a_local];
+          if (keep_indices) mpi_a_ptr[a_global] = local_mpi_a[a_local];
+        }
+      }
+      for (uint32_t b_local = 0; b_local < b_profiles; b_local++) {
+        uint32_t const b_global = task.b.sample_begin + b_local;
+        if (local_mp_b[b_local] > mp_b_ptr[b_global]) {
+          mp_b_ptr[b_global] = local_mp_b[b_local];
+          if (keep_indices) mpi_b_ptr[b_global] = local_mpi_b[b_local];
+        }
+      }
+    }
+  }
+};
+
+// True native finite-block AB segmentation.  Unlike
+// mpxab_na_segmented_rcpp_parallel(), this function does not enter the regular
+// MPX implementation for each segment pair: statistics and task scheduling
+// are shared by the whole join.
+// [[Rcpp::export]]
+List mpxab_na_segmented_native_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size,
+                                             double s_size, bool idxs, bool euclidean, bool progress) {
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
+  if (window_size < 2 || window_size >= data_size || window_size >= query_size) {
+    Rcpp::stop("window_size must leave at least two subsequences in each series");
+  }
+  if (!std::isfinite(s_size) || s_size < 0.0 || s_size > 1.0) {
+    Rcpp::stop("s_size must be between 0 and 1");
+  }
+
+  uint32_t const profile_len_a = data_size - window_size + 1;
+  uint32_t const profile_len_b = query_size - window_size + 1;
+  List const stats_a = muinvn_na_parallel(data_ref, window_size);
+  List const stats_b = muinvn_na_parallel(query_ref, window_size);
+  NumericVector data = stats_a["data"];
+  NumericVector query = stats_b["data"];
+  NumericVector mu_a = stats_a["avg"];
+  NumericVector mu_b = stats_b["avg"];
+  NumericVector sig_a = stats_a["sig"];
+  NumericVector sig_b = stats_b["sig"];
+  LogicalVector valid_a = stats_a["valid_window"];
+  LogicalVector valid_b = stats_b["valid_window"];
+  if (!matrix_profile_validity_is_only_nonfinite(data_ref, window_size, valid_a) ||
+      !matrix_profile_validity_is_only_nonfinite(query_ref, window_size, valid_b)) {
+    Rcpp::stop("the native segmented NA-aware AB join supports only finite windows with non-finite barriers; use mpxab_na_rcpp_parallel for constant or non-normalizable windows");
+  }
+
+  std::vector<MatrixProfileFiniteSegment> const segments_a = matrix_profile_finite_segments(data_ref, window_size);
+  std::vector<MatrixProfileFiniteSegment> const segments_b = matrix_profile_finite_segments(query_ref, window_size);
+  if (segments_a.empty() || segments_b.empty()) {
+    Rcpp::stop("the native segmented NA-aware AB join requires at least one finite window in both series");
+  }
+  NumericVector df_a = 0.5 * (data[Range(window_size, data_size - 1)] -
+                              data[Range(0, data_size - window_size - 1)]);
+  df_a.push_front(0);
+  NumericVector dg_a = (data[Range(window_size, data_size - 1)] - mu_a[Range(1, profile_len_a - 1)]) +
+                       (data[Range(0, data_size - window_size - 1)] - mu_a[Range(0, profile_len_a - 2)]);
+  dg_a.push_front(0);
+  NumericVector df_b = 0.5 * (query[Range(window_size, query_size - 1)] -
+                              query[Range(0, query_size - window_size - 1)]);
+  df_b.push_front(0);
+  NumericVector dg_b = (query[Range(window_size, query_size - 1)] - mu_b[Range(1, profile_len_b - 1)]) +
+                       (query[Range(0, query_size - window_size - 1)] - mu_b[Range(0, profile_len_b - 2)]);
+  dg_b.push_front(0);
+  std::vector<MatrixProfileSegmentPairTask> tasks;
+  tasks.reserve(segments_a.size() * segments_b.size());
+  bool partial = false;
+  matrix_profile_add_native_ab_tasks(segments_a, segments_b, window_size, s_size, tasks, partial);
+
+  NumericVector mp_a(profile_len_a, R_NegInf);
+  NumericVector mp_b(profile_len_b, R_NegInf);
+  IntegerVector mpi_a;
+  IntegerVector mpi_b;
+  if (idxs) {
+    mpi_a = IntegerVector(profile_len_a, NA_INTEGER);
+    mpi_b = IntegerVector(profile_len_b, NA_INTEGER);
+  }
+  MatrixProfileSegmentedNativeAB worker(data, query, mu_a, mu_b, sig_a, sig_b, df_a, df_b, dg_a, dg_b, tasks,
+                                        window_size, mp_a, mp_b, mpi_a, mpi_b, idxs);
+  (void)progress;
+  try {
+#if RCPP_PARALLEL_USE_TBB
+    RcppParallel::parallelFor(0, tasks.size(), worker, 1);
+#else
+    RcppParallel2::ttParallelFor(0, tasks.size(), worker, 1);
+#endif
+  } catch (RcppThread::UserInterruptException &e) {
+    partial = true;
+    Rcout << "Native segmented AB join terminated by the user successfully, partial results were returned." << std::endl;
+  } catch (...) {
+    Rcpp::stop("c++ exception (unknown reason)");
+  }
+
+  for (uint32_t i = 0; i < profile_len_a; i++) {
+    if (!valid_a[i] || !std::isfinite(mp_a[i])) {
+      mp_a[i] = NA_REAL;
+      if (idxs) mpi_a[i] = NA_INTEGER;
+      continue;
+    }
+    mp_a[i] = std::max(-1.0, std::min(1.0, mp_a[i]));
+    if (euclidean) mp_a[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_a[i])));
+  }
+  for (uint32_t i = 0; i < profile_len_b; i++) {
+    if (!valid_b[i] || !std::isfinite(mp_b[i])) {
+      mp_b[i] = NA_REAL;
+      if (idxs) mpi_b[i] = NA_INTEGER;
+      continue;
+    }
+    mp_b[i] = std::max(-1.0, std::min(1.0, mp_b[i]));
+    if (euclidean) mp_b[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp_b[i])));
+  }
+
+  if (idxs) {
+    return List::create(Rcpp::Named("matrix_profile") = mp_a, Rcpp::Named("profile_index") = mpi_a,
+                        Rcpp::Named("mpb") = mp_b, Rcpp::Named("pib") = mpi_b,
+                        Rcpp::Named("valid_window_a") = valid_a, Rcpp::Named("valid_window_b") = valid_b,
+                        Rcpp::Named("partial") = partial);
+  }
+  return List::create(Rcpp::Named("matrix_profile") = mp_a, Rcpp::Named("mpb") = mp_b,
+                      Rcpp::Named("valid_window_a") = valid_a, Rcpp::Named("valid_window_b") = valid_b,
+                      Rcpp::Named("partial") = partial);
+}
+
+class MatrixProfileSegmentedNativeAA : public Worker {
+private:
+  const RVector<double> data;
+  const RVector<double> mu;
+  const RVector<double> sig;
+  const RVector<double> df;
+  const RVector<double> dg;
+  const std::vector<MatrixProfileSegmentPairTask> &tasks;
+  const uint32_t window_size;
+  const uint32_t exclusion;
+  RVector<double> mp;
+  RVector<int> mpi;
+  const bool keep_indices;
+
+#if RCPP_PARALLEL_USE_TBB
+  tbb::spin_mutex mutex;
+#else
+  tthread::mutex mutex;
+#endif
+
+  static double covariance_at(const double *data_ptr, const double *mu_ptr, uint32_t a_start, uint32_t b_start,
+                              uint32_t window_size) {
+    double covariance = 0.0;
+    for (uint32_t k = 0; k < window_size; k++) {
+      covariance += (data_ptr[a_start + k] - mu_ptr[a_start]) * (data_ptr[b_start + k] - mu_ptr[b_start]);
+    }
+    return covariance;
+  }
+
+public:
+  MatrixProfileSegmentedNativeAA(const NumericVector &data, const NumericVector &mu, const NumericVector &sig,
+                                 const NumericVector &df, const NumericVector &dg,
+                                 const std::vector<MatrixProfileSegmentPairTask> &tasks, uint32_t window_size,
+                                 uint32_t exclusion, const NumericVector &mp, const IntegerVector &mpi, bool idxs)
+      : data(data), mu(mu), sig(sig), df(df), dg(dg), tasks(tasks), window_size(window_size), exclusion(exclusion),
+        mp(mp), mpi(mpi), keep_indices(idxs) {}
+
+  void operator()(std::size_t begin, std::size_t end) override {
+    double const *const data_ptr = data.begin();
+    double const *const mu_ptr = mu.begin();
+    double const *const sig_ptr = sig.begin();
+    double const *const df_ptr = df.begin();
+    double const *const dg_ptr = dg.begin();
+    double *const mp_ptr = mp.begin();
+    int *const mpi_ptr = keep_indices ? mpi.begin() : nullptr;
+
+    thread_local std::vector<double> local_a;
+    thread_local std::vector<double> local_b;
+    thread_local std::vector<int> local_i_a;
+    thread_local std::vector<int> local_i_b;
+
+    for (std::size_t task_index = begin; task_index < end; task_index++) {
+      MatrixProfileSegmentPairTask const &task = tasks[task_index];
+      uint32_t const a_profiles = task.a.profile_length(window_size);
+      uint32_t const b_profiles = task.b.profile_length(window_size);
+      bool const same_segment = task.a.sample_begin == task.b.sample_begin;
+      uint32_t const total_diagonals = a_profiles + b_profiles - 1;
+      local_a.assign(a_profiles, R_NegInf);
+      if (!same_segment) local_b.assign(b_profiles, R_NegInf);
+      if (keep_indices) {
+        local_i_a.assign(a_profiles, NA_INTEGER);
+        if (!same_segment) local_i_b.assign(b_profiles, NA_INTEGER);
+      }
+
+      auto update_diagonal = [&](uint32_t a_local_start, uint32_t b_local_start, uint32_t diagonal_length,
+                                 bool self_diagonal) {
+        uint32_t const a_start = task.a.sample_begin + a_local_start;
+        uint32_t const b_start = task.b.sample_begin + b_local_start;
+        double covariance = covariance_at(data_ptr, mu_ptr, a_start, b_start, window_size);
+        for (uint32_t offset = 0; offset < diagonal_length; offset++) {
+          uint32_t const a_local = a_local_start + offset;
+          uint32_t const b_local = b_local_start + offset;
+          uint32_t const a_global = task.a.sample_begin + a_local;
+          uint32_t const b_global = task.b.sample_begin + b_local;
+          double const correlation = covariance * sig_ptr[a_global] * sig_ptr[b_global];
+          if (std::isfinite(correlation)) {
+            if (correlation > local_a[a_local]) {
+              local_a[a_local] = correlation;
+              if (keep_indices) local_i_a[a_local] = b_global + 1;
+            }
+            if (self_diagonal) {
+              if (correlation > local_a[b_local]) {
+                local_a[b_local] = correlation;
+                if (keep_indices) local_i_a[b_local] = a_global + 1;
+              }
+            } else if (correlation > local_b[b_local]) {
+              local_b[b_local] = correlation;
+              if (keep_indices) local_i_b[b_local] = a_global + 1;
+            }
+          }
+          if (offset + 1 < diagonal_length) {
+            uint32_t const next_a = a_global + 1;
+            uint32_t const next_b = b_global + 1;
+            covariance += df_ptr[next_a] * dg_ptr[next_b] + dg_ptr[next_a] * df_ptr[next_b];
+          }
+        }
+      };
+
+      if (same_segment) {
+        uint32_t const diagonal_begin = std::max(exclusion + 1, task.diagonal_begin);
+        uint32_t const diagonal_end = task.diagonal_end == 0
+                                          ? a_profiles
+                                          : std::min(task.diagonal_end, a_profiles);
+        for (uint32_t diagonal = diagonal_begin; diagonal < diagonal_end; diagonal++) {
+          update_diagonal(diagonal, 0, a_profiles - diagonal, true);
+        }
+      } else {
+        uint32_t const diagonal_begin = std::min(task.diagonal_begin, total_diagonals);
+        uint32_t const diagonal_end = task.diagonal_end == 0
+                                          ? total_diagonals
+                                          : std::min(task.diagonal_end, total_diagonals);
+        for (uint32_t diagonal = diagonal_begin; diagonal < diagonal_end; diagonal++) {
+          if (diagonal < a_profiles) {
+            update_diagonal(diagonal, 0, std::min(a_profiles - diagonal, b_profiles), false);
+          } else {
+            uint32_t const b_local = diagonal - a_profiles + 1;
+            update_diagonal(0, b_local, std::min(a_profiles, b_profiles - b_local), false);
+          }
+        }
+      }
+
+      std::lock_guard<decltype(mutex)> lock(mutex);
+      for (uint32_t a_local = 0; a_local < a_profiles; a_local++) {
+        uint32_t const a_global = task.a.sample_begin + a_local;
+        if (local_a[a_local] > mp_ptr[a_global]) {
+          mp_ptr[a_global] = local_a[a_local];
+          if (keep_indices) mpi_ptr[a_global] = local_i_a[a_local];
+        }
+      }
+      if (!same_segment) {
+        for (uint32_t b_local = 0; b_local < b_profiles; b_local++) {
+          uint32_t const b_global = task.b.sample_begin + b_local;
+          if (local_b[b_local] > mp_ptr[b_global]) {
+            mp_ptr[b_global] = local_b[b_local];
+            if (keep_indices) mpi_ptr[b_global] = local_i_b[b_local];
+          }
+        }
+      }
+    }
+  }
+};
+
+// Native finite-block AA segmentation.  Only the non-trivial upper half of a
+// within-segment block is traversed; cross-segment blocks are evaluated once
+// and update both profile positions.
+// [[Rcpp::export]]
+List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size,
+                                           bool idxs, bool euclidean, bool progress) {
+  uint64_t const data_size = data_ref.length();
+  if (window_size < 2 || window_size >= data_size) {
+    Rcpp::stop("window_size must leave at least two subsequences");
+  }
+  if (!std::isfinite(ez) || ez < 0.0) {
+    Rcpp::stop("exclusion_zone must be non-negative and finite");
+  }
+  if (!std::isfinite(s_size) || s_size < 0.0 || s_size > 1.0) {
+    Rcpp::stop("s_size must be between 0 and 1");
+  }
+
+  uint32_t const profile_len = data_size - window_size + 1;
+  List const stats = muinvn_na_parallel(data_ref, window_size);
+  NumericVector data = stats["data"];
+  NumericVector mu = stats["avg"];
+  NumericVector sig = stats["sig"];
+  LogicalVector valid_window = stats["valid_window"];
+  if (!matrix_profile_validity_is_only_nonfinite(data_ref, window_size, valid_window)) {
+    Rcpp::stop("the native segmented NA-aware self join supports only finite windows with non-finite barriers; use mpx_na_rcpp_parallel for constant or non-normalizable windows");
+  }
+  std::vector<MatrixProfileFiniteSegment> const segments = matrix_profile_finite_segments(data_ref, window_size);
+  if (segments.empty()) {
+    Rcpp::stop("the native segmented NA-aware self join requires at least one finite window");
+  }
+  NumericVector df = 0.5 * (data[Range(window_size, data_size - 1)] -
+                            data[Range(0, data_size - window_size - 1)]);
+  df.push_front(0);
+  NumericVector dg = (data[Range(window_size, data_size - 1)] - mu[Range(1, profile_len - 1)]) +
+                     (data[Range(0, data_size - window_size - 1)] - mu[Range(0, profile_len - 2)]);
+  dg.push_front(0);
+
+  std::vector<MatrixProfileSegmentPairTask> tasks;
+  tasks.reserve(segments.size() * (segments.size() + 1) / 2);
+  bool partial = false;
+  matrix_profile_add_native_aa_tasks(segments, window_size, static_cast<uint32_t>(round(window_size * ez)), s_size,
+                                     tasks, partial);
+
+  NumericVector mp(profile_len, R_NegInf);
+  IntegerVector mpi;
+  if (idxs) mpi = IntegerVector(profile_len, NA_INTEGER);
+  uint32_t const exclusion = static_cast<uint32_t>(round(window_size * ez));
+  MatrixProfileSegmentedNativeAA worker(data, mu, sig, df, dg, tasks, window_size, exclusion, mp, mpi, idxs);
+  (void)progress;
+  try {
+#if RCPP_PARALLEL_USE_TBB
+    RcppParallel::parallelFor(0, tasks.size(), worker, 1);
+#else
+    RcppParallel2::ttParallelFor(0, tasks.size(), worker, 1);
+#endif
+  } catch (RcppThread::UserInterruptException &e) {
+    partial = true;
+    Rcout << "Native segmented self join terminated by the user successfully, partial results were returned." << std::endl;
+  } catch (...) {
+    Rcpp::stop("c++ exception (unknown reason)");
+  }
+
+  for (uint32_t i = 0; i < profile_len; i++) {
+    if (!valid_window[i] || !std::isfinite(mp[i])) {
+      mp[i] = NA_REAL;
+      if (idxs) mpi[i] = NA_INTEGER;
+      continue;
+    }
+    mp[i] = std::max(-1.0, std::min(1.0, mp[i]));
+    if (euclidean) mp[i] = sqrt(std::max(0.0, 2.0 * window_size * (1.0 - mp[i])));
+  }
+  if (idxs) {
+    return List::create(Rcpp::Named("matrix_profile") = mp, Rcpp::Named("profile_index") = mpi,
+                        Rcpp::Named("valid_window") = valid_window, Rcpp::Named("partial") = partial);
+  }
+  return List::create(Rcpp::Named("matrix_profile") = mp, Rcpp::Named("valid_window") = valid_window,
+                      Rcpp::Named("partial") = partial);
+}
+
+// Parallel AB-join that decomposes non-finite barriers into finite segments.
+// It is intentionally a separate entry point from mpxab_na_rcpp_parallel:
+// callers choose the strategy, and unsupported input is reported rather than
+// silently switching algorithms.
+// [[Rcpp::export]]
+List mpxab_na_segmented_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size,
+                                      double s_size, bool idxs, bool euclidean, bool progress) {
+  uint64_t const data_size = data_ref.length();
+  uint64_t const query_size = query_ref.length();
+  if (window_size < 2 || window_size >= data_size || window_size >= query_size) {
+    Rcpp::stop("window_size must leave at least two subsequences in each series");
+  }
+  if (s_size != 1.0) {
+    Rcpp::stop("the segmented NA-aware AB join currently requires s_size = 1; use mpxab_na_rcpp_parallel for sampled joins");
+  }
+
+  uint32_t const profile_len_a = data_size - window_size + 1;
+  uint32_t const profile_len_b = query_size - window_size + 1;
+  List const stats_a = muinvn_na_parallel(data_ref, window_size);
+  List const stats_b = muinvn_na_parallel(query_ref, window_size);
+  LogicalVector valid_a = stats_a["valid_window"];
+  LogicalVector valid_b = stats_b["valid_window"];
+  if (!matrix_profile_validity_is_only_nonfinite(data_ref, window_size, valid_a) ||
+      !matrix_profile_validity_is_only_nonfinite(query_ref, window_size, valid_b)) {
+    Rcpp::stop("the segmented NA-aware AB join supports only finite windows with non-finite barriers; use mpxab_na_rcpp_parallel for constant or non-normalizable windows");
+  }
+
+  std::vector<MatrixProfileFiniteSegment> const segments_a = matrix_profile_finite_segments(data_ref, window_size);
+  std::vector<MatrixProfileFiniteSegment> const segments_b = matrix_profile_finite_segments(query_ref, window_size);
+  if (segments_a.empty() || segments_b.empty()) {
+    Rcpp::stop("the segmented NA-aware AB join requires at least one finite window in both series");
+  }
+
+  double const initial_profile = euclidean ? R_PosInf : R_NegInf;
+  NumericVector mp_a(profile_len_a, initial_profile);
+  NumericVector mp_b(profile_len_b, initial_profile);
+  IntegerVector mpi_a;
+  IntegerVector mpi_b;
+  if (idxs) {
+    mpi_a = IntegerVector(profile_len_a, NA_INTEGER);
+    mpi_b = IntegerVector(profile_len_b, NA_INTEGER);
+  }
+
+  bool partial = false;
+  // Segment calls delegate to the regular parallel kernel, whose own progress
+  // object is intentionally disabled here.  A single outer progress object is
+  // not safe while repeatedly entering RcppParallel from this native entry.
+  (void)progress;
+  for (std::size_t a_segment_index = 0; a_segment_index < segments_a.size() && !partial; a_segment_index++) {
+    MatrixProfileFiniteSegment const &a_segment = segments_a[a_segment_index];
+    NumericVector const a = data_ref[Range(a_segment.sample_begin, a_segment.sample_end - 1)];
+    uint32_t const a_profiles = a_segment.profile_length(window_size);
+    for (std::size_t b_segment_index = 0; b_segment_index < segments_b.size() && !partial; b_segment_index++) {
+      MatrixProfileFiniteSegment const &b_segment = segments_b[b_segment_index];
+      NumericVector const b = query_ref[Range(b_segment.sample_begin, b_segment.sample_end - 1)];
+      uint32_t const b_profiles = b_segment.profile_length(window_size);
+
+      if (a_profiles == 1 || b_profiles == 1) {
+        for (uint32_t a_local = 0; a_local < a_profiles; a_local++) {
+          for (uint32_t b_local = 0; b_local < b_profiles; b_local++) {
+            double correlation = matrix_profile_segment_correlation(a, a_local, b, b_local, window_size);
+            correlation = std::max(-1.0, std::min(1.0, correlation));
+            double const candidate = euclidean ? sqrt(std::max(0.0, 2.0 * window_size * (1.0 - correlation))) : correlation;
+            uint32_t const a_global = a_segment.sample_begin + a_local;
+            uint32_t const b_global = b_segment.sample_begin + b_local;
+            bool const improve_a = euclidean ? candidate < mp_a[a_global] : candidate > mp_a[a_global];
+            bool const improve_b = euclidean ? candidate < mp_b[b_global] : candidate > mp_b[b_global];
+            if (improve_a) {
+              mp_a[a_global] = candidate;
+              if (idxs) mpi_a[a_global] = b_global + 1;
+            }
+            if (improve_b) {
+              mp_b[b_global] = candidate;
+              if (idxs) mpi_b[b_global] = a_global + 1;
+            }
+          }
+        }
+      } else {
+        List const local = mpxab_rcpp_parallel(a, b, window_size, 1.0, idxs, euclidean, false);
+        NumericVector const local_mp_a = local["matrix_profile"];
+        NumericVector const local_mp_b = local["mpb"];
+        IntegerVector local_mpi_a;
+        IntegerVector local_mpi_b;
+        if (idxs) {
+          local_mpi_a = local["profile_index"];
+          local_mpi_b = local["pib"];
+        }
+        for (uint32_t a_local = 0; a_local < a_profiles; a_local++) {
+          uint32_t const a_global = a_segment.sample_begin + a_local;
+          double const candidate = local_mp_a[a_local];
+          if ((euclidean ? candidate < mp_a[a_global] : candidate > mp_a[a_global])) {
+            mp_a[a_global] = candidate;
+            if (idxs) mpi_a[a_global] = b_segment.sample_begin + local_mpi_a[a_local];
+          }
+        }
+        for (uint32_t b_local = 0; b_local < b_profiles; b_local++) {
+          uint32_t const b_global = b_segment.sample_begin + b_local;
+          double const candidate = local_mp_b[b_local];
+          if ((euclidean ? candidate < mp_b[b_global] : candidate > mp_b[b_global])) {
+            mp_b[b_global] = candidate;
+            if (idxs) mpi_b[b_global] = a_segment.sample_begin + local_mpi_b[b_local];
+          }
+        }
+        partial = as<bool>(local["partial"]);
+      }
+    }
+  }
+
+  for (uint32_t i = 0; i < profile_len_a; i++) {
+    if (!valid_a[i] || !std::isfinite(mp_a[i])) {
+      mp_a[i] = NA_REAL;
+      if (idxs) mpi_a[i] = NA_INTEGER;
+    }
+  }
+  for (uint32_t i = 0; i < profile_len_b; i++) {
+    if (!valid_b[i] || !std::isfinite(mp_b[i])) {
+      mp_b[i] = NA_REAL;
+      if (idxs) mpi_b[i] = NA_INTEGER;
+    }
+  }
+
+  if (idxs) {
+    return List::create(Rcpp::Named("matrix_profile") = mp_a, Rcpp::Named("profile_index") = mpi_a,
+                        Rcpp::Named("mpb") = mp_b, Rcpp::Named("pib") = mpi_b,
+                        Rcpp::Named("valid_window_a") = valid_a, Rcpp::Named("valid_window_b") = valid_b,
+                        Rcpp::Named("partial") = partial);
+  }
+  return List::create(Rcpp::Named("matrix_profile") = mp_a, Rcpp::Named("mpb") = mp_b,
+                      Rcpp::Named("valid_window_a") = valid_a, Rcpp::Named("valid_window_b") = valid_b,
+                      Rcpp::Named("partial") = partial);
 }
 
 // Parallel MPX AB-join with explicit support for non-finite samples.

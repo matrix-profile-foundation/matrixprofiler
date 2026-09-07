@@ -5,6 +5,8 @@
 \alias{stomp}
 \alias{scrimp}
 \alias{mpx}
+\alias{mpx_stream_right}
+\alias{mpx_stream_s_right}
 \title{Matrix Profile Computation}
 \usage{
 stamp(
@@ -47,9 +49,28 @@ mpx(
   idxs = TRUE,
   distance = c("euclidean", "pearson"),
   n_workers = 1,
+  progress = TRUE,
+  na_strategy = c("monolithic", "segmented", "segmented_native")
+)
+
+mpx_stream_right(
+  new_data,
+  start_obj,
+  history = 0,
+  mp_time_constraint = 0,
   progress = TRUE
 )
 
+mpx_stream_s_right(
+  data,
+  batch_size,
+  start_obj,
+  stats,
+  history = 0,
+  mp_time_constraint = 0,
+  progress = TRUE,
+  threshold = -1
+)
 }
 \arguments{
 \item{data}{Required. Any 1-dimension series of numbers (\code{matrix}, \code{vector}, \code{ts} etc.) (See details).}
@@ -84,6 +105,27 @@ This parameter is ignored when using multithread or AB-join.}
 
 \item{distance}{(\code{mpx()} only) A string. Currently accepts \code{euclidean} and \code{pearson}. Defaults to \code{euclidean}.}
 
+\item{na_strategy}{(\code{mpx()} only) Strategy for a parallel NA-aware join: \code{"monolithic"} (the default),
+\code{"segmented"}, or \code{"segmented_native"}. The native strategy supports sampled diagonal tiles when
+\code{s_size < 1}, marks the result as partial, and shares one native pre-calculation and scheduler across finite
+blocks. Segmented strategies support non-finite barriers, but not constant or otherwise non-normalizable windows.}
+
+\item{new_data}{a vector with the new data}
+
+\item{start_obj}{obj from another run}
+
+\item{history}{an \code{int}. Max distance where to look for the best match in matrix profile.
+(default is NULL).}
+
+\item{mp_time_constraint}{time constraint for the mp update in terms of indices.
+This parameter specifies how far back in the time series the algorithm will search
+for the nearest neighbor. A value of 0 (default) means no constraint and the algorithm
+will check the entire time series. Higher values limit the search to a window
+that extends \code{mp_time_constraint} indices into the past.}
+
+\item{batch_size}{size of the new data}
+
+\item{stats}{obj with stats for mpx}
 }
 \value{
 Returns a \code{list} with the \code{matrix_profile}, \code{profile_index} (if \code{idxs} is \code{TRUE} in \code{mpx()}), and some
@@ -155,7 +197,7 @@ interrupted result should remain an anytime approximation.
 }
 }
 \section{This document}{
-Last updated on 2025-12-01 using R version 4.2.3.
+Last updated on 2026-09-07 using R version 4.6.1.
 }
 
 \examples{

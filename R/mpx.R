@@ -5,6 +5,10 @@
 #' @param idxs (`mpx()` only) A logical. Specifies if the computation will return the Profile Index or not. Defaults to
 #'   `TRUE`.
 #' @param distance (`mpx()` only) A string. Currently accepts `euclidean` and `pearson`. Defaults to `euclidean`.
+#' @param na_strategy (`mpx()` only) Strategy for a parallel NA-aware join: `"monolithic"` (the default),
+#'   `"segmented"`, or `"segmented_native"`. The native strategy supports sampled diagonal tiles when
+#'   `s_size < 1`, marks the result as partial, and shares one native pre-calculation and scheduler across finite
+#'   blocks. Segmented strategies support non-finite barriers, but not constant or otherwise non-normalizable windows.
 #'
 #' @details ## mpx
 #' This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
@@ -32,7 +36,8 @@
 #' @examples
 #' mp <- mpx(motifs_discords_small, 50)
 mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1.0, idxs = TRUE,
-                distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE) {
+                distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE,
+                na_strategy = c("monolithic", "segmented", "segmented_native")) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
 
@@ -50,6 +55,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
   }
   checkmate::qassert(idxs, "B+")
   distance <- match.arg(distance)
+  na_strategy <- match.arg(na_strategy)
   if (distance == "euclidean") {
     dist <- TRUE
   } else {
@@ -93,12 +99,22 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
     tryCatch(
       {
         "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
+        if (n_workers > 1 || (has_non_finite && na_strategy == "segmented_native")) {
           p <- RcppParallel::defaultNumThreads()
           on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
-          if (has_non_finite) {
+          if (has_non_finite && na_strategy == "segmented_native") {
+            result <- mpx_na_segmented_native_rcpp_parallel(
+              data,
+              window_size,
+              ez,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else if (has_non_finite) {
             result <- mpx_na_rcpp_parallel(
               data,
               window_size,
@@ -155,12 +171,32 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
     tryCatch(
       {
         "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
+        if (n_workers > 1 || (has_non_finite && na_strategy != "monolithic")) {
           p <- RcppParallel::defaultNumThreads()
           on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
           n_workers <- min(n_workers, p)
           RcppParallel::setThreadOptions(numThreads = n_workers)
-          if (has_non_finite) {
+          if (has_non_finite && na_strategy == "segmented_native") {
+            result <- mpxab_na_segmented_native_rcpp_parallel(
+              data,
+              query,
+              window_size,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else if (has_non_finite && na_strategy == "segmented") {
+            result <- mpxab_na_segmented_rcpp_parallel(
+              data,
+              query,
+              window_size,
+              s_size,
+              as.logical(idxs),
+              as.logical(dist),
+              as.logical(progress)
+            )
+          } else if (has_non_finite) {
             result <- mpxab_na_rcpp_parallel(
               data,
               query,

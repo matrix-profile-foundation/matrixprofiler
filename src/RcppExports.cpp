@@ -470,6 +470,57 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mpxab_na_segmented_native_rcpp_parallel
+List mpxab_na_segmented_native_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size, bool idxs, bool euclidean, bool progress);
+RcppExport SEXP _matrixprofiler_mpxab_na_segmented_native_rcpp_parallel(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP s_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type s_size(s_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpxab_na_segmented_native_rcpp_parallel(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mpx_na_segmented_native_rcpp_parallel
+List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean, bool progress);
+RcppExport SEXP _matrixprofiler_mpx_na_segmented_native_rcpp_parallel(SEXP data_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP s_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    Rcpp::traits::input_parameter< double >::type s_size(s_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpx_na_segmented_native_rcpp_parallel(data_ref, window_size, ez, s_size, idxs, euclidean, progress));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mpxab_na_segmented_rcpp_parallel
+List mpxab_na_segmented_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size, bool idxs, bool euclidean, bool progress);
+RcppExport SEXP _matrixprofiler_mpxab_na_segmented_rcpp_parallel(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP s_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type s_size(s_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpxab_na_segmented_rcpp_parallel(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mpxab_na_rcpp_parallel
 List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size, bool idxs, bool euclidean, bool progress);
 RcppExport SEXP _matrixprofiler_mpxab_na_rcpp_parallel(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP s_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP, SEXP progressSEXP) {
@@ -865,6 +916,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mpx_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_rcpp_parallel, 7},
     {"_matrixprofiler_mpx_na_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_na_rcpp_parallel, 7},
     {"_matrixprofiler_mpxab_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_rcpp_parallel, 7},
+    {"_matrixprofiler_mpxab_na_segmented_native_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_na_segmented_native_rcpp_parallel, 7},
+    {"_matrixprofiler_mpx_na_segmented_native_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_na_segmented_native_rcpp_parallel, 7},
+    {"_matrixprofiler_mpxab_na_segmented_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_na_segmented_rcpp_parallel, 7},
     {"_matrixprofiler_mpxab_na_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_na_rcpp_parallel, 7},
     {"_matrixprofiler_scrimp_rcpp", (DL_FUNC) &_matrixprofiler_scrimp_rcpp, 7},
     {"_matrixprofiler_scrimp_rcpp_parallel", (DL_FUNC) &_matrixprofiler_scrimp_rcpp_parallel, 6},

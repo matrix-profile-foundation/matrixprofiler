@@ -190,6 +190,24 @@ test_that("parallel mpx_na agrees with serial mpx_na", {
   })
 })
 
+test_that("native segmented mpx_na preserves the monolithic self join", {
+  with_mpx_test_threads({
+    set.seed(2117)
+    data <- rnorm(260L)
+    data[c(45L, 135L, 215L)] <- c(NA_real_, Inf, NaN)
+
+    monolithic <- matrixprofiler:::mpx_na_rcpp_parallel(data, 20L, 0.5, 1, TRUE, TRUE, FALSE)
+    native <- matrixprofiler:::mpx_na_segmented_native_rcpp_parallel(data, 20L, 0.5, 1, TRUE, TRUE, FALSE)
+    selected <- mpx(data, 20L, n_workers = 2L, progress = FALSE, na_strategy = "segmented_native")
+
+    expect_identical(native$valid_window, monolithic$valid_window)
+    expect_equal(native$matrix_profile, monolithic$matrix_profile, tolerance = 1e-10)
+    expect_identical(native$profile_index, monolithic$profile_index)
+    expect_equal(selected$matrix_profile, native$matrix_profile, tolerance = 1e-10)
+    expect_identical(selected$profile_index, native$profile_index)
+  })
+})
+
 test_that("parallel mpx_na agrees with regular parallel MPX for finite data", {
   with_mpx_test_threads({
     set.seed(2113)
@@ -298,6 +316,159 @@ test_that("parallel mpxab_na agrees with serial mpxab_na", {
     expect_equal(parallel$mpb, serial$mpb, tolerance = 1e-10)
     expect_identical(parallel$profile_index, serial$profile_index)
     expect_identical(parallel$pib, serial$pib)
+  })
+})
+
+test_that("parallel mpxab_na preserves an unequal join with range-local scratch", {
+  with_mpx_test_threads({
+    set.seed(2135)
+    data <- rnorm(180)
+    query <- rnorm(1200)
+    data[c(25, 145)] <- c(NA_real_, Inf)
+    query[c(300, 1050)] <- c(NaN, -Inf)
+
+    set.seed(2136)
+    serial <- matrixprofiler:::mpxab_na_rcpp(data, query, 20L, 1, TRUE, TRUE, FALSE)
+    set.seed(2136)
+    parallel <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, 20L, 1, TRUE, TRUE, FALSE)
+
+    expect_identical(parallel$valid_window_a, serial$valid_window_a)
+    expect_identical(parallel$valid_window_b, serial$valid_window_b)
+    expect_equal(parallel$matrix_profile, serial$matrix_profile, tolerance = 1e-10)
+    expect_equal(parallel$mpb, serial$mpb, tolerance = 1e-10)
+    expect_identical(parallel$profile_index, serial$profile_index)
+    expect_identical(parallel$pib, serial$pib)
+  })
+})
+
+test_that("segmented parallel mpxab_na agrees with monolithic and STAMP across non-finite barriers", {
+  with_mpx_test_threads({
+    set.seed(2137)
+    for (iteration in seq_len(12L)) {
+      data <- rnorm(180L)
+      query <- rnorm(220L)
+      data[sample.int(length(data), 3L)] <- c(NA_real_, NaN, Inf)
+      query[sample.int(length(query), 4L)] <- c(NA_real_, NaN, Inf, -Inf)
+      window_size <- 15L
+
+      monolithic <- matrixprofiler:::mpxab_na_rcpp_parallel(
+        data, query, window_size, 1, TRUE, TRUE, FALSE
+      )
+      segmented <- matrixprofiler:::mpxab_na_segmented_rcpp_parallel(
+        data, query, window_size, 1, TRUE, TRUE, FALSE
+      )
+      native_segmented <- matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
+        data, query, window_size, 1, TRUE, TRUE, FALSE
+      )
+      stamp_a <- matrixprofiler:::stamp_rcpp(data, query, window_size, 0, 1, FALSE)
+      stamp_b <- matrixprofiler:::stamp_rcpp(query, data, window_size, 0, 1, FALSE)
+
+      expect_identical(segmented$valid_window_a, monolithic$valid_window_a)
+      expect_identical(segmented$valid_window_b, monolithic$valid_window_b)
+      expect_equal(segmented$matrix_profile, monolithic$matrix_profile, tolerance = 1e-10)
+      expect_equal(segmented$mpb, monolithic$mpb, tolerance = 1e-10)
+      expect_identical(native_segmented$valid_window_a, monolithic$valid_window_a)
+      expect_identical(native_segmented$valid_window_b, monolithic$valid_window_b)
+      expect_equal(native_segmented$matrix_profile, monolithic$matrix_profile, tolerance = 1e-10)
+      expect_equal(native_segmented$mpb, monolithic$mpb, tolerance = 1e-10)
+      expect_identical(native_segmented$profile_index, monolithic$profile_index)
+      expect_identical(native_segmented$pib, monolithic$pib)
+      expect_equal(
+        segmented$matrix_profile[segmented$valid_window_a],
+        stamp_a$matrix_profile[segmented$valid_window_a],
+        tolerance = 1e-10
+      )
+      expect_equal(
+        segmented$mpb[segmented$valid_window_b],
+        stamp_b$matrix_profile[segmented$valid_window_b],
+        tolerance = 1e-10
+      )
+    }
+  })
+})
+
+test_that("segmented parallel mpxab_na handles a one-window finite segment", {
+  with_mpx_test_threads({
+    set.seed(2138)
+    data <- c(rnorm(30L), NA_real_, rnorm(12L), Inf, rnorm(35L))
+    query <- c(rnorm(25L), NaN, rnorm(40L))
+    window_size <- 12L
+
+    monolithic <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, window_size, 1, TRUE, TRUE, FALSE)
+    segmented <- matrixprofiler:::mpxab_na_segmented_rcpp_parallel(data, query, window_size, 1, TRUE, TRUE, FALSE)
+    native_segmented <- matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
+      data, query, window_size, 1, TRUE, TRUE, FALSE
+    )
+
+    expect_equal(segmented$matrix_profile, monolithic$matrix_profile, tolerance = 1e-10)
+    expect_equal(segmented$mpb, monolithic$mpb, tolerance = 1e-10)
+    expect_identical(segmented$profile_index, monolithic$profile_index)
+    expect_identical(segmented$pib, monolithic$pib)
+    expect_equal(native_segmented$matrix_profile, monolithic$matrix_profile, tolerance = 1e-10)
+    expect_equal(native_segmented$mpb, monolithic$mpb, tolerance = 1e-10)
+    expect_identical(native_segmented$profile_index, monolithic$profile_index)
+    expect_identical(native_segmented$pib, monolithic$pib)
+
+    monolithic_correlation <- matrixprofiler:::mpxab_na_rcpp_parallel(
+      data, query, window_size, 1, TRUE, FALSE, FALSE
+    )
+    segmented_correlation <- matrixprofiler:::mpxab_na_segmented_rcpp_parallel(
+      data, query, window_size, 1, TRUE, FALSE, FALSE
+    )
+    expect_equal(segmented_correlation$matrix_profile, monolithic_correlation$matrix_profile, tolerance = 1e-10)
+    expect_equal(segmented_correlation$mpb, monolithic_correlation$mpb, tolerance = 1e-10)
+  })
+})
+
+test_that("segmented parallel mpxab_na reports unsupported inputs instead of falling back", {
+  data <- c(rep(1, 30L), NA_real_, rnorm(40L))
+  query <- c(rnorm(35L), Inf, rnorm(35L))
+
+  expect_error(
+    matrixprofiler:::mpxab_na_segmented_rcpp_parallel(data, query, 12L, 1, TRUE, TRUE, FALSE),
+    "constant or non-normalizable"
+  )
+  expect_error(
+    matrixprofiler:::mpxab_na_segmented_rcpp_parallel(query, data, 12L, 0.5, TRUE, TRUE, FALSE),
+    "requires s_size = 1"
+  )
+  expect_error(
+    matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(data, query, 12L, 1, TRUE, TRUE, FALSE),
+    "constant or non-normalizable"
+  )
+  native_partial <- matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
+    c(rnorm(35L), NA_real_, rnorm(35L)),
+    c(rnorm(35L), Inf, rnorm(35L)),
+    12L, 0.5, TRUE, TRUE, FALSE
+  )
+  expect_true(native_partial$partial)
+})
+
+test_that("public mpx exposes the NA-aware AB-join strategy", {
+  with_mpx_test_threads({
+    set.seed(2139)
+    data <- rnorm(140L)
+    query <- rnorm(170L)
+    data[c(40L, 105L)] <- c(NA_real_, Inf)
+    query[c(55L, 130L)] <- c(NaN, -Inf)
+
+    direct <- matrixprofiler:::mpxab_na_segmented_rcpp_parallel(data, query, 15L, 1, TRUE, TRUE, FALSE)
+    selected <- mpx(data, 15L, query = query, n_workers = 2L, progress = FALSE, na_strategy = "segmented")
+    native_direct <- matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
+      data, query, 15L, 1, TRUE, TRUE, FALSE
+    )
+    native_selected <- mpx(
+      data, 15L, query = query, n_workers = 2L, progress = FALSE, na_strategy = "segmented_native"
+    )
+
+    expect_equal(selected$matrix_profile, direct$matrix_profile, tolerance = 1e-10)
+    expect_equal(selected$mpb, direct$mpb, tolerance = 1e-10)
+    expect_identical(selected$profile_index, direct$profile_index)
+    expect_identical(selected$pib, direct$pib)
+    expect_equal(native_selected$matrix_profile, native_direct$matrix_profile, tolerance = 1e-10)
+    expect_equal(native_selected$mpb, native_direct$mpb, tolerance = 1e-10)
+    expect_identical(native_selected$profile_index, native_direct$profile_index)
+    expect_identical(native_selected$pib, native_direct$pib)
   })
 })
 

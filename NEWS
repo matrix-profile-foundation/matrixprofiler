@@ -1,5 +1,21 @@
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
+## matrixprofiler 0.1.11.9004
+
+-   Added independently selectable native finite-block segmentation for
+    NA-aware MPX self-joins and AB-joins through
+    `na_strategy = "segmented_native"` in `mpx()`, while retaining the
+    monolithic implementation as the default.
+-   Added native diagonal-tile sampling for `s_size < 1`, with explicit
+    `partial` results and adaptive tile subdivision based on the
+    configured parallel thread count.
+-   Added global-coordinate reduction of native segmented profiles and
+    indices, including cross-segment AB comparisons and exclusion-zone
+    handling for AA joins.
+-   Added regression and stress coverage against the monolithic NA-aware
+    MPX implementation and STAMP for non-finite barriers, one-window
+    segments, distance, correlation, and sampled computations.
+
 ## matrixprofiler 0.1.11.9003
 
 -   Clarified the MPX `s_size` semantics: values below `1` retain

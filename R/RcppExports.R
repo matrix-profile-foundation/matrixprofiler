@@ -125,6 +125,18 @@ mpxab_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, 
     .Call(`_matrixprofiler_mpxab_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
 }
 
+mpxab_na_segmented_native_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
+    .Call(`_matrixprofiler_mpxab_na_segmented_native_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
+}
+
+mpx_na_segmented_native_rcpp_parallel <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress) {
+    .Call(`_matrixprofiler_mpx_na_segmented_native_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress)
+}
+
+mpxab_na_segmented_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
+    .Call(`_matrixprofiler_mpxab_na_segmented_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
+}
+
 mpxab_na_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
     .Call(`_matrixprofiler_mpxab_na_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
 }
