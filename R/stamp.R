@@ -32,7 +32,11 @@
 #' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
 #'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
 #' @param s_size A numeric. Used on anytime algorithms (stamp, scrimp, mpx) if only part of the computation is needed.
-#' Default is `1.0` (means 100%).
+#' Default is `1.0` (means 100%). For MPX specifically, values below `1` use a
+#' randomized subset of diagonals and are the recommended setting for an
+#' anytime approximation. At `1`, MPX computes every diagonal in monotone order
+#' for performance; the completed result is exact, but an interrupted partial
+#' result can be less representative than a randomized partial run.
 #' @param pre_scrimp A numeric. If not zero, pre_scrimp is computed, using a fraction of the data. Default is `0.25`.
 #' This parameter is ignored when using multithread or AB-join.
 #' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.

@@ -694,6 +694,12 @@ List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double
     Rcpp::stop("s_size must be between 0 and 1");
   }
 
+  if (mpx_finite_fast_path_safe(data_ref, window_size)) {
+    List result = mpx_rcpp(data_ref, window_size, ez, s_size, idxs, euclidean, progress, INFINITY);
+    result["valid_window"] = LogicalVector(data_ref.length() - window_size + 1, true);
+    return result;
+  }
+
   uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
   uint64_t const profile_len = data_size - window_size + 1;
   bool partial = false;
@@ -964,6 +970,14 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
     Rcpp::stop("s_size must be between 0 and 1");
   }
 
+  if (mpx_finite_fast_path_safe(data_ref, window_size) &&
+      mpx_finite_fast_path_safe(query_ref, window_size)) {
+    List result = mpxab_rcpp(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress);
+    result["valid_window_a"] = LogicalVector(data_ref.length() - window_size + 1, true);
+    result["valid_window_b"] = LogicalVector(query_ref.length() - window_size + 1, true);
+    return result;
+  }
+
   uint32_t const profile_len_a = data_size - window_size + 1;
   uint32_t const profile_len_b = query_size - window_size + 1;
   bool partial = false;
@@ -1014,8 +1028,13 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
 
   IntegerVector order_a = Range(0, profile_len_a - 1);
   IntegerVector order_b = Range(0, profile_len_b - 1);
-  order_a = sample(order_a, order_a.size());
-  order_b = sample(order_b, order_b.size());
+  // With a complete join, diagonal order does not affect profile values and
+  // keeping it sorted avoids destroying locality. Randomize only sampled
+  // joins, where the order is part of the anytime/partial semantics.
+  if (s_size > 0.0 && s_size < 1.0) {
+    order_a = sample(order_a, order_a.size());
+    order_b = sample(order_b, order_b.size());
+  }
   uint64_t work_a = order_a.size();
   uint64_t work_b = order_b.size();
   if (s_size > 0.0 && s_size < 1.0) {

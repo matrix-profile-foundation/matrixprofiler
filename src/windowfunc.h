@@ -27,6 +27,7 @@ List muinvn_rcpp(NumericVector data, uint32_t window_size);
 List muinvn_rcpp_parallel(NumericVector data, uint32_t window_size);
 List muinvn_na(NumericVector data, uint32_t window_size);
 List muinvn_na_parallel(NumericVector data, uint32_t window_size);
+bool mpx_finite_fast_path_safe(const NumericVector &data, uint32_t window_size);
 IntegerVector zero_crossing_rcpp(NumericVector data, uint32_t window_size);
 
 #endif // __WINDOWFUNC__

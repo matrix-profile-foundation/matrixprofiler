@@ -63,7 +63,11 @@ Default is \code{NULL} (See details).}
 trivial matches. Default is \code{0.5}, i.e., half of the \code{window_size}.}
 
 \item{s_size}{A numeric. Used on anytime algorithms (stamp, scrimp, mpx) if only part of the computation is needed.
-Default is \code{1.0} (means 100\%).}
+Default is \code{1.0} (means 100\%). For MPX specifically, values below \code{1} use a
+randomized subset of diagonals and are the recommended setting for an
+anytime approximation. At \code{1}, MPX computes every diagonal in monotone order
+for performance; the completed result is exact, but an interrupted partial
+result can be less representative than a randomized partial run.}
 
 \item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.}
 
@@ -141,6 +145,13 @@ on Ogita's work for better precision computing mean and standard deviation (part
 
 Inputs containing \code{NA}, \code{NaN}, \code{Inf}, or \code{-Inf} are automatically routed to the missing-data implementation. Fully
 finite inputs continue to use the faster regular MPX implementation.
+
+For MPX, values of \code{s_size} below \code{1} select a randomized subset of diagonals
+and provide the intended anytime approximation. With \code{s_size = 1}, all
+diagonals are processed in monotone order for better locality, so the final
+result is exact but an interruption before completion can be less
+representative than a randomized partial run. Use \code{s_size < 1} when an
+interrupted result should remain an anytime approximation.
 }
 }
 \section{This document}{

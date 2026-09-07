@@ -55,6 +55,55 @@ test_that("MPXABs are equal", {
   expect_identical(mpxab_res, mpxab_res_par)
 })
 
+test_that("parallel MPXAB omits indices when idxs is FALSE", {
+  with_mpx_test_threads <- function(code, n = 2L) {
+    previous <- RcppParallel::defaultNumThreads()
+    on.exit(RcppParallel::setThreadOptions(numThreads = previous), add = TRUE)
+    RcppParallel::setThreadOptions(numThreads = n)
+    force(code)
+  }
+
+  with_mpx_test_threads({
+    set.seed(2022)
+    data <- rnorm(180)
+    query <- rnorm(140)
+    set.seed(2023)
+    serial <- matrixprofiler:::mpxab_rcpp(data, query, 15L, 1, FALSE, TRUE, FALSE)
+    set.seed(2023)
+    parallel <- matrixprofiler:::mpxab_rcpp_parallel(data, query, 15L, 1, FALSE, TRUE, FALSE)
+
+    expect_identical(names(parallel), names(serial))
+    expect_equal(parallel, serial, tolerance = 1e-10)
+  })
+})
+
+test_that("parallel MPXAB worker diagnostics are opt-in", {
+  previous <- Sys.getenv("MATRIXPROFILER_PROFILE_WORKERS", unset = NA_character_)
+  on.exit({
+    if (is.na(previous)) Sys.unsetenv("MATRIXPROFILER_PROFILE_WORKERS") else Sys.setenv(MATRIXPROFILER_PROFILE_WORKERS = previous)
+  }, add = TRUE)
+
+  set.seed(2024)
+  data <- rnorm(180)
+  query <- rnorm(140)
+  Sys.unsetenv("MATRIXPROFILER_PROFILE_WORKERS")
+  set.seed(2025)
+  normal <- matrixprofiler:::mpxab_rcpp_parallel(data, query, 15L, 1, FALSE, TRUE, FALSE)
+  expect_false("worker_diagnostics" %in% names(normal))
+
+  Sys.setenv(MATRIXPROFILER_PROFILE_WORKERS = "1")
+  set.seed(2025)
+  profiled <- matrixprofiler:::mpxab_rcpp_parallel(data, query, 15L, 1, FALSE, TRUE, FALSE)
+  expect_true("worker_diagnostics" %in% names(profiled))
+  expect_true(profiled$worker_diagnostics$enabled)
+  expect_gt(profiled$worker_diagnostics$ab$tasks, 0)
+  expect_gt(profiled$worker_diagnostics$ba$tasks, 0)
+  expect_gt(profiled$worker_diagnostics$ab$pairs_visited, 0)
+  expect_gt(profiled$worker_diagnostics$ba$pairs_visited, 0)
+  expect_equal(profiled$matrix_profile, normal$matrix_profile, tolerance = 1e-10)
+  expect_equal(profiled$mpb, normal$mpb, tolerance = 1e-10)
+})
+
 test_that("parallel MPX handles fewer than 100 diagonals", {
   set.seed(2001)
   data <- rnorm(100)

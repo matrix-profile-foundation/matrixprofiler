@@ -14,6 +14,13 @@
 #' Inputs containing `NA`, `NaN`, `Inf`, or `-Inf` are automatically routed to the missing-data implementation. Fully
 #' finite inputs continue to use the faster regular MPX implementation.
 #'
+#' For MPX, values of `s_size` below `1` select a randomized subset of diagonals
+#' and provide the intended anytime approximation. With `s_size = 1`, all
+#' diagonals are processed in monotone order for better locality, so the final
+#' result is exact but an interruption before completion can be less
+#' representative than a randomized partial run. Use `s_size < 1` when an
+#' interrupted result should remain an anytime approximation.
+#'
 #' @seealso `mpxab()` for the forward and reverse join-similarity.
 #'
 #' @details # This document

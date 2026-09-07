@@ -2,9 +2,41 @@ NEWS
 ================
 Francisco Bischoff
 
-04 Sep 2026
+07 Sep 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+## matrixprofiler 0.1.11.9003
+
+- Clarified the MPX `s_size` semantics: values below `1` retain
+  randomized anytime sampling, while `s_size = 1` processes all
+  diagonals in monotone order and may yield a less representative
+  partial result if interrupted.
+
+- Added a numerically guarded finite fast path for NA-aware MPX and
+  MPXAB, preserving the stable normalization path for constant or
+  large-offset windows.
+
+- Reused parallel AB/BA worker scratch buffers per executor thread and
+  limited mutex merges to ranges touched by each task.
+
+- Avoided allocating and writing profile-index vectors in parallel self-
+  and AB-joins when `idxs = FALSE`.
+
+- Added an opt-in AB/BA worker profiler with per-task counts for pairs,
+  invalid blocks, scratch resets, merges, mutex wait, and observed
+  threads.
+
+- Added a conservative native restart path that skips dense invalid
+  blocks in parallel NA-aware AB/BA joins while preserving the original
+  recurrence for sparse barriers.
+
+- Kept complete NA-aware AB/BA joins in monotone diagonal order to
+  reduce parallel scratch resets and merges; sampled joins retain
+  randomized work order.
+
+- Added reproducible fixture benchmarks and a persistent optimization
+  workplan for NA-aware segmentation and parallel reductions.
 
 ## matrixprofiler 0.1.11.9000
 

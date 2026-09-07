@@ -596,6 +596,48 @@ List muinvn_na_parallel(NumericVector data_ref, uint32_t window_size) {
   return muinvn_na_impl(data_ref, window_size, true);
 }
 
+// A finite series can still contain constant windows, which the NA-aware
+// implementation deliberately masks. Also avoid the ordinary MPX statistics
+// path when the series has a large offset relative to its dynamic range: its
+// rolling sum-of-squares calculation is then susceptible to cancellation.
+// This O(n) guard keeps the finite fast path both fast and numerically safe.
+bool mpx_finite_fast_path_safe(const NumericVector &data, uint32_t window_size) {
+  uint32_t const data_size = data.length();
+  if (window_size < 2 || window_size > data_size) {
+    return false;
+  }
+
+  double const *const data_ptr = data.begin();
+  double min_value = R_PosInf;
+  double max_value = R_NegInf;
+  double max_abs = 0.0;
+  uint32_t equal_run = 1;
+  for (uint32_t i = 0; i < data_size; i++) {
+    if (!std::isfinite(data_ptr[i])) {
+      return false;
+    }
+    min_value = std::min(min_value, data_ptr[i]);
+    max_value = std::max(max_value, data_ptr[i]);
+    max_abs = std::max(max_abs, std::abs(data_ptr[i]));
+    if (i > 0 && data_ptr[i] == data_ptr[i - 1]) {
+      equal_run++;
+      if (equal_run >= window_size) {
+        return false;
+      }
+    } else {
+      equal_run = 1;
+    }
+  }
+
+  double const dynamic_range = max_value - min_value;
+  if (!std::isfinite(dynamic_range)) {
+    return false;
+  }
+  double const scale = std::max(1.0, dynamic_range);
+  constexpr double max_offset_to_range = 1000.0;
+  return (max_abs / scale) <= max_offset_to_range;
+}
+
 struct MuinWorker : public Worker {
 
 private:

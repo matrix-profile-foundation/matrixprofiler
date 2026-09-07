@@ -319,6 +319,72 @@ test_that("parallel mpxab_na agrees with regular parallel MPXAB for finite data"
   })
 })
 
+test_that("parallel mpxab_na restarts covariance for dense invalid blocks", {
+  with_mpx_test_threads({
+    set.seed(2131)
+    data <- rnorm(900)
+    query <- rnorm(1000)
+    data[seq(80, length(data), by = 80)] <- NA_real_
+    query[seq(100, length(query), by = 100)] <- NaN
+
+    set.seed(2132)
+    serial <- matrixprofiler:::mpxab_na_rcpp(data, query, 30L, 1, TRUE, TRUE, FALSE)
+    set.seed(2132)
+    parallel <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, 30L, 1, TRUE, TRUE, FALSE)
+
+    expect_equal(parallel$matrix_profile, serial$matrix_profile, tolerance = 1e-10)
+    expect_equal(parallel$mpb, serial$mpb, tolerance = 1e-10)
+    expect_identical(parallel$profile_index, serial$profile_index)
+    expect_identical(parallel$pib, serial$pib)
+  })
+})
+
+test_that("parallel mpxab_na threshold override preserves profiles", {
+  with_mpx_test_threads({
+    old_threshold <- Sys.getenv("MATRIXPROFILER_INVALID_BLOCK_THRESHOLD", unset = NA_character_)
+    on.exit({
+      if (is.na(old_threshold)) Sys.unsetenv("MATRIXPROFILER_INVALID_BLOCK_THRESHOLD")
+      else Sys.setenv(MATRIXPROFILER_INVALID_BLOCK_THRESHOLD = old_threshold)
+    }, add = TRUE)
+
+    set.seed(2133)
+    data <- rnorm(700)
+    query <- rnorm(800)
+    data[seq(90, length(data), by = 90)] <- NA_real_
+    query[seq(110, length(query), by = 110)] <- Inf
+
+    Sys.setenv(MATRIXPROFILER_INVALID_BLOCK_THRESHOLD = "legacy")
+    set.seed(2134)
+    legacy <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, 30L, 1, TRUE, TRUE, FALSE)
+    Sys.setenv(MATRIXPROFILER_INVALID_BLOCK_THRESHOLD = "force")
+    set.seed(2134)
+    forced <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, 30L, 1, TRUE, TRUE, FALSE)
+
+    expect_identical(forced$valid_window_a, legacy$valid_window_a)
+    expect_identical(forced$valid_window_b, legacy$valid_window_b)
+    expect_equal(forced$matrix_profile, legacy$matrix_profile, tolerance = 1e-10)
+    expect_equal(forced$mpb, legacy$mpb, tolerance = 1e-10)
+    expect_identical(forced$profile_index, legacy$profile_index)
+    expect_identical(forced$pib, legacy$pib)
+  })
+})
+
+test_that("parallel NA-aware joins omit indices when idxs is FALSE", {
+  with_mpx_test_threads({
+    set.seed(2128)
+    data <- rnorm(300)
+    query <- rnorm(250)
+    data[80] <- NA_real_
+    query[170] <- Inf
+
+    result <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, 20L, 1, FALSE, TRUE, FALSE)
+
+    expect_false(any(c("profile_index", "pib") %in% names(result)))
+    expect_true(all(is.na(result$matrix_profile[!result$valid_window_a])))
+    expect_true(all(is.na(result$mpb[!result$valid_window_b])))
+  })
+})
+
 test_that("parallel mpxab_na honors partial sample size", {
   with_mpx_test_threads({
     set.seed(2129)
@@ -356,6 +422,18 @@ test_that("mpx_na_rcpp normalizes windows directly for large offsets", {
 
   expect_true(all(result$valid_window))
   expect_lt(max(abs(result$matrix_profile - oracle$matrix_profile)), 1e-5)
+})
+
+test_that("parallel mpx_na_rcpp also preserves large-offset precision", {
+  with_mpx_test_threads({
+    data <- 1e8 + sin(seq(0, 20, length.out = 100))
+    window_size <- 12L
+    oracle <- brute_force_mpx_na(data, window_size)
+    result <- matrixprofiler:::mpx_na_rcpp_parallel(data, window_size, 0.5, 1, TRUE, TRUE, FALSE)
+
+    expect_identical(result$valid_window, oracle$valid_window)
+    expect_lt(max(abs(result$matrix_profile - oracle$matrix_profile)), 1e-5)
+  })
 })
 
 test_that("mpx_na_rcpp validates its numerical controls", {
