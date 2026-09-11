@@ -108,7 +108,8 @@ This parameter is ignored when using multithread or AB-join.}
 \item{na_strategy}{(\code{mpx()} only) Strategy for a parallel NA-aware join: \code{"monolithic"} (the default),
 \code{"segmented"}, or \code{"segmented_native"}. The native strategy supports sampled diagonal tiles when
 \code{s_size < 1}, marks the result as partial, and shares one native pre-calculation and scheduler across finite
-blocks. Segmented strategies support non-finite barriers, but not constant or otherwise non-normalizable windows.}
+blocks. The native strategy also masks constant or otherwise non-normalizable windows. The \code{"segmented"}
+reference strategy remains restricted to inputs whose invalid windows are caused only by non-finite barriers.}
 
 \item{new_data}{a vector with the new data}
 
@@ -194,10 +195,38 @@ diagonals are processed in monotone order for better locality, so the final
 result is exact but an interruption before completion can be less
 representative than a randomized partial run. Use \code{s_size < 1} when an
 interrupted result should remain an anytime approximation.
+
+The native segmented parallel AA implementation has an optional cache-tuning
+setting for large NA-aware self-joins. This setting applies only when
+\code{na_strategy = "segmented_native"} selects the native NA-aware parallel path.
+When \code{s_size = 1}, \code{MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE} controls the number of
+profile windows in each rectangular internal block. Its default is \code{8192};
+values from \code{1024} to \code{262144} are accepted and invalid values fall back to
+the default. For example, set it for one shell invocation with
+\verb{MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE=16384 Rscript script.R}, or set it in R
+with \code{Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = "16384")} before
+calling \code{mpx()}. Remove the override with
+\code{Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")}. The setting is read
+at call time, does not change the public \code{mpx()} API or its numerical
+parameters, and is ignored for AB joins, finite inputs using regular MPX,
+and sampled native runs with \code{s_size < 1}. It primarily trades cache
+locality against task overhead; \code{8192} is a suitable starting point, while
+larger values should only be selected after benchmarking a substantially
+larger workload.
+
+The internal C++ target \code{matrix_profile_native_pairs_per_task} (currently
+\code{100000000} pairwise window comparisons) controls the granularity of native
+parallel AB tasks and sampled AA tasks. It is used only by the native
+NA-aware parallel implementation. It is not an \code{mpx()} argument or an
+environment variable; changing it requires a source change and recompiling
+the package. It is normally left unchanged: increase it only when profiling
+a very large workload shows excessive scheduling overhead, while retaining
+several tasks per worker for load balancing. Neither setting affects the
+regular MPX paths or the serial NA-aware implementations.
 }
 }
 \section{This document}{
-Last updated on 2026-09-07 using R version 4.6.1.
+Last updated on 2026-09-11 using R version 4.6.1.
 }
 
 \examples{

@@ -142,6 +142,24 @@
 - wild_sigma_threshold feature needs validation with test datasets
 - Consider documenting wild sigma threshold scientific basis (UCR papers)
 
+### TODO: cache blocking for finite parallel MPX
+
+Investigate whether the non-NA-aware parallel implementations (`mpx_rcpp_parallel`
+and `mpxab_rcpp_parallel`) can benefit from cache-local computational tiling,
+especially for very large finite series whose working set exceeds the CPU cache.
+This would be an internal blocking strategy, not semantic segmentation: finite
+data remains one logical segment and the existing recurrence must remain exact.
+The AA self-join is the first candidate; AB should be evaluated separately
+because it updates and merges both profiles.
+
+Do not apply `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE` to these paths: that setting
+currently affects only the native NA-aware parallel AA implementation. Start
+with a benchmark against the current `mpx_rcpp_parallel`/`mpxab_rcpp_parallel`
+on small, fixture-sized, and substantially larger finite inputs. For small or
+moderate inputs, segmentation/blocking may lose to the current implementation
+because of task creation and merge overhead. Any proposed change must compare
+wall time, CPU utilization, peak memory, and numerical parity.
+
 ## Project Context
 - Working on matrixprofiler R package
 - Focus on code consistency and C++ const correctness

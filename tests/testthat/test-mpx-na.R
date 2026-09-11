@@ -432,16 +432,86 @@ test_that("segmented parallel mpxab_na reports unsupported inputs instead of fal
     matrixprofiler:::mpxab_na_segmented_rcpp_parallel(query, data, 12L, 0.5, TRUE, TRUE, FALSE),
     "requires s_size = 1"
   )
-  expect_error(
-    matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(data, query, 12L, 1, TRUE, TRUE, FALSE),
-    "constant or non-normalizable"
-  )
   native_partial <- matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
     c(rnorm(35L), NA_real_, rnorm(35L)),
     c(rnorm(35L), Inf, rnorm(35L)),
     12L, 0.5, TRUE, TRUE, FALSE
   )
   expect_true(native_partial$partial)
+})
+
+test_that("native segmented NA-aware joins mask constant windows", {
+  with_mpx_test_threads({
+    set.seed(2142)
+    data <- c(rnorm(45L), rep(2, 18L), rnorm(50L), NA_real_, rnorm(40L))
+    query <- c(rnorm(35L), Inf, rnorm(30L), rep(-3, 16L), rnorm(45L))
+    window_size <- 12L
+
+    expected_ab <- matrixprofiler:::mpxab_na_rcpp_parallel(
+      data, query, window_size, 1, TRUE, TRUE, FALSE
+    )
+    native_ab <- matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
+      data, query, window_size, 1, TRUE, TRUE, FALSE
+    )
+    stamp_a <- matrixprofiler:::stamp_rcpp(data, query, window_size, 0, 1, FALSE)
+    stamp_b <- matrixprofiler:::stamp_rcpp(query, data, window_size, 0, 1, FALSE)
+
+    expect_identical(native_ab$valid_window_a, expected_ab$valid_window_a)
+    expect_identical(native_ab$valid_window_b, expected_ab$valid_window_b)
+    expect_equal(native_ab$matrix_profile, expected_ab$matrix_profile, tolerance = 1e-10)
+    expect_equal(native_ab$mpb, expected_ab$mpb, tolerance = 1e-10)
+    expect_equal(
+      native_ab$matrix_profile[native_ab$valid_window_a],
+      stamp_a$matrix_profile[native_ab$valid_window_a],
+      tolerance = 1e-10
+    )
+    expect_equal(
+      native_ab$mpb[native_ab$valid_window_b],
+      stamp_b$matrix_profile[native_ab$valid_window_b],
+      tolerance = 1e-10
+    )
+
+    expected_aa <- matrixprofiler:::mpx_na_rcpp_parallel(
+      data, window_size, 0.5, 1, TRUE, TRUE, FALSE
+    )
+    native_aa <- matrixprofiler:::mpx_na_segmented_native_rcpp_parallel(
+      data, window_size, 0.5, 1, TRUE, TRUE, FALSE
+    )
+    stamp_aa <- matrixprofiler:::stamp_rcpp(data, data, window_size, 0.5, 1, FALSE)
+
+    expect_identical(native_aa$valid_window, expected_aa$valid_window)
+    expect_equal(native_aa$matrix_profile, expected_aa$matrix_profile, tolerance = 1e-10)
+    expect_equal(
+      native_aa$matrix_profile[native_aa$valid_window],
+      stamp_aa$matrix_profile[native_aa$valid_window],
+      tolerance = 1e-10
+    )
+  })
+})
+
+test_that("native segmented AA preserves results across multiple cache blocks", {
+  with_mpx_test_threads({
+    old_block_size <- Sys.getenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE", unset = NA_character_)
+    on.exit({
+      if (is.na(old_block_size)) Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")
+      else Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = old_block_size)
+    }, add = TRUE)
+    Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = "1024")
+
+    set.seed(2143)
+    data <- c(rnorm(1100L), NA_real_, rnorm(500L), rep(2, 30L), rnorm(800L))
+    window_size <- 20L
+    expected <- matrixprofiler:::mpx_na_rcpp_parallel(
+      data, window_size, 0.5, 1, TRUE, TRUE, FALSE
+    )
+    blocked <- matrixprofiler:::mpx_na_segmented_native_rcpp_parallel(
+      data, window_size, 0.5, 1, TRUE, TRUE, FALSE
+    )
+
+    expect_identical(blocked$valid_window, expected$valid_window)
+    expect_equal(blocked$matrix_profile, expected$matrix_profile, tolerance = 1e-8)
+    expect_true(all(is.na(blocked$matrix_profile[!blocked$valid_window])))
+  })
 })
 
 test_that("public mpx exposes the NA-aware AB-join strategy", {

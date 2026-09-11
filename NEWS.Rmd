@@ -22,11 +22,15 @@ knitr::opts_chunk$set(
 )
 ```
 
-## matrixprofiler 0.1.11.9004
+## matrixprofiler 0.1.11.9005
 
 -   Added independently selectable native finite-block segmentation for NA-aware MPX self-joins and AB-joins through `na_strategy = "segmented_native"` in `mpx()`, while retaining the monolithic implementation as the default.
 -   Added native diagonal-tile sampling for `s_size < 1`, with explicit `partial` results and adaptive tile subdivision based on the configured parallel thread count.
 -   Added global-coordinate reduction of native segmented profiles and indices, including cross-segment AB comparisons and exclusion-zone handling for AA joins.
+
+-   Optimized native segmented scheduling for highly unbalanced segment lengths, added cache-bounded rectangular blocks for exact AA joins, and allowed it to mask constant or otherwise non-normalizable windows without reverting to the monolithic NA-aware kernel.
+-   Set the native exact-AA block default to 8,192 windows and documented `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE` for cache-tuning large parallel NA-aware self-joins without changing the public `mpx()` API.
+-   Validated the native segmented implementation on the full fixture: exact AA and AB runs completed with `partial = FALSE`, identical validity masks, and substantial wall-time reductions compared with the previous native and monolithic NA-aware paths.
 -   Added regression and stress coverage against the monolithic NA-aware MPX implementation and STAMP for non-finite barriers, one-window segments, distance, correlation, and sampled computations.
 
 ## matrixprofiler 0.1.11.9003

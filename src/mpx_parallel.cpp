@@ -1384,6 +1384,7 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
 struct MatrixProfileFiniteSegment {
   uint32_t sample_begin;
   uint32_t sample_end;
+  bool all_windows_valid = true;
 
   uint32_t profile_length(uint32_t window_size) const { return sample_end - sample_begin - window_size + 1; }
 };
@@ -1430,6 +1431,20 @@ static std::vector<MatrixProfileFiniteSegment> matrix_profile_finite_segments(co
   return segments;
 }
 
+static void matrix_profile_annotate_segment_validity(std::vector<MatrixProfileFiniteSegment> &segments,
+                                                     uint32_t window_size, const LogicalVector &valid_window) {
+  int const *const valid_ptr = valid_window.begin();
+  for (MatrixProfileFiniteSegment &segment : segments) {
+    uint32_t const profile_end = segment.sample_begin + segment.profile_length(window_size);
+    for (uint32_t profile_index = segment.sample_begin; profile_index < profile_end; profile_index++) {
+      if (!valid_ptr[profile_index]) {
+        segment.all_windows_valid = false;
+        break;
+      }
+    }
+  }
+}
+
 static double matrix_profile_segment_correlation(const NumericVector &a, uint32_t a_start, const NumericVector &b,
                                                  uint32_t b_start, uint32_t window_size) {
   double mean_a = 0.0;
@@ -1459,6 +1474,11 @@ struct MatrixProfileSegmentPairTask {
   MatrixProfileFiniteSegment b;
   uint32_t diagonal_begin = 0;
   uint32_t diagonal_end = 0;
+  bool rectangular = false;
+  uint32_t a_profile_begin = 0;
+  uint32_t a_profile_end = 0;
+  uint32_t b_profile_begin = 0;
+  uint32_t b_profile_end = 0;
 };
 
 static uint32_t matrix_profile_native_thread_hint() {
@@ -1473,6 +1493,24 @@ static uint32_t matrix_profile_native_thread_hint() {
   return 4;
 }
 
+// A segment pair used to become a single scheduler task whenever the total
+// number of pairs already exceeded the small thread-count target.  Real ECG
+// collections are strongly skewed, so one long record could then keep a
+// worker busy long after all short-record tasks had completed.  Bound the
+// approximate amount of quadratic work in a diagonal tile while retaining a
+// fairly coarse task size: the worker still reuses segment-local scratch and
+// the extra merge/reset cost remains small compared with the tile's loop.
+static constexpr uint64_t matrix_profile_native_pairs_per_task = 100000000ULL;
+static uint32_t matrix_profile_native_aa_block_size() {
+  uint32_t const default_block_size = 8192;
+  const char *value = std::getenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE");
+  if (value == nullptr || value[0] == '\0') return default_block_size;
+  char *end = nullptr;
+  unsigned long parsed = std::strtoul(value, &end, 10);
+  if (end == value || *end != '\0' || parsed < 1024 || parsed > 262144) return default_block_size;
+  return static_cast<uint32_t>(parsed);
+}
+
 static void matrix_profile_add_native_ab_tasks(const std::vector<MatrixProfileFiniteSegment> &segments_a,
                                                const std::vector<MatrixProfileFiniteSegment> &segments_b,
                                                uint32_t window_size, double s_size,
@@ -1483,7 +1521,11 @@ static void matrix_profile_add_native_ab_tasks(const std::vector<MatrixProfileFi
   for (MatrixProfileFiniteSegment const &a : segments_a) {
     for (MatrixProfileFiniteSegment const &b : segments_b) {
       uint32_t const diagonal_count = a.profile_length(window_size) + b.profile_length(window_size) - 1;
-      uint32_t const parts = static_cast<uint32_t>(std::min<uint64_t>(split_factor, diagonal_count));
+      uint64_t const pair_work = static_cast<uint64_t>(a.profile_length(window_size)) * b.profile_length(window_size);
+      uint64_t const work_parts =
+          (pair_work + matrix_profile_native_pairs_per_task - 1) / matrix_profile_native_pairs_per_task;
+      uint32_t const parts =
+          static_cast<uint32_t>(std::min<uint64_t>(std::max(split_factor, work_parts), diagonal_count));
       uint32_t const tile_size = (diagonal_count + parts - 1) / parts;
       uint32_t const tile_count = (diagonal_count + tile_size - 1) / tile_size;
       uint32_t const keep_tiles = static_cast<uint32_t>(round(tile_count * s_size + DBL_EPSILON));
@@ -1523,7 +1565,13 @@ static void matrix_profile_add_native_aa_tasks(const std::vector<MatrixProfileFi
                                           ? a_profiles - diagonal_begin
                                           : a_profiles + b_profiles - 1;
       if (diagonal_count == 0) continue;
-      uint32_t const parts = static_cast<uint32_t>(std::min<uint64_t>(split_factor, diagonal_count));
+      uint64_t const pair_work = same_segment
+                                     ? static_cast<uint64_t>(diagonal_count) * (diagonal_count + 1) / 2
+                                     : static_cast<uint64_t>(a_profiles) * b_profiles;
+      uint64_t const work_parts =
+          (pair_work + matrix_profile_native_pairs_per_task - 1) / matrix_profile_native_pairs_per_task;
+      uint32_t const parts =
+          static_cast<uint32_t>(std::min<uint64_t>(std::max(split_factor, work_parts), diagonal_count));
       uint32_t const tile_size = (diagonal_count + parts - 1) / parts;
       uint32_t const tile_count = (diagonal_count + tile_size - 1) / tile_size;
       uint32_t const keep_tiles = static_cast<uint32_t>(round(tile_count * s_size + DBL_EPSILON));
@@ -1537,6 +1585,43 @@ static void matrix_profile_add_native_aa_tasks(const std::vector<MatrixProfileFi
           uint32_t const begin = diagonal_begin + tile * tile_size;
           uint32_t const end = std::min(diagonal_begin + diagonal_count, begin + tile_size);
           tasks.push_back(MatrixProfileSegmentPairTask{a, b, begin, end});
+        }
+      }
+    }
+  }
+}
+
+// Exact AA joins use rectangular profile blocks instead of repeatedly giving
+// diagonal tiles scratch buffers covering their complete source segments.
+// Rectangles keep both output ranges cache-sized and still traverse every
+// pair exactly once.  Sampled joins retain the diagonal task generator above,
+// because its diagonal-level sampling defines their anytime semantics.
+static void matrix_profile_add_native_aa_block_tasks(const std::vector<MatrixProfileFiniteSegment> &segments,
+                                                     uint32_t window_size,
+                                                     std::vector<MatrixProfileSegmentPairTask> &tasks) {
+  uint32_t const block_size = matrix_profile_native_aa_block_size();
+  for (std::size_t a_segment_index = 0; a_segment_index < segments.size(); a_segment_index++) {
+    for (std::size_t b_segment_index = a_segment_index; b_segment_index < segments.size(); b_segment_index++) {
+      MatrixProfileFiniteSegment const &a = segments[a_segment_index];
+      MatrixProfileFiniteSegment const &b = segments[b_segment_index];
+      uint32_t const a_profiles = a.profile_length(window_size);
+      uint32_t const b_profiles = b.profile_length(window_size);
+      bool const same_segment = a_segment_index == b_segment_index;
+
+      for (uint32_t a_begin = 0; a_begin < a_profiles; a_begin += block_size) {
+        uint32_t const a_end = std::min(a_profiles, a_begin + block_size);
+        uint32_t const first_b = same_segment ? a_begin : 0;
+        for (uint32_t b_begin = first_b; b_begin < b_profiles; b_begin += block_size) {
+          uint32_t const b_end = std::min(b_profiles, b_begin + block_size);
+          MatrixProfileSegmentPairTask task;
+          task.a = a;
+          task.b = b;
+          task.rectangular = true;
+          task.a_profile_begin = a_begin;
+          task.a_profile_end = a_end;
+          task.b_profile_begin = b_begin;
+          task.b_profile_end = b_end;
+          tasks.push_back(task);
         }
       }
     }
@@ -1642,7 +1727,7 @@ public:
           uint32_t const a_global = task.a.sample_begin + a_local;
           uint32_t const b_global = task.b.sample_begin + b_local;
           double const correlation = covariance * sig_a_ptr[a_global] * sig_b_ptr[b_global];
-          if (std::isfinite(correlation)) {
+          if ((task.a.all_windows_valid && task.b.all_windows_valid) || std::isfinite(correlation)) {
             if (correlation > local_mp_a[a_local]) {
               local_mp_a[a_local] = correlation;
               if (keep_indices) local_mpi_a[a_local] = b_global + 1;
@@ -1716,13 +1801,18 @@ List mpxab_na_segmented_native_rcpp_parallel(NumericVector data_ref, NumericVect
   NumericVector sig_b = stats_b["sig"];
   LogicalVector valid_a = stats_a["valid_window"];
   LogicalVector valid_b = stats_b["valid_window"];
-  if (!matrix_profile_validity_is_only_nonfinite(data_ref, window_size, valid_a) ||
-      !matrix_profile_validity_is_only_nonfinite(query_ref, window_size, valid_b)) {
-    Rcpp::stop("the native segmented NA-aware AB join supports only finite windows with non-finite barriers; use mpxab_na_rcpp_parallel for constant or non-normalizable windows");
-  }
+  // Finite segments may still contain constant or otherwise
+  // non-normalizable windows.  muinvn_na_parallel marks those windows as
+  // invalid by leaving their inverse norm non-finite.  The native worker
+  // already rejects their correlations with std::isfinite() while continuing
+  // the covariance recurrence through the surrounding finite samples, and
+  // the final reduction applies valid_a/valid_b to the output.  Therefore they
+  // do not require falling back to the monolithic NA-aware implementation.
 
-  std::vector<MatrixProfileFiniteSegment> const segments_a = matrix_profile_finite_segments(data_ref, window_size);
-  std::vector<MatrixProfileFiniteSegment> const segments_b = matrix_profile_finite_segments(query_ref, window_size);
+  std::vector<MatrixProfileFiniteSegment> segments_a = matrix_profile_finite_segments(data_ref, window_size);
+  std::vector<MatrixProfileFiniteSegment> segments_b = matrix_profile_finite_segments(query_ref, window_size);
+  matrix_profile_annotate_segment_validity(segments_a, window_size, valid_a);
+  matrix_profile_annotate_segment_validity(segments_b, window_size, valid_b);
   if (segments_a.empty() || segments_b.empty()) {
     Rcpp::stop("the native segmented NA-aware AB join requires at least one finite window in both series");
   }
@@ -1850,6 +1940,79 @@ public:
 
     for (std::size_t task_index = begin; task_index < end; task_index++) {
       MatrixProfileSegmentPairTask const &task = tasks[task_index];
+      if (task.rectangular) {
+        uint32_t const a_count = task.a_profile_end - task.a_profile_begin;
+        uint32_t const b_count = task.b_profile_end - task.b_profile_begin;
+        bool const same_segment = task.a.sample_begin == task.b.sample_begin;
+        bool const all_windows_valid = task.a.all_windows_valid && task.b.all_windows_valid;
+        local_a.assign(a_count, R_NegInf);
+        local_b.assign(b_count, R_NegInf);
+        if (keep_indices) {
+          local_i_a.assign(a_count, NA_INTEGER);
+          local_i_b.assign(b_count, NA_INTEGER);
+        }
+
+        uint32_t const diagonal_count = a_count + b_count - 1;
+        for (uint32_t diagonal = 0; diagonal < diagonal_count; diagonal++) {
+          uint32_t const a_relative = diagonal < a_count ? diagonal : 0;
+          uint32_t const b_relative = diagonal < a_count ? 0 : diagonal - a_count + 1;
+          uint32_t const diagonal_length = std::min(a_count - a_relative, b_count - b_relative);
+          uint32_t const a_local_start = task.a_profile_begin + a_relative;
+          uint32_t const b_local_start = task.b_profile_begin + b_relative;
+
+          // A diagonal inside a same-segment rectangle has a constant index
+          // difference, so the complete diagonal is either inside or outside
+          // the exclusion zone.
+          if (same_segment &&
+              static_cast<int64_t>(b_local_start) - static_cast<int64_t>(a_local_start) <= exclusion) {
+            continue;
+          }
+
+          uint32_t const a_start = task.a.sample_begin + a_local_start;
+          uint32_t const b_start = task.b.sample_begin + b_local_start;
+          double covariance = covariance_at(data_ptr, mu_ptr, a_start, b_start, window_size);
+          for (uint32_t offset = 0; offset < diagonal_length; offset++) {
+            uint32_t const a_relative_offset = a_relative + offset;
+            uint32_t const b_relative_offset = b_relative + offset;
+            uint32_t const a_global = a_start + offset;
+            uint32_t const b_global = b_start + offset;
+            double const correlation = covariance * sig_ptr[a_global] * sig_ptr[b_global];
+            if (all_windows_valid || std::isfinite(correlation)) {
+              if (correlation > local_a[a_relative_offset]) {
+                local_a[a_relative_offset] = correlation;
+                if (keep_indices) local_i_a[a_relative_offset] = b_global + 1;
+              }
+              if (correlation > local_b[b_relative_offset]) {
+                local_b[b_relative_offset] = correlation;
+                if (keep_indices) local_i_b[b_relative_offset] = a_global + 1;
+              }
+            }
+            if (offset + 1 < diagonal_length) {
+              uint32_t const next_a = a_global + 1;
+              uint32_t const next_b = b_global + 1;
+              covariance += df_ptr[next_a] * dg_ptr[next_b] + dg_ptr[next_a] * df_ptr[next_b];
+            }
+          }
+        }
+
+        std::lock_guard<decltype(mutex)> lock(mutex);
+        for (uint32_t a_relative = 0; a_relative < a_count; a_relative++) {
+          uint32_t const a_global = task.a.sample_begin + task.a_profile_begin + a_relative;
+          if (local_a[a_relative] > mp_ptr[a_global]) {
+            mp_ptr[a_global] = local_a[a_relative];
+            if (keep_indices) mpi_ptr[a_global] = local_i_a[a_relative];
+          }
+        }
+        for (uint32_t b_relative = 0; b_relative < b_count; b_relative++) {
+          uint32_t const b_global = task.b.sample_begin + task.b_profile_begin + b_relative;
+          if (local_b[b_relative] > mp_ptr[b_global]) {
+            mp_ptr[b_global] = local_b[b_relative];
+            if (keep_indices) mpi_ptr[b_global] = local_i_b[b_relative];
+          }
+        }
+        continue;
+      }
+
       uint32_t const a_profiles = task.a.profile_length(window_size);
       uint32_t const b_profiles = task.b.profile_length(window_size);
       bool const same_segment = task.a.sample_begin == task.b.sample_begin;
@@ -1872,7 +2035,7 @@ public:
           uint32_t const a_global = task.a.sample_begin + a_local;
           uint32_t const b_global = task.b.sample_begin + b_local;
           double const correlation = covariance * sig_ptr[a_global] * sig_ptr[b_global];
-          if (std::isfinite(correlation)) {
+          if ((task.a.all_windows_valid && task.b.all_windows_valid) || std::isfinite(correlation)) {
             if (correlation > local_a[a_local]) {
               local_a[a_local] = correlation;
               if (keep_indices) local_i_a[a_local] = b_global + 1;
@@ -1962,10 +2125,12 @@ List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t wind
   NumericVector mu = stats["avg"];
   NumericVector sig = stats["sig"];
   LogicalVector valid_window = stats["valid_window"];
-  if (!matrix_profile_validity_is_only_nonfinite(data_ref, window_size, valid_window)) {
-    Rcpp::stop("the native segmented NA-aware self join supports only finite windows with non-finite barriers; use mpx_na_rcpp_parallel for constant or non-normalizable windows");
-  }
-  std::vector<MatrixProfileFiniteSegment> const segments = matrix_profile_finite_segments(data_ref, window_size);
+  // Constant and otherwise non-normalizable windows remain inside their
+  // finite sample segment, but carry a non-finite inverse norm.  The worker
+  // ignores their correlations and the output pass masks them, while valid
+  // neighbouring windows keep using the finite-sample recurrence.
+  std::vector<MatrixProfileFiniteSegment> segments = matrix_profile_finite_segments(data_ref, window_size);
+  matrix_profile_annotate_segment_validity(segments, window_size, valid_window);
   if (segments.empty()) {
     Rcpp::stop("the native segmented NA-aware self join requires at least one finite window");
   }
@@ -1979,8 +2144,12 @@ List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t wind
   std::vector<MatrixProfileSegmentPairTask> tasks;
   tasks.reserve(segments.size() * (segments.size() + 1) / 2);
   bool partial = false;
-  matrix_profile_add_native_aa_tasks(segments, window_size, static_cast<uint32_t>(round(window_size * ez)), s_size,
-                                     tasks, partial);
+  if (s_size == 1.0) {
+    matrix_profile_add_native_aa_block_tasks(segments, window_size, tasks);
+  } else {
+    matrix_profile_add_native_aa_tasks(segments, window_size, static_cast<uint32_t>(round(window_size * ez)), s_size,
+                                       tasks, partial);
+  }
 
   NumericVector mp(profile_len, R_NegInf);
   IntegerVector mpi;

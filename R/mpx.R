@@ -8,7 +8,8 @@
 #' @param na_strategy (`mpx()` only) Strategy for a parallel NA-aware join: `"monolithic"` (the default),
 #'   `"segmented"`, or `"segmented_native"`. The native strategy supports sampled diagonal tiles when
 #'   `s_size < 1`, marks the result as partial, and shares one native pre-calculation and scheduler across finite
-#'   blocks. Segmented strategies support non-finite barriers, but not constant or otherwise non-normalizable windows.
+#'   blocks. The native strategy also masks constant or otherwise non-normalizable windows. The `"segmented"`
+#'   reference strategy remains restricted to inputs whose invalid windows are caused only by non-finite barriers.
 #'
 #' @details ## mpx
 #' This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
@@ -24,6 +25,34 @@
 #' result is exact but an interruption before completion can be less
 #' representative than a randomized partial run. Use `s_size < 1` when an
 #' interrupted result should remain an anytime approximation.
+#'
+#' The native segmented parallel AA implementation has an optional cache-tuning
+#' setting for large NA-aware self-joins. This setting applies only when
+#' `na_strategy = "segmented_native"` selects the native NA-aware parallel path.
+#' When `s_size = 1`, `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE` controls the number of
+#' profile windows in each rectangular internal block. Its default is `8192`;
+#' values from `1024` to `262144` are accepted and invalid values fall back to
+#' the default. For example, set it for one shell invocation with
+#' `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE=16384 Rscript script.R`, or set it in R
+#' with `Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = "16384")` before
+#' calling `mpx()`. Remove the override with
+#' `Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")`. The setting is read
+#' at call time, does not change the public `mpx()` API or its numerical
+#' parameters, and is ignored for AB joins, finite inputs using regular MPX,
+#' and sampled native runs with `s_size < 1`. It primarily trades cache
+#' locality against task overhead; `8192` is a suitable starting point, while
+#' larger values should only be selected after benchmarking a substantially
+#' larger workload.
+#'
+#' The internal C++ target `matrix_profile_native_pairs_per_task` (currently
+#' `100000000` pairwise window comparisons) controls the granularity of native
+#' parallel AB tasks and sampled AA tasks. It is used only by the native
+#' NA-aware parallel implementation. It is not an `mpx()` argument or an
+#' environment variable; changing it requires a source change and recompiling
+#' the package. It is normally left unchanged: increase it only when profiling
+#' a very large workload shows excessive scheduling overhead, while retaining
+#' several tasks per worker for load balancing. Neither setting affects the
+#' regular MPX paths or the serial NA-aware implementations.
 #'
 #' @seealso `mpxab()` for the forward and reverse join-similarity.
 #'
