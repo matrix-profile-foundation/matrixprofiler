@@ -538,6 +538,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rfcp_na_segmented_native_rcpp_parallel
+List rfcp_na_segmented_native_rcpp_parallel(NumericVector positive_ref, NumericVector negative_ref, uint64_t window_size, uint32_t max_freq, uint32_t exclusion_radius, uint64_t query_begin, uint64_t query_end, bool return_profiles, bool progress);
+RcppExport SEXP _matrixprofiler_rfcp_na_segmented_native_rcpp_parallel(SEXP positive_refSEXP, SEXP negative_refSEXP, SEXP window_sizeSEXP, SEXP max_freqSEXP, SEXP exclusion_radiusSEXP, SEXP query_beginSEXP, SEXP query_endSEXP, SEXP return_profilesSEXP, SEXP progressSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type positive_ref(positive_refSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type negative_ref(negative_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type max_freq(max_freqSEXP);
+    Rcpp::traits::input_parameter< uint32_t >::type exclusion_radius(exclusion_radiusSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type query_begin(query_beginSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type query_end(query_endSEXP);
+    Rcpp::traits::input_parameter< bool >::type return_profiles(return_profilesSEXP);
+    Rcpp::traits::input_parameter< bool >::type progress(progressSEXP);
+    rcpp_result_gen = Rcpp::wrap(rfcp_na_segmented_native_rcpp_parallel(positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, return_profiles, progress));
+    return rcpp_result_gen;
+END_RCPP
+}
 // scrimp_rcpp
 List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez, double s_size, double pre_scrimp, bool progress);
 RcppExport SEXP _matrixprofiler_scrimp_rcpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP s_sizeSEXP, SEXP pre_scrimpSEXP, SEXP progressSEXP) {
@@ -920,6 +939,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mpx_na_segmented_native_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_na_segmented_native_rcpp_parallel, 7},
     {"_matrixprofiler_mpxab_na_segmented_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_na_segmented_rcpp_parallel, 7},
     {"_matrixprofiler_mpxab_na_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_na_rcpp_parallel, 7},
+    {"_matrixprofiler_rfcp_na_segmented_native_rcpp_parallel", (DL_FUNC) &_matrixprofiler_rfcp_na_segmented_native_rcpp_parallel, 9},
     {"_matrixprofiler_scrimp_rcpp", (DL_FUNC) &_matrixprofiler_scrimp_rcpp, 7},
     {"_matrixprofiler_scrimp_rcpp_parallel", (DL_FUNC) &_matrixprofiler_scrimp_rcpp_parallel, 6},
     {"_matrixprofiler_scrimpab_rcpp", (DL_FUNC) &_matrixprofiler_scrimpab_rcpp, 5},

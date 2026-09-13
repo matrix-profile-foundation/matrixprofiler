@@ -2,11 +2,37 @@ NEWS
 ================
 Francisco Bischoff
 
-11 Sep 2026
+14 Sep 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
+## matrixprofiler 0.1.11.9006
+
+- Completed the native NA-aware RFCP implementation with deterministic
+  AA/AB neighbor ranks, restartable query blocks, compact Plato output,
+  and optional allocation-guarded full-profile matrices.
+- Added adaptive MASS-style FFT initialization for large RFCP blocks
+  while retaining direct initialization for small inputs; the
+  implementation advances subsequent rows with a STOMP-style covariance
+  recurrence.
+- Added RFCP correctness, barrier, tie-breaking, serial/parallel,
+  block-composition, near-constant, and performance regression coverage.
+
 ## matrixprofiler 0.1.11.9005
+
+- Added `rfcp()`, an exact parallel NA-aware Relative Frequency Contrast
+  Profile implementation with deterministic greedy non-overlapping
+  neighbor ranks, fixed-frequency RMSC semantics, restartable
+  positive-query blocks, and an allocation-guarded full-profile
+  validation mode.
+
+- Added the fused native `rfcp_na_segmented_native_rcpp_parallel()`
+  kernel, which shares rolling normalization across AA and AB
+  computations, initializes large blocks with a MASS-style FFT
+  convolution, advances subsequent distance profiles with a STOMP-style
+  covariance recurrence, respects non-finite barriers and
+  non-normalizable windows, and avoids materializing the pairwise
+  distance matrix.
 
 - Added independently selectable native finite-block segmentation for
   NA-aware MPX self-joins and AB-joins through

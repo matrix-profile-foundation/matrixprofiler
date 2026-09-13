@@ -141,6 +141,10 @@ mpxab_na_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idx
     .Call(`_matrixprofiler_mpxab_na_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
 }
 
+rfcp_na_segmented_native_rcpp_parallel <- function(positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, return_profiles, progress) {
+    .Call(`_matrixprofiler_rfcp_na_segmented_native_rcpp_parallel`, positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, return_profiles, progress)
+}
+
 scrimp_rcpp <- function(data_ref, query_ref, window_size, ez, s_size, pre_scrimp, progress) {
     .Call(`_matrixprofiler_scrimp_rcpp`, data_ref, query_ref, window_size, ez, s_size, pre_scrimp, progress)
 }
