@@ -22,10 +22,15 @@ knitr::opts_chunk$set(
 )
 ```
 
+## matrixprofiler 0.1.11.9007
+
+-   Optimized RFCP worker execution by reusing covariance, candidate, rank, and exclusion buffers across query blocks and carrying exclusion stamps between blocks.
+
 ## matrixprofiler 0.1.11.9006
 
 -   Completed the native NA-aware RFCP implementation with deterministic AA/AB neighbor ranks, restartable query blocks, compact Plato output, and optional allocation-guarded full-profile matrices.
 -   Added adaptive MASS-style FFT initialization for large RFCP blocks while retaining direct initialization for small inputs; the implementation advances subsequent rows with a STOMP-style covariance recurrence.
+-   Reused worker-local covariance, candidate, rank, and exclusion buffers across RFCP blocks, carrying exclusion stamps between blocks to reduce allocation and reset overhead.
 -   Added RFCP correctness, barrier, tie-breaking, serial/parallel, block-composition, near-constant, and performance regression coverage.
 
 ## matrixprofiler 0.1.11.9005

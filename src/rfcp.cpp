@@ -242,7 +242,6 @@ private:
                                    std::vector<double> &distances, std::vector<int> &indices) {
     uint32_t const reference_profiles = covariance.size();
     candidates.clear();
-    candidates.reserve(reference_profiles);
     uint32_t const self_left = self_join && query_index > exclusion_radius
                                    ? query_index - exclusion_radius
                                    : 0;
@@ -343,29 +342,36 @@ public:
     uint32_t const positive_profiles = mean_positive.size();
     uint32_t const negative_profiles = mean_negative.size();
     double const clip = std::sqrt(2.0 * window_size);
+    uint32_t const max_reference_profiles = std::max(positive_profiles, negative_profiles);
+
+    // These buffers belong to one executor invocation and are deliberately
+    // reused across its query blocks.  Reallocating them per block is costly
+    // for large segmented streams, while the exclusion stamps let us avoid
+    // clearing the full reference-profile-sized mask between blocks.
+    std::vector<double> covariance_aa;
+    std::vector<double> covariance_ab;
+    std::vector<RFCPCandidate> candidates;
+    candidates.reserve(max_reference_profiles);
+    std::vector<uint32_t> exclusion_marks(max_reference_profiles, 0);
+    uint32_t exclusion_stamp = 0;
+    std::vector<double> aa_distances(max_freq, NA_REAL);
+    std::vector<double> ab_distances(max_freq, NA_REAL);
+    std::vector<double> rfcp_values(max_freq, NA_REAL);
+    std::vector<int> aa_indices(max_freq, NA_INTEGER);
+    std::vector<int> ab_indices(max_freq, NA_INTEGER);
+    RFCPTaskBest best;
 
     for (std::size_t task_index = begin; task_index < end; task_index++) {
       RFCPQueryTask const &task = tasks[task_index];
-      std::vector<double> covariance_aa;
-      std::vector<double> covariance_ab;
       initialize_covariances(positive_ptr, positive_ptr, mean_positive_ptr,
                              mean_positive_ptr, task.anchor_begin, positive.size(),
                              window_size, covariance_aa);
       initialize_covariances(positive_ptr, negative_ptr, mean_positive_ptr,
                              mean_negative_ptr, task.anchor_begin, negative.size(),
                              window_size, covariance_ab);
-
-      std::vector<RFCPCandidate> candidates;
-      candidates.reserve(std::max(positive_profiles, negative_profiles));
-      std::vector<uint32_t> exclusion_marks(
-          std::max(positive_profiles, negative_profiles), 0);
-      uint32_t exclusion_stamp = 0;
-      std::vector<double> aa_distances(max_freq, NA_REAL);
-      std::vector<double> ab_distances(max_freq, NA_REAL);
-      std::vector<double> rfcp_values(max_freq, NA_REAL);
-      std::vector<int> aa_indices(max_freq, NA_INTEGER);
-      std::vector<int> ab_indices(max_freq, NA_INTEGER);
-      RFCPTaskBest best;
+      best.available = false;
+      best.query_index = 0;
+      best.rms = R_NegInf;
 
       for (uint32_t query_index = task.anchor_begin; query_index < task.output_end;
            query_index++) {
@@ -437,7 +443,7 @@ public:
         }
         completed_ptr[output_index] = true;
       }
-      task_best[task_index] = std::move(best);
+      task_best[task_index] = best;
     }
   }
 };
