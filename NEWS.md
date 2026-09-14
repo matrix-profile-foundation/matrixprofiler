@@ -11,6 +11,11 @@ Francisco Bischoff
 - Optimized RFCP worker execution by reusing covariance, candidate,
   rank, and exclusion buffers across query blocks and carrying exclusion
   stamps between blocks.
+- Made RFCP query tiling worker-aware: the native kernel now starts the
+  first tile at `query_begin`, derives the tile size from the query
+  count and effective worker count, and reports `query_rows_per_task`,
+  `n_tasks`, and `effective_workers` for diagnostics while preserving
+  the public `rfcp()` API.
 
 ## matrixprofiler 0.1.11.9006
 

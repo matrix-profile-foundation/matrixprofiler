@@ -44,11 +44,18 @@
 #' coordinates and can be concatenated for checkpointed execution. With
 #' `return_profiles = TRUE`, RFMP matrices contain unclipped z-normalized
 #' Euclidean distances and RFCP contains the corresponding clipped contrasts.
+#' Native query tiles use
+#' `min(32768, max(1024, 16 * window_size))`, further capped at the ceiling of
+#' the requested query count divided by the effective worker count. The first
+#' tile starts at `query_begin`, so checkpoint blocks do not perform discarded
+#' warm-up rows.
 #'
 #' @return A list containing `rms_profile`, complete positive and negative
 #'   validity masks, the selected Plato index and first AA twin, the RFCP/RFMP
 #'   rank vectors at that Plato, query-range and completion metadata, and
-#'   optionally the complete rank-by-query matrices.
+#'   optionally the complete rank-by-query matrices. Diagnostic fields
+#'   `query_rows_per_task`, `n_tasks`, and `effective_workers` report the
+#'   native tile granularity and effective executor count.
 #'
 #' @export
 #' @examples
@@ -104,6 +111,7 @@ rfcp <- function(positive_data, negative_data, window_size, max_freq,
     exclusion_radius,
     as.numeric(query_begin - 1L),
     as.numeric(query_end),
+    n_workers,
     as.logical(return_profiles),
     as.logical(progress)
   )

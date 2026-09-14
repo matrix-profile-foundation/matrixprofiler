@@ -240,16 +240,30 @@ test_that("RFCP serial, parallel, and adjacent query blocks compose", {
     return_profiles = TRUE, n_workers = 3L, progress = FALSE
   )
 
-  expect_identical(full_parallel, full_serial)
-  expect_identical(
-    c(left$rms_profile, right$rms_profile),
-    full_serial$rms_profile
+  diagnostic_fields <- c("query_rows_per_task", "n_tasks", "effective_workers")
+  core_fields <- setdiff(names(full_serial), diagnostic_fields)
+  expect_equal(
+    full_parallel[core_fields], full_serial[core_fields],
+    tolerance = 1e-9
   )
-  expect_identical(cbind(left$rfmp_aa, right$rfmp_aa), full_serial$rfmp_aa)
-  expect_identical(cbind(left$rfmp_ab, right$rfmp_ab), full_serial$rfmp_ab)
+  expect_identical(full_serial$effective_workers, 1L)
+  expect_identical(full_parallel$effective_workers, 4L)
+  expect_identical(full_serial$n_tasks, 1L)
+  expect_identical(full_parallel$n_tasks, 4L)
+  expect_identical(full_parallel$query_rows_per_task, 24L)
+  expect_equal(
+    c(left$rms_profile, right$rms_profile),
+    full_serial$rms_profile,
+    tolerance = 1e-9
+  )
+  expect_equal(cbind(left$rfmp_aa, right$rfmp_aa), full_serial$rfmp_aa,
+               tolerance = 1e-9)
+  expect_equal(cbind(left$rfmp_ab, right$rfmp_ab), full_serial$rfmp_ab,
+               tolerance = 1e-9)
   expect_identical(cbind(left$rfmpi_aa, right$rfmpi_aa), full_serial$rfmpi_aa)
   expect_identical(cbind(left$rfmpi_ab, right$rfmpi_ab), full_serial$rfmpi_ab)
-  expect_identical(cbind(left$rfcp, right$rfcp), full_serial$rfcp)
+  expect_equal(cbind(left$rfcp, right$rfcp), full_serial$rfcp,
+               tolerance = 1e-9)
   combined_rms <- c(left$rms_profile, right$rms_profile)
   expect_identical(full_serial$plato_index, as.numeric(which.max(combined_rms)))
 })

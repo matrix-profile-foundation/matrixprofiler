@@ -62,13 +62,23 @@ struct RFCPTaskBest {
   std::vector<int> ab_indices;
 };
 
-static uint32_t rfcp_query_rows_per_task(uint32_t window_size) {
+static uint32_t rfcp_query_rows_per_task(uint32_t window_size,
+                                         uint32_t query_count,
+                                         uint32_t effective_workers) {
   // A direct covariance profile initializes each fixed task.  Keeping at
   // least sixteen times m rows amortizes that restart to roughly six percent
   // of the pairwise work, while the bounds retain enough tasks for small and
-  // very large inputs.
+  // very large inputs.  The worker count additionally caps the tile size so
+  // that a sufficiently large request exposes work to every configured
+  // executor thread.
   uint64_t const scaled = 16ULL * window_size;
-  return static_cast<uint32_t>(std::max<uint64_t>(1024ULL, std::min<uint64_t>(32768ULL, scaled)));
+  uint64_t const base_rows = std::max<uint64_t>(
+      1024ULL, std::min<uint64_t>(32768ULL, scaled));
+  uint64_t const rows_for_workers =
+      (static_cast<uint64_t>(query_count) + effective_workers - 1) /
+      effective_workers;
+  return static_cast<uint32_t>(std::max<uint64_t>(
+      1ULL, std::min(base_rows, rows_for_workers)));
 }
 
 static void rfcp_fill_differences(const NumericVector &data, const NumericVector &mean,
@@ -460,6 +470,7 @@ List rfcp_na_segmented_native_rcpp_parallel(NumericVector positive_ref,
                                              uint32_t exclusion_radius,
                                              uint64_t query_begin,
                                              uint64_t query_end,
+                                             uint32_t n_workers,
                                              bool return_profiles,
                                              bool progress) {
   uint64_t const positive_size = positive_ref.length();
@@ -487,6 +498,7 @@ List rfcp_na_segmented_native_rcpp_parallel(NumericVector positive_ref,
   uint32_t const request_begin = query_begin;
   uint32_t const request_end = query_end;
   uint32_t const query_count = request_end - request_begin;
+  uint32_t const effective_workers = std::max<uint32_t>(1U, n_workers);
   uint64_t const profile_cells = static_cast<uint64_t>(query_count) * max_freq;
   if (return_profiles && profile_cells > rfcp_max_profile_cells) {
     Rcpp::stop("return_profiles exceeds the limit of 5,000,000 rank-query cells");
@@ -511,19 +523,15 @@ List rfcp_na_segmented_native_rcpp_parallel(NumericVector positive_ref,
   rfcp_fill_differences(positive, mean_positive, window_size, df_positive, dg_positive);
   rfcp_fill_differences(negative, mean_negative, window_size, df_negative, dg_negative);
 
-  uint32_t const rows_per_task = rfcp_query_rows_per_task(window_size);
-  uint32_t const first_anchor = (request_begin / rows_per_task) * rows_per_task;
+  uint32_t const rows_per_task = rfcp_query_rows_per_task(
+      window_size, query_count, effective_workers);
   std::vector<RFCPQueryTask> tasks;
-  for (uint64_t anchor64 = first_anchor; anchor64 < request_end;
+  for (uint64_t anchor64 = request_begin; anchor64 < request_end;
        anchor64 += rows_per_task) {
     uint32_t const anchor = static_cast<uint32_t>(anchor64);
     uint32_t const block_end = static_cast<uint32_t>(std::min<uint64_t>(
-        positive_profiles, anchor64 + rows_per_task));
-    uint32_t const output_begin = std::max(request_begin, anchor);
-    uint32_t const output_end = std::min(request_end, block_end);
-    if (output_begin < output_end) {
-      tasks.push_back(RFCPQueryTask{anchor, output_begin, output_end});
-    }
+        request_end, anchor64 + rows_per_task));
+    tasks.push_back(RFCPQueryTask{anchor, anchor, block_end});
   }
 
   NumericVector rms_profile(query_count, NA_REAL);
@@ -648,7 +656,9 @@ List rfcp_na_segmented_native_rcpp_parallel(NumericVector positive_ref,
                                                        ? Rcpp::wrap(static_cast<double>(request_begin + completed_count))
                                                        : Rcpp::wrap(NA_REAL),
       Rcpp::Named("partial") = partial,
-      Rcpp::Named("query_rows_per_task") = static_cast<int>(rows_per_task));
+      Rcpp::Named("query_rows_per_task") = static_cast<int>(rows_per_task),
+      Rcpp::Named("n_tasks") = static_cast<int>(tasks.size()),
+      Rcpp::Named("effective_workers") = static_cast<int>(effective_workers));
 
   if (return_profiles) {
     IntegerVector const dimensions = IntegerVector::create(max_freq, query_count);
