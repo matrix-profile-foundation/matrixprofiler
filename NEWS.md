@@ -6,6 +6,24 @@ Francisco Bischoff
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
+## matrixprofiler 0.1.11.9009
+
+- Added an optional CUDA backend for exact RFCP (Relative Frequency
+  Contrast Profile) computations through `rfcp(..., backend = "cuda")`,
+  with full support for finite and NA-barrier series, query subsetting,
+  and full-profile matrix extraction (`return_profiles = TRUE`).
+- Accelerated candidate sorting and greedy neighbor selection 100% on
+  the GPU using `cub::DeviceSegmentedRadixSort` and a specialized CUDA
+  exclusion kernel, eliminating PCIe bandwidth bottlenecks and
+  delivering up to 55x speedup over CPU-sorting GPU baselines and over
+  12x speedup compared to single-threaded CPU execution.
+- Added GPU regression and numerical equivalence tests against the
+  native CPU implementation, verifying exact Plato detection and
+  machine-precision distance profiles ($10^{-14}$) on real datasets.
+- Kept CUDA source in `inst/cuda/` and linked conditionally via
+  `MATRIXPROFILER_ENABLE_CUDA`, preserving standard CUDA-free CRAN
+  compatibility.
+
 ## matrixprofiler 0.1.11.9008
 
 - Added an optional CUDA backend for exact MPX self-joins and AB-joins

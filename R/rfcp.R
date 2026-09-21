@@ -19,7 +19,11 @@
 #' @param return_profiles Whether to return the complete RFMP, RFCP, and index
 #'   matrices for the requested query block. This validation mode is limited
 #'   to 5,000,000 rank-query cells. Defaults to `FALSE`.
-#' @param n_workers Number of native worker threads. Defaults to `1`.
+#' @param n_workers Number of native worker threads for the CPU backend.
+#'   Ignored when `backend = "cuda"`. Defaults to `1`.
+#' @param backend Computation backend: `"cpu"` (default) or `"cuda"`. The CUDA
+#'   backend is optional and requires a local build with CUDA enabled (see
+#'   `inst/cuda/build_cuda_rcpp.sh`).
 #' @param progress Logical progress flag. Reserved for native progress
 #'   reporting; defaults to `TRUE`.
 #'
@@ -49,28 +53,46 @@
 #' the requested query count divided by the effective worker count. The first
 #' tile starts at `query_begin`, so checkpoint blocks do not perform discarded
 #' warm-up rows.
+#' The CUDA backend executes the full join query-by-query with optional profile
+#' matrices returned identically to the CPU backend.
 #'
-#' @return A list containing `rms_profile`, complete positive and negative
-#'   validity masks, the selected Plato index and first AA twin, the RFCP/RFMP
-#'   rank vectors at that Plato, query-range and completion metadata, and
-#'   optionally the complete rank-by-query matrices. Diagnostic fields
-#'   `query_rows_per_task`, `n_tasks`, and `effective_workers` report the
-#'   native tile granularity and effective executor count.
+#' @return A list with RFCP outputs:
+#' \itemize{
+#'   \item `rms_profile`: numeric vector of root-mean-square contrasts.
+#'   \item `valid_window_positive`: logical mask of valid query windows.
+#'   \item `valid_window_negative`: logical mask of valid reference windows.
+#'   \item `plato_index`: one-based index of the highest-contrast query.
+#'   \item `plato_rms`: contrast score at `plato_index`.
+#'   \item `plato_twin_index`: one-based index of the nearest self-join neighbor
+#'     at `plato_index`.
+#'   \item `rfcp_at_plato`: clipped contrasts across accepted neighbor ranks.
+#'   \item `rfmp_aa_at_plato`: positive self-join distances at plato.
+#'   \item `rfmp_ab_at_plato`: negative AB distances at plato.
+#'   \item `rfmpi_aa_at_plato`: positive neighbor indices at plato.
+#'   \item `rfmpi_ab_at_plato`: negative neighbor indices at plato.
+#'   \item `requested_max_freq`: requested rank count.
+#'   \item `effective_max_freq`: highest paired rank observed.
+#'   \item `query_begin`, `query_end`: one-based query range.
+#'   \item `completed_query_end`: end of completed queries.
+#'   \item `partial`: whether computation stopped early.
+#'   \item `rfmp_aa`, `rfmp_ab`, `rfcp`, `rfmpi_aa`, `rfmpi_ab`: optional
+#'     full profile matrices when `return_profiles = TRUE`.
+#' }
 #'
 #' @export
 #' @examples
-#' positive <- c(sin(seq(0, 4 * pi, length.out = 80)), NA,
-#'               sin(seq(0, 4 * pi, length.out = 80)))
-#' negative <- cos(seq(0, 10 * pi, length.out = 180))
-#' result <- rfcp(positive, negative, 16, max_freq = 3,
-#'                n_workers = 2, progress = FALSE)
+#' pos <- c(sin(seq(0, 4 * pi, length.out = 100)))
+#' neg <- c(cos(seq(0, 10 * pi, length.out = 150)))
+#' res <- rfcp(pos, neg, window_size = 10, max_freq = 2)
+#' res$plato_index
 rfcp <- function(positive_data, negative_data, window_size, max_freq,
                  exclusion_radius = NULL, query_begin = 1L, query_end = NULL,
-                 return_profiles = FALSE, n_workers = 1L, progress = TRUE) {
+                 return_profiles = FALSE, n_workers = 1L, progress = TRUE,
+                 backend = "cpu") {
   positive_data <- as.numeric(positive_data)
   negative_data <- as.numeric(negative_data)
   if (!length(positive_data) || !length(negative_data)) {
-    stop("`positive_data` and `negative_data` must be non-empty numeric vectors.",
+    stop("Both positive_data and negative_data must be non-empty numeric vectors.",
       call. = FALSE
     )
   }
@@ -97,6 +119,20 @@ rfcp <- function(positive_data, negative_data, window_size, max_freq,
   checkmate::qassert(return_profiles, "B1")
   n_workers <- as.integer(checkmate::qassert(n_workers, "X1[1,)"))
   checkmate::qassert(progress, "B1")
+  backend <- match.arg(backend, c("cpu", "cuda"))
+
+  if (identical(backend, "cuda")) {
+    return(rfcp_gpu_rcpp(
+      positive_data,
+      negative_data,
+      window_size,
+      max_freq,
+      exclusion_radius,
+      as.numeric(query_begin - 1L),
+      as.numeric(query_end),
+      as.logical(return_profiles)
+    ))
+  }
 
   previous_threads <- RcppParallel::defaultNumThreads()
   on.exit(RcppParallel::setThreadOptions(numThreads = previous_threads), add = TRUE)
