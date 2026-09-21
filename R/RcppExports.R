@@ -113,6 +113,22 @@ mpxab_rcpp <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean
     .Call(`_matrixprofiler_mpxab_rcpp`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
 }
 
+mpx_gpu_rcpp <- function(data_ref, window_size, ez, idxs, euclidean) {
+    .Call(`_matrixprofiler_mpx_gpu_rcpp`, data_ref, window_size, ez, idxs, euclidean)
+}
+
+mpx_na_gpu_rcpp <- function(data_ref, window_size, ez, idxs, euclidean) {
+    .Call(`_matrixprofiler_mpx_na_gpu_rcpp`, data_ref, window_size, ez, idxs, euclidean)
+}
+
+mpxab_na_gpu_rcpp <- function(data_ref, query_ref, window_size, idxs, euclidean) {
+    .Call(`_matrixprofiler_mpxab_na_gpu_rcpp`, data_ref, query_ref, window_size, idxs, euclidean)
+}
+
+mpxab_gpu_rcpp <- function(data_ref, query_ref, window_size, idxs, euclidean) {
+    .Call(`_matrixprofiler_mpxab_gpu_rcpp`, data_ref, query_ref, window_size, idxs, euclidean)
+}
+
 mpx_rcpp_parallel <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress) {
     .Call(`_matrixprofiler_mpx_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress)
 }

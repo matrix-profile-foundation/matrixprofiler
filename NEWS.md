@@ -2,9 +2,19 @@ NEWS
 ================
 Francisco Bischoff
 
-14 Sep 2026
+21 Sep 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+## matrixprofiler 0.1.11.9008
+
+- Added an optional CUDA backend for exact MPX self-joins and AB-joins
+  through `mpx(..., backend = "cuda")`, including finite and NA-aware
+  inputs.
+- Added GPU regression coverage against the parallel CPU implementations
+  for profiles, indices, validity masks, and CUDA-free builds.
+- Kept CUDA source and its local build helper distributed in
+  `inst/cuda/` while preserving the default CUDA-free CRAN build.
 
 ## matrixprofiler 0.1.11.9007
 

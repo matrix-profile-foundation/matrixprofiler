@@ -2,6 +2,11 @@
 PKG_CXXFLAGS += -DRCPP_PARALLEL_USE_TBB=1 -DSTRICT_R_HEADERS
 PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
 
+ifneq ($(strip $(MATRIXPROFILER_ENABLE_CUDA)),)
+PKG_CXXFLAGS += -DMATRIXPROFILER_ENABLE_CUDA
+PKG_LIBS += $(MATRIXPROFILER_CUDA_OBJECT) $(MATRIXPROFILER_CUDA_LIBS)
+endif
+
 # use strip -S instead of strip --strip-debug for MacOS compatibility
 # strippedLib: $(SHLIB)
 #	if test -f "/usr/bin/strip"; then /usr/bin/strip -S $(SHLIB); fi

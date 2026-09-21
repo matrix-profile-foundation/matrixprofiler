@@ -419,6 +419,66 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mpx_gpu_rcpp
+List mpx_gpu_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs, bool euclidean);
+RcppExport SEXP _matrixprofiler_mpx_gpu_rcpp(SEXP data_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP idxsSEXP, SEXP euclideanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpx_gpu_rcpp(data_ref, window_size, ez, idxs, euclidean));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mpx_na_gpu_rcpp
+List mpx_na_gpu_rcpp(NumericVector data_ref, uint64_t window_size, double ez, bool idxs, bool euclidean);
+RcppExport SEXP _matrixprofiler_mpx_na_gpu_rcpp(SEXP data_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP idxsSEXP, SEXP euclideanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ez(ezSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpx_na_gpu_rcpp(data_ref, window_size, ez, idxs, euclidean));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mpxab_na_gpu_rcpp
+List mpxab_na_gpu_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs, bool euclidean);
+RcppExport SEXP _matrixprofiler_mpxab_na_gpu_rcpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpxab_na_gpu_rcpp(data_ref, query_ref, window_size, idxs, euclidean));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mpxab_gpu_rcpp
+List mpxab_gpu_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs, bool euclidean);
+RcppExport SEXP _matrixprofiler_mpxab_gpu_rcpp(SEXP data_refSEXP, SEXP query_refSEXP, SEXP window_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type data_ref(data_refSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type query_ref(query_refSEXP);
+    Rcpp::traits::input_parameter< uint64_t >::type window_size(window_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type idxs(idxsSEXP);
+    Rcpp::traits::input_parameter< bool >::type euclidean(euclideanSEXP);
+    rcpp_result_gen = Rcpp::wrap(mpxab_gpu_rcpp(data_ref, query_ref, window_size, idxs, euclidean));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mpx_rcpp_parallel
 List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs, bool euclidean, bool progress);
 RcppExport SEXP _matrixprofiler_mpx_rcpp_parallel(SEXP data_refSEXP, SEXP window_sizeSEXP, SEXP ezSEXP, SEXP s_sizeSEXP, SEXP idxsSEXP, SEXP euclideanSEXP, SEXP progressSEXP) {
@@ -933,6 +993,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_mpx_rcpp", (DL_FUNC) &_matrixprofiler_mpx_rcpp, 8},
     {"_matrixprofiler_mpxab_na_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_na_rcpp, 7},
     {"_matrixprofiler_mpxab_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_rcpp, 7},
+    {"_matrixprofiler_mpx_gpu_rcpp", (DL_FUNC) &_matrixprofiler_mpx_gpu_rcpp, 5},
+    {"_matrixprofiler_mpx_na_gpu_rcpp", (DL_FUNC) &_matrixprofiler_mpx_na_gpu_rcpp, 5},
+    {"_matrixprofiler_mpxab_na_gpu_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_na_gpu_rcpp, 5},
+    {"_matrixprofiler_mpxab_gpu_rcpp", (DL_FUNC) &_matrixprofiler_mpxab_gpu_rcpp, 5},
     {"_matrixprofiler_mpx_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_rcpp_parallel, 7},
     {"_matrixprofiler_mpx_na_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpx_na_rcpp_parallel, 7},
     {"_matrixprofiler_mpxab_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mpxab_rcpp_parallel, 7},

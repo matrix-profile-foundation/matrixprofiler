@@ -79,9 +79,12 @@ test_that("parallel MPXAB omits indices when idxs is FALSE", {
 
 test_that("parallel MPXAB worker diagnostics are opt-in", {
   previous <- Sys.getenv("MATRIXPROFILER_PROFILE_WORKERS", unset = NA_character_)
-  on.exit({
-    if (is.na(previous)) Sys.unsetenv("MATRIXPROFILER_PROFILE_WORKERS") else Sys.setenv(MATRIXPROFILER_PROFILE_WORKERS = previous)
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(previous)) Sys.unsetenv("MATRIXPROFILER_PROFILE_WORKERS") else Sys.setenv(MATRIXPROFILER_PROFILE_WORKERS = previous)
+    },
+    add = TRUE
+  )
 
   set.seed(2024)
   data <- rnorm(180)
@@ -127,6 +130,102 @@ test_that("parallel MPX honors partial sample size", {
 
   expect_true(parallel$partial)
   expect_equal(parallel, serial, tolerance = 1e-10)
+})
+
+test_that("CUDA MPX matches parallel MPX when CUDA is available", {
+  set.seed(2005)
+  data <- rnorm(512)
+  window_size <- 31L
+
+  gpu <- tryCatch(
+    matrixprofiler:::mpx_gpu_rcpp(data, window_size, 0.5, TRUE, FALSE),
+    error = identity
+  )
+  if (inherits(gpu, "error")) {
+    message <- conditionMessage(gpu)
+    if (message %in% c(
+      "CUDA support is not enabled; rebuild with MATRIXPROFILER_ENABLE_CUDA=1",
+      "no CUDA-capable GPU is available"
+    )) {
+      skip(message)
+    }
+    stop(message, call. = FALSE)
+  }
+
+  cpu <- matrixprofiler:::mpx_rcpp_parallel(data, window_size, 0.5, 1, TRUE, FALSE, FALSE)
+  expect_identical(names(gpu), names(cpu))
+  expect_equal(gpu$matrix_profile, cpu$matrix_profile, tolerance = 1e-8)
+  expect_identical(gpu$profile_index, cpu$profile_index)
+  expect_false(gpu$partial)
+
+  gpu_distance <- matrixprofiler:::mpx_gpu_rcpp(data, window_size, 0.5, FALSE, TRUE)
+  cpu_distance <- matrixprofiler:::mpx_rcpp_parallel(data, window_size, 0.5, 1, FALSE, TRUE, FALSE)
+  expect_identical(names(gpu_distance), names(cpu_distance))
+  expect_equal(gpu_distance$matrix_profile, cpu_distance$matrix_profile, tolerance = 1e-8)
+})
+
+test_that("CUDA MPXAB matches parallel MPXAB when CUDA is available", {
+  set.seed(2006)
+  data <- rnorm(220)
+  query <- rnorm(180)
+
+  gpu <- tryCatch(
+    matrixprofiler:::mpxab_gpu_rcpp(data, query, 21L, TRUE, TRUE),
+    error = identity
+  )
+  if (inherits(gpu, "error")) {
+    message <- conditionMessage(gpu)
+    if (message %in% c(
+      "CUDA support is not enabled; rebuild with MATRIXPROFILER_ENABLE_CUDA=1",
+      "no CUDA-capable GPU is available"
+    )) {
+      skip(message)
+    }
+    stop(message, call. = FALSE)
+  }
+
+  cpu <- matrixprofiler:::mpxab_rcpp_parallel(data, query, 21L, 1, TRUE, TRUE, FALSE)
+  expect_identical(names(gpu), names(cpu))
+  expect_equal(gpu$matrix_profile, cpu$matrix_profile, tolerance = 1e-8)
+  expect_equal(gpu$mpb, cpu$mpb, tolerance = 1e-8)
+  expect_identical(gpu$profile_index, cpu$profile_index)
+  expect_identical(gpu$pib, cpu$pib)
+  expect_false(gpu$partial)
+})
+
+test_that("public mpx dispatches exact finite joins to CUDA when requested", {
+  set.seed(2007)
+  data <- rnorm(180)
+  query <- rnorm(140)
+
+  gpu <- tryCatch(
+    mpx(data, 15L, progress = FALSE, backend = "cuda"),
+    error = identity
+  )
+  if (is.null(gpu)) {
+    skip("CUDA support is not enabled or no CUDA-capable GPU is available")
+  }
+  if (inherits(gpu, "error")) {
+    message <- conditionMessage(gpu)
+    if (message %in% c(
+      "CUDA support is not enabled; rebuild with MATRIXPROFILER_ENABLE_CUDA=1",
+      "no CUDA-capable GPU is available"
+    )) {
+      skip(message)
+    }
+    stop(message, call. = FALSE)
+  }
+
+  cpu <- mpx(data, 15L, n_workers = 2, progress = FALSE)
+  expect_equal(gpu$matrix_profile, cpu$matrix_profile, tolerance = 1e-8)
+  expect_identical(gpu$profile_index, cpu$profile_index)
+
+  gpu_ab <- mpx(data, 15L, query = query, progress = FALSE, backend = "cuda")
+  cpu_ab <- mpx(data, 15L, query = query, n_workers = 2, progress = FALSE)
+  expect_equal(gpu_ab$matrix_profile, cpu_ab$matrix_profile, tolerance = 1e-8)
+  expect_equal(gpu_ab$mpb, cpu_ab$mpb, tolerance = 1e-8)
+  expect_error(mpx(data, 15L, s_size = 0.5, backend = "cuda"), "requires `s_size = 1`", fixed = TRUE)
+  expect_error(mpx(data, 15L, na_strategy = "segmented", backend = "cuda"), "requires `na_strategy", fixed = TRUE)
 })
 
 test_that("mpx validates sample size", {

@@ -241,6 +241,103 @@ test_that("parallel mpx_na honors partial sample size", {
   })
 })
 
+test_that("CUDA NA-aware MPX matches the parallel implementation", {
+  set.seed(2130)
+  data <- rnorm(320)
+  data[c(45L, 130L, 230L, 290L)] <- c(NA_real_, NaN, Inf, -Inf)
+  data[180:205] <- 4
+
+  gpu <- tryCatch(
+    matrixprofiler:::mpx_na_gpu_rcpp(data, 20L, 0.5, TRUE, TRUE),
+    error = identity
+  )
+  if (inherits(gpu, "error")) {
+    message <- conditionMessage(gpu)
+    if (message %in% c(
+      "CUDA support is not enabled; rebuild with MATRIXPROFILER_ENABLE_CUDA=1",
+      "no CUDA-capable GPU is available"
+    )) {
+      skip(message)
+    }
+    stop(message, call. = FALSE)
+  }
+
+  cpu <- matrixprofiler:::mpx_na_rcpp_parallel(data, 20L, 0.5, 1, TRUE, TRUE, FALSE)
+  expect_identical(names(gpu), names(cpu))
+  expect_identical(gpu$valid_window, cpu$valid_window)
+  expect_equal(gpu$matrix_profile, cpu$matrix_profile, tolerance = 1e-8)
+  expect_identical(gpu$profile_index, cpu$profile_index)
+  expect_identical(gpu$partial, cpu$partial)
+
+  offset_data <- 1e8 + sin(seq(0, 40, length.out = 320))
+  gpu_offset <- matrixprofiler:::mpx_na_gpu_rcpp(offset_data, 20L, 0.5, FALSE, TRUE)
+  cpu_offset <- matrixprofiler:::mpx_na_rcpp_parallel(offset_data, 20L, 0.5, 1, FALSE, TRUE, FALSE)
+  expect_identical(gpu_offset$valid_window, cpu_offset$valid_window)
+  expect_lt(max(abs(gpu_offset$matrix_profile - cpu_offset$matrix_profile), na.rm = TRUE), 3e-5)
+})
+
+test_that("CUDA NA-aware MPXAB matches the parallel implementation", {
+  set.seed(2131)
+  data <- rnorm(180)
+  query <- rnorm(140)
+  data[c(30L, 110L)] <- c(NA_real_, Inf)
+  query[c(20L, 100L)] <- c(NaN, -Inf)
+
+  gpu <- tryCatch(
+    matrixprofiler:::mpxab_na_gpu_rcpp(data, query, 15L, TRUE, TRUE),
+    error = identity
+  )
+  if (inherits(gpu, "error")) {
+    message <- conditionMessage(gpu)
+    if (message %in% c(
+      "CUDA support is not enabled; rebuild with MATRIXPROFILER_ENABLE_CUDA=1",
+      "no CUDA-capable GPU is available"
+    )) {
+      skip(message)
+    }
+    stop(message, call. = FALSE)
+  }
+
+  cpu <- matrixprofiler:::mpxab_na_rcpp_parallel(data, query, 15L, 1, TRUE, TRUE, FALSE)
+  expect_identical(names(gpu), names(cpu))
+  expect_identical(gpu$valid_window_a, cpu$valid_window_a)
+  expect_identical(gpu$valid_window_b, cpu$valid_window_b)
+  expect_equal(gpu$matrix_profile, cpu$matrix_profile, tolerance = 1e-8)
+  expect_equal(gpu$mpb, cpu$mpb, tolerance = 1e-8)
+  expect_identical(gpu$profile_index, cpu$profile_index)
+  expect_identical(gpu$pib, cpu$pib)
+  expect_identical(gpu$partial, cpu$partial)
+})
+
+test_that("public mpx dispatches NA-aware self joins to CUDA when requested", {
+  set.seed(2132)
+  data <- rnorm(180)
+  data[c(25L, 100L)] <- c(NA_real_, Inf)
+
+  gpu <- tryCatch(
+    mpx(data, 15L, progress = FALSE, backend = "cuda"),
+    error = identity
+  )
+  if (is.null(gpu)) {
+    skip("CUDA support is not enabled or no CUDA-capable GPU is available")
+  }
+  if (inherits(gpu, "error")) {
+    message <- conditionMessage(gpu)
+    if (message %in% c(
+      "CUDA support is not enabled; rebuild with MATRIXPROFILER_ENABLE_CUDA=1",
+      "no CUDA-capable GPU is available"
+    )) {
+      skip(message)
+    }
+    stop(message, call. = FALSE)
+  }
+
+  cpu <- mpx(data, 15L, n_workers = 2, progress = FALSE)
+  expect_identical(gpu$valid_window, cpu$valid_window)
+  expect_equal(gpu$matrix_profile, cpu$matrix_profile, tolerance = 1e-8)
+  expect_identical(gpu$profile_index, cpu$profile_index)
+})
+
 test_that("mpxab_na agrees with regular MPXAB for finite data", {
   set.seed(2121)
   data <- rnorm(120)
@@ -492,10 +589,16 @@ test_that("native segmented NA-aware joins mask constant windows", {
 test_that("native segmented AA preserves results across multiple cache blocks", {
   with_mpx_test_threads({
     old_block_size <- Sys.getenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE", unset = NA_character_)
-    on.exit({
-      if (is.na(old_block_size)) Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")
-      else Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = old_block_size)
-    }, add = TRUE)
+    on.exit(
+      {
+        if (is.na(old_block_size)) {
+          Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")
+        } else {
+          Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = old_block_size)
+        }
+      },
+      add = TRUE
+    )
     Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = "1024")
 
     set.seed(2143)
@@ -528,7 +631,8 @@ test_that("public mpx exposes the NA-aware AB-join strategy", {
       data, query, 15L, 1, TRUE, TRUE, FALSE
     )
     native_selected <- mpx(
-      data, 15L, query = query, n_workers = 2L, progress = FALSE, na_strategy = "segmented_native"
+      data, 15L,
+      query = query, n_workers = 2L, progress = FALSE, na_strategy = "segmented_native"
     )
 
     expect_equal(selected$matrix_profile, direct$matrix_profile, tolerance = 1e-10)
@@ -583,10 +687,16 @@ test_that("parallel mpxab_na restarts covariance for dense invalid blocks", {
 test_that("parallel mpxab_na threshold override preserves profiles", {
   with_mpx_test_threads({
     old_threshold <- Sys.getenv("MATRIXPROFILER_INVALID_BLOCK_THRESHOLD", unset = NA_character_)
-    on.exit({
-      if (is.na(old_threshold)) Sys.unsetenv("MATRIXPROFILER_INVALID_BLOCK_THRESHOLD")
-      else Sys.setenv(MATRIXPROFILER_INVALID_BLOCK_THRESHOLD = old_threshold)
-    }, add = TRUE)
+    on.exit(
+      {
+        if (is.na(old_threshold)) {
+          Sys.unsetenv("MATRIXPROFILER_INVALID_BLOCK_THRESHOLD")
+        } else {
+          Sys.setenv(MATRIXPROFILER_INVALID_BLOCK_THRESHOLD = old_threshold)
+        }
+      },
+      add = TRUE
+    )
 
     set.seed(2133)
     data <- rnorm(700)
@@ -682,27 +792,33 @@ test_that("mpx_na_rcpp validates its numerical controls", {
 
   expect_error(
     matrixprofiler:::mpx_na_rcpp(data, 5L, -0.5, 1, TRUE, TRUE, FALSE),
-    "finite and non-negative", fixed = TRUE
+    "finite and non-negative",
+    fixed = TRUE
   )
   expect_error(
     matrixprofiler:::mpx_na_rcpp(data, 5L, 0.5, 1.1, TRUE, TRUE, FALSE),
-    "between 0 and 1", fixed = TRUE
+    "between 0 and 1",
+    fixed = TRUE
   )
   expect_error(
     matrixprofiler:::mpx_na_rcpp_parallel(data, 5L, -0.5, 1, TRUE, TRUE, FALSE),
-    "finite and non-negative", fixed = TRUE
+    "finite and non-negative",
+    fixed = TRUE
   )
   expect_error(
     matrixprofiler:::mpx_na_rcpp_parallel(data, 5L, 0.5, 1.1, TRUE, TRUE, FALSE),
-    "between 0 and 1", fixed = TRUE
+    "between 0 and 1",
+    fixed = TRUE
   )
   expect_error(
     matrixprofiler:::mpxab_na_rcpp(data, rev(data), 5L, 1.1, TRUE, TRUE, FALSE),
-    "between 0 and 1", fixed = TRUE
+    "between 0 and 1",
+    fixed = TRUE
   )
   expect_error(
     matrixprofiler:::mpxab_na_rcpp_parallel(data, rev(data), 5L, 1.1, TRUE, TRUE, FALSE),
-    "between 0 and 1", fixed = TRUE
+    "between 0 and 1",
+    fixed = TRUE
   )
 })
 

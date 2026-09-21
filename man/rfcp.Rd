@@ -50,8 +50,8 @@ A list containing \code{rms_profile}, complete positive and negative
 validity masks, the selected Plato index and first AA twin, the RFCP/RFMP
 rank vectors at that Plato, query-range and completion metadata, and
 optionally the complete rank-by-query matrices. Diagnostic fields
-\code{query_rows_per_task}, \code{n_tasks}, and \code{effective_workers}
-report native tile granularity and the effective executor count.
+\code{query_rows_per_task}, \code{n_tasks}, and \code{effective_workers} report the
+native tile granularity and effective executor count.
 }
 \description{
 Computes an exact, NA-aware Relative Frequency Contrast Profile (RFCP)
@@ -81,10 +81,10 @@ coordinates and can be concatenated for checkpointed execution. With
 \code{return_profiles = TRUE}, RFMP matrices contain unclipped z-normalized
 Euclidean distances and RFCP contains the corresponding clipped contrasts.
 Native query tiles use
-\code{min(32768, max(1024, 16 * window_size))}, further capped at the ceiling
-of the requested query count divided by the effective worker count. The first
-tile starts at \code{query_begin}, so checkpoint blocks do not perform
-discarded warm-up rows.
+\code{min(32768, max(1024, 16 * window_size))}, further capped at the ceiling of
+the requested query count divided by the effective worker count. The first
+tile starts at \code{query_begin}, so checkpoint blocks do not perform discarded
+warm-up rows.
 }
 \examples{
 positive <- c(sin(seq(0, 4 * pi, length.out = 80)), NA,

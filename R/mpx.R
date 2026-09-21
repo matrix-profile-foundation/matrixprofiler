@@ -10,6 +10,8 @@
 #'   `s_size < 1`, marks the result as partial, and shares one native pre-calculation and scheduler across finite
 #'   blocks. The native strategy also masks constant or otherwise non-normalizable windows. The `"segmented"`
 #'   reference strategy remains restricted to inputs whose invalid windows are caused only by non-finite barriers.
+#' @param backend (`mpx()` only) Computation backend: `"cpu"` (default) or `"cuda"`. The CUDA backend is optional,
+#'   supports exact joins only (`s_size = 1`), and requires a local build with CUDA enabled.
 #'
 #' @details ## mpx
 #' This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
@@ -66,7 +68,7 @@
 #' mp <- mpx(motifs_discords_small, 50)
 mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1.0, idxs = TRUE,
                 distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE,
-                na_strategy = c("monolithic", "segmented", "segmented_native")) {
+                na_strategy = c("monolithic", "segmented", "segmented_native"), backend = c("cpu", "cuda")) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
 
@@ -85,6 +87,7 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
   checkmate::qassert(idxs, "B+")
   distance <- match.arg(distance)
   na_strategy <- match.arg(na_strategy)
+  backend <- match.arg(backend)
   if (distance == "euclidean") {
     dist <- TRUE
   } else {
@@ -106,6 +109,12 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
   if (window_size > ceiling(query_size / 2)) {
     stop("Time series is too short relative to desired window size.", call. = FALSE)
   }
+  if (backend == "cuda" && s_size != 1) {
+    stop("The CUDA backend currently requires `s_size = 1`.", call. = FALSE)
+  }
+  if (backend == "cuda" && na_strategy != "monolithic") {
+    stop("The CUDA backend currently requires `na_strategy = \"monolithic\"`.", call. = FALSE)
+  }
 
 
   # Register anytime exit point ----------------------
@@ -125,6 +134,14 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
   if (is.null(query)) {
     ## Self-Join ====================================
     "!DEBUG Self-Join"
+    if (backend == "cuda") {
+      result <- if (has_non_finite) {
+        mpx_na_gpu_rcpp(data, window_size, ez, as.logical(idxs), as.logical(dist))
+      } else {
+        mpx_gpu_rcpp(data, window_size, ez, as.logical(idxs), as.logical(dist))
+      }
+      return(result)
+    }
     tryCatch(
       {
         "!DEBUG n_workers = `n_workers`"
@@ -196,6 +213,15 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
     ## AB-Join ====================================
     "!DEBUG AB-Join"
     ez <- 0
+
+    if (backend == "cuda") {
+      result <- if (has_non_finite) {
+        mpxab_na_gpu_rcpp(data, query, window_size, as.logical(idxs), as.logical(dist))
+      } else {
+        mpxab_gpu_rcpp(data, query, window_size, as.logical(idxs), as.logical(dist))
+      }
+      return(result)
+    }
 
     tryCatch(
       {

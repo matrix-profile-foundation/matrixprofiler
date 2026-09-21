@@ -50,7 +50,8 @@ mpx(
   distance = c("euclidean", "pearson"),
   n_workers = 1,
   progress = TRUE,
-  na_strategy = c("monolithic", "segmented", "segmented_native")
+  na_strategy = c("monolithic", "segmented", "segmented_native"),
+  backend = c("cpu", "cuda")
 )
 
 mpx_stream_right(
@@ -110,6 +111,9 @@ This parameter is ignored when using multithread or AB-join.}
 \code{s_size < 1}, marks the result as partial, and shares one native pre-calculation and scheduler across finite
 blocks. The native strategy also masks constant or otherwise non-normalizable windows. The \code{"segmented"}
 reference strategy remains restricted to inputs whose invalid windows are caused only by non-finite barriers.}
+
+\item{backend}{(\code{mpx()} only) Computation backend: \code{"cpu"} (default) or \code{"cuda"}. The CUDA backend is optional,
+supports exact joins only (\code{s_size = 1}), and requires a local build with CUDA enabled.}
 
 \item{new_data}{a vector with the new data}
 
@@ -226,7 +230,7 @@ regular MPX paths or the serial NA-aware implementations.
 }
 }
 \section{This document}{
-Last updated on 2026-09-11 using R version 4.6.1.
+Last updated on 2026-09-21 using R version 4.6.1.
 }
 
 \examples{
