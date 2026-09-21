@@ -14,7 +14,8 @@ rfcp(
   query_end = NULL,
   return_profiles = FALSE,
   n_workers = 1L,
-  progress = TRUE
+  progress = TRUE,
+  backend = "cpu"
 )
 }
 \arguments{
@@ -40,18 +41,39 @@ inclusive coordinates. \code{NULL} processes through the final start.}
 matrices for the requested query block. This validation mode is limited
 to 5,000,000 rank-query cells. Defaults to \code{FALSE}.}
 
-\item{n_workers}{Number of native worker threads. Defaults to \code{1}.}
+\item{n_workers}{Number of native worker threads for the CPU backend.
+Ignored when \code{backend = "cuda"}. Defaults to \code{1}.}
 
 \item{progress}{Logical progress flag. Reserved for native progress
 reporting; defaults to \code{TRUE}.}
+
+\item{backend}{Computation backend: \code{"cpu"} (default) or \code{"cuda"}. The CUDA
+backend is optional and requires a local build with CUDA enabled (see
+\code{inst/cuda/build_cuda_rcpp.sh}).}
 }
 \value{
-A list containing \code{rms_profile}, complete positive and negative
-validity masks, the selected Plato index and first AA twin, the RFCP/RFMP
-rank vectors at that Plato, query-range and completion metadata, and
-optionally the complete rank-by-query matrices. Diagnostic fields
-\code{query_rows_per_task}, \code{n_tasks}, and \code{effective_workers} report the
-native tile granularity and effective executor count.
+A list with RFCP outputs:
+\itemize{
+\item \code{rms_profile}: numeric vector of root-mean-square contrasts.
+\item \code{valid_window_positive}: logical mask of valid query windows.
+\item \code{valid_window_negative}: logical mask of valid reference windows.
+\item \code{plato_index}: one-based index of the highest-contrast query.
+\item \code{plato_rms}: contrast score at \code{plato_index}.
+\item \code{plato_twin_index}: one-based index of the nearest self-join neighbor
+at \code{plato_index}.
+\item \code{rfcp_at_plato}: clipped contrasts across accepted neighbor ranks.
+\item \code{rfmp_aa_at_plato}: positive self-join distances at plato.
+\item \code{rfmp_ab_at_plato}: negative AB distances at plato.
+\item \code{rfmpi_aa_at_plato}: positive neighbor indices at plato.
+\item \code{rfmpi_ab_at_plato}: negative neighbor indices at plato.
+\item \code{requested_max_freq}: requested rank count.
+\item \code{effective_max_freq}: highest paired rank observed.
+\item \code{query_begin}, \code{query_end}: one-based query range.
+\item \code{completed_query_end}: end of completed queries.
+\item \code{partial}: whether computation stopped early.
+\item \code{rfmp_aa}, \code{rfmp_ab}, \code{rfcp}, \code{rfmpi_aa}, \code{rfmpi_ab}: optional
+full profile matrices when \code{return_profiles = TRUE}.
+}
 }
 \description{
 Computes an exact, NA-aware Relative Frequency Contrast Profile (RFCP)
@@ -85,11 +107,12 @@ Native query tiles use
 the requested query count divided by the effective worker count. The first
 tile starts at \code{query_begin}, so checkpoint blocks do not perform discarded
 warm-up rows.
+The CUDA backend executes the full join query-by-query with optional profile
+matrices returned identically to the CPU backend.
 }
 \examples{
-positive <- c(sin(seq(0, 4 * pi, length.out = 80)), NA,
-              sin(seq(0, 4 * pi, length.out = 80)))
-negative <- cos(seq(0, 10 * pi, length.out = 180))
-result <- rfcp(positive, negative, 16, max_freq = 3,
-               n_workers = 2, progress = FALSE)
+pos <- c(sin(seq(0, 4 * pi, length.out = 100)))
+neg <- c(cos(seq(0, 10 * pi, length.out = 150)))
+res <- rfcp(pos, neg, window_size = 10, max_freq = 2)
+res$plato_index
 }

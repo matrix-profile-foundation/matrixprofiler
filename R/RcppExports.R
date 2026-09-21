@@ -161,7 +161,7 @@ rfcp_na_segmented_native_rcpp_parallel <- function(positive_ref, negative_ref, w
     .Call(`_matrixprofiler_rfcp_na_segmented_native_rcpp_parallel`, positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, n_workers, return_profiles, progress)
 }
 
-rfcp_gpu_rcpp <- function(positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, return_profiles = FALSE) {
+rfcp_gpu_rcpp <- function(positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, return_profiles) {
     .Call(`_matrixprofiler_rfcp_gpu_rcpp`, positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, return_profiles)
 }
 

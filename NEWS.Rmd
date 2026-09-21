@@ -22,6 +22,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+## matrixprofiler 0.1.11.9010
+
+-   Added `rfcp_top_k()`, an iterative Top-K Plato discovery function for Relative Frequency Contrast Profiles (RFCP) that uncovers multiple distinct contrasting patterns between a positive and negative time series.
+-   Implemented iterative morphology suppression by concatenating each discovered Plato and its accepted positive self-join neighbors into the negative series, incorporating an exclusion zone around each occurrence (`[start - exclusion_radius, start + window_size - 1 + exclusion_radius]`) and fusing overlapping intervals with `NA` barriers to prevent boundary artifacts.
+-   Added support for dynamic and adaptive `max_freq` re-evaluation across Plato iterations via vectors (e.g. `max_freq = c(10, 3)`), allowing frequency parameters to scale appropriately for rarer secondary morphologies.
+-   Added unit tests for input validation, multi-morphology discovery, frequency scaling, early stopping thresholds, and S3 print methods.
+
 ## matrixprofiler 0.1.11.9009
 
 -   Added an optional CUDA backend for exact RFCP (Relative Frequency Contrast Profile) computations through `rfcp(..., backend = "cuda")`, with full support for finite and NA-barrier series, query subsetting, and full-profile matrix extraction (`return_profiles = TRUE`).
