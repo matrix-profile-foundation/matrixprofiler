@@ -19,6 +19,12 @@
 #' @param min_rms Numeric threshold for root-mean-square contrast. Iteration
 #'   stops early if the detected Plato has an RMS contrast below this value.
 #'   Defaults to `1e-4`.
+#' @param adaptive_max_freq Logical. If `TRUE`, dynamically adapts `max_freq`
+#'   for subsequent iterations based on the observed support (number of valid
+#'   positive self-join neighbors with distance below \eqn{\sqrt{2 \cdot \text{window\_size}}})
+#'   of the current Plato. Defaults to `FALSE`.
+#' @param min_freq Integer minimum rank frequency floor when `adaptive_max_freq = TRUE`.
+#'   Defaults to `2L`.
 #' @param n_workers Number of native worker threads for the CPU backend.
 #'   Ignored when `backend = "cuda"`. Defaults to `1L`.
 #' @param backend Computation backend: `"cpu"` (default) or `"cuda"`.
@@ -43,6 +49,9 @@
 #'     barriers. Because \code{rfcp} is NA-aware, this suppresses the contrast of
 #'     that morphology and its trivial overlaps in subsequent iterations without
 #'     introducing spurious cross-boundary windows.
+#'   \item If \code{adaptive_max_freq = TRUE}, re-evaluates the frequency for
+#'     the next iteration based on the count of finite AA neighbors with distance
+#'     below \eqn{\sqrt{2 \cdot \text{window\_size}}}, bounded below by \code{min_freq}.
 #' }
 #'
 #' @return An object of class \code{"rfcp_top_k"}, which is a list containing:
@@ -51,6 +60,8 @@
 #'   \item \code{k_found}: number of Platos discovered before stopping.
 #'   \item \code{window_size}: subsequence length.
 #'   \item \code{exclusion_radius}: exclusion radius used.
+#'   \item \code{adaptive_max_freq}: whether adaptive frequency was enabled.
+#'   \item \code{min_freq}: minimum frequency floor used.
 #'   \item \code{max_freq}: vector of frequencies used for each Plato.
 #'   \item \code{platos}: list of discovered Plato objects, each containing:
 #'     \itemize{
@@ -87,6 +98,7 @@
 rfcp_top_k <- function(positive_data, negative_data, window_size,
                        k_platos = 2L, max_freq = 5L,
                        exclusion_radius = NULL, min_rms = 1e-4,
+                       adaptive_max_freq = FALSE, min_freq = 2L,
                        n_workers = 1L, backend = "cpu", progress = FALSE) {
   positive_data <- as.numeric(positive_data)
   negative_data <- as.numeric(negative_data)
@@ -109,6 +121,8 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
   exclusion_radius <- as.integer(checkmate::qassert(exclusion_radius, "X1[0,)"))
 
   checkmate::qassert(min_rms, "N1[0,)")
+  checkmate::assert_flag(adaptive_max_freq)
+  min_freq <- as.integer(checkmate::qassert(min_freq, "X1[1,)"))
   checkmate::qassert(max_freq, "X+[1,)")
 
   if (length(max_freq) == 1L) {
@@ -273,6 +287,20 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
     }
 
     current_negative <- c(current_negative, unlist(segments_to_add, use.names = FALSE))
+
+    # Adapt max_freq dynamically for subsequent iterations if enabled
+    if (isTRUE(adaptive_max_freq) && k_iter < k_platos) {
+      clip_distance <- sqrt(2 * window_size)
+      valid_support <- sum(
+        aa_distances < clip_distance & is.finite(aa_distances) & aa_distances >= 0,
+        na.rm = TRUE
+      )
+      next_freq <- max(
+        min_freq,
+        min(current_freq, as.integer(valid_support))
+      )
+      max_freq_vec[(k_iter + 1L):k_platos] <- next_freq
+    }
   }
 
   if (count_found < k_platos) {
@@ -285,6 +313,8 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
       k_found = count_found,
       window_size = window_size,
       exclusion_radius = exclusion_radius,
+      adaptive_max_freq = adaptive_max_freq,
+      min_freq = min_freq,
       max_freq = max_freq_vec[seq_len(count_found)],
       platos = platos_found,
       negative_data_final = current_negative
@@ -297,8 +327,9 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
 print.rfcp_top_k <- function(x, ...) {
   cat(sprintf("Top-%d Relative Frequency Contrast Profile (RFCP)\n", x$k_found))
   cat(sprintf(
-    "Window size: %d | Exclusion radius: %d | Requested: %d\n",
-    x$window_size, x$exclusion_radius, x$k_requested
+    "Window size: %d | Exclusion radius: %d | Requested: %d | Adaptive: %s\n",
+    x$window_size, x$exclusion_radius, x$k_requested,
+    ifelse(isTRUE(x$adaptive_max_freq), sprintf("TRUE (min_freq=%d)", x$min_freq), "FALSE")
   ))
   if (x$k_found == 0L) {
     cat("  No Platos found meeting the contrast threshold.\n")

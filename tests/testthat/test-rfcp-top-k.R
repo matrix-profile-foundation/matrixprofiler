@@ -104,3 +104,38 @@ test_that("rfcp_top_k terminates early when min_rms threshold is not met", {
   expect_identical(length(res$platos), 0L)
   expect_output(print(res), "No Platos found")
 })
+
+test_that("rfcp_top_k adapts max_freq when adaptive_max_freq = TRUE", {
+  # Synthetic stream with 1 dominant pattern (5 repeats) and 1 secondary pattern (2 repeats)
+  set.seed(42)
+  pos <- rnorm(500, sd = 0.05)
+  sine_pulse <- sin(seq(0, pi, length.out = 20))
+  cos_pulse <- cos(seq(0, pi, length.out = 20)) * 1.5
+
+  # Dominant morphology: 5 occurrences
+  for (p in c(30, 80, 130, 180, 230)) pos[p:(p + 19)] <- pos[p:(p + 19)] + sine_pulse
+  # Secondary morphology: 2 occurrences
+  for (p in c(330, 400)) pos[p:(p + 19)] <- pos[p:(p + 19)] + cos_pulse
+
+  neg <- rnorm(500, sd = 0.05)
+
+  res <- rfcp_top_k(
+    positive_data = pos,
+    negative_data = neg,
+    window_size = 20L,
+    k_platos = 2L,
+    max_freq = 5L,
+    adaptive_max_freq = TRUE,
+    min_freq = 2L,
+    backend = "cpu"
+  )
+
+  expect_s3_class(res, "rfcp_top_k")
+  expect_equal(res$k_found, 2L)
+  expect_true(res$max_freq[[1L]] == 5L)
+  # After suppressing dominant pulse (5 occurrences), the next frequency adapts down
+  expect_true(res$max_freq[[2L]] <= res$max_freq[[1L]])
+  expect_true(res$adaptive_max_freq)
+  expect_equal(res$min_freq, 2L)
+  expect_output(print(res), "Adaptive: TRUE")
+})

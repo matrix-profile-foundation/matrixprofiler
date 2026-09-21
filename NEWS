@@ -1,5 +1,15 @@
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
+## matrixprofiler 0.1.11.9011
+
+-   Added `adaptive_max_freq` support to `rfcp_top_k()`, dynamically
+    rescaling subsequent frequencies based on observed Plato support
+    (count of positive self-join neighbors with distance below
+    $\sqrt{2 \cdot \text{window\\size}}$) with configurable `min_freq`
+    floor.
+-   Added unit test coverage for adaptive frequency descent across
+    dominant and secondary synthetic pulse morphologies.
+
 ## matrixprofiler 0.1.11.9010
 
 -   Added `rfcp_top_k()`, an iterative Top-K Plato discovery function
@@ -13,10 +23,8 @@
     (`[start - exclusion_radius, start + window_size - 1 + exclusion_radius]`)
     and fusing overlapping intervals with `NA` barriers to prevent
     boundary artifacts.
--   Added support for dynamic and adaptive `max_freq` re-evaluation
-    across Plato iterations via vectors (e.g. `max_freq = c(10, 3)`),
-    allowing frequency parameters to scale appropriately for rarer
-    secondary morphologies.
+-   Added support for dynamic `max_freq` specification across Plato
+    iterations via vectors (e.g. `max_freq = c(10, 3)`).
 -   Added unit tests for input validation, multi-morphology discovery,
     frequency scaling, early stopping thresholds, and S3 print methods.
 

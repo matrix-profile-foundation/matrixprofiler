@@ -12,6 +12,8 @@ rfcp_top_k(
   max_freq = 5L,
   exclusion_radius = NULL,
   min_rms = 1e-04,
+  adaptive_max_freq = FALSE,
+  min_freq = 2L,
   n_workers = 1L,
   backend = "cpu",
   progress = FALSE
@@ -40,6 +42,14 @@ starts and for padding concatenated segments. \code{NULL} uses \code{window_size
 stops early if the detected Plato has an RMS contrast below this value.
 Defaults to \code{1e-4}.}
 
+\item{adaptive_max_freq}{Logical. If \code{TRUE}, dynamically adapts \code{max_freq}
+for subsequent iterations based on the observed support (number of valid
+positive self-join neighbors with distance below \eqn{\sqrt{2 \cdot \text{window\_size}}})
+of the current Plato. Defaults to \code{FALSE}.}
+
+\item{min_freq}{Integer minimum rank frequency floor when \code{adaptive_max_freq = TRUE}.
+Defaults to \code{2L}.}
+
 \item{n_workers}{Number of native worker threads for the CPU backend.
 Ignored when \code{backend = "cuda"}. Defaults to \code{1L}.}
 
@@ -54,6 +64,8 @@ An object of class \code{"rfcp_top_k"}, which is a list containing:
 \item \code{k_found}: number of Platos discovered before stopping.
 \item \code{window_size}: subsequence length.
 \item \code{exclusion_radius}: exclusion radius used.
+\item \code{adaptive_max_freq}: whether adaptive frequency was enabled.
+\item \code{min_freq}: minimum frequency floor used.
 \item \code{max_freq}: vector of frequencies used for each Plato.
 \item \code{platos}: list of discovered Plato objects, each containing:
 \itemize{
@@ -97,6 +109,9 @@ the resulting segments to the negative series separated by \code{NA}
 barriers. Because \code{rfcp} is NA-aware, this suppresses the contrast of
 that morphology and its trivial overlaps in subsequent iterations without
 introducing spurious cross-boundary windows.
+\item If \code{adaptive_max_freq = TRUE}, re-evaluates the frequency for
+the next iteration based on the count of finite AA neighbors with distance
+below \eqn{\sqrt{2 \cdot \text{window\_size}}}, bounded below by \code{min_freq}.
 }
 }
 \examples{
