@@ -29,6 +29,17 @@
 #'   Ignored when `backend = "cuda"`. Defaults to `1L`.
 #' @param backend Computation backend: `"cpu"` (default) or `"cuda"`.
 #' @param progress Logical progress flag for each RFCP iteration. Defaults to `FALSE`.
+#' @param query_block_size Optional integer query block size for chunked
+#'   execution. If \code{NULL} (default), queries are processed monolithically in
+#'   a single call. If specified, queries are processed in contiguous blocks of
+#'   size \code{query_block_size}.
+#' @param progress_callback Optional callback function \code{function(event)}
+#'   invoked periodically with structured progress events (\code{"round_start"},
+#'   \code{"block_done"}, \code{"round_done"}).
+#' @param checkpoint_callback Optional callback function \code{function(state)}
+#'   invoked after each block and Plato with a serializable state list.
+#' @param resume_state Optional state list from a previous execution
+#'   (\code{checkpoint_callback}) used to resume execution idempotently.
 #'
 #' @details
 #' In each iteration \eqn{i \in \{1, \dots, K\}}, the algorithm:
@@ -99,7 +110,11 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
                        k_platos = 2L, max_freq = 5L,
                        exclusion_radius = NULL, min_rms = 1e-4,
                        adaptive_max_freq = FALSE, min_freq = 2L,
-                       n_workers = 1L, backend = "cpu", progress = FALSE) {
+                       n_workers = 1L, backend = "cpu", progress = FALSE,
+                       query_block_size = NULL,
+                       progress_callback = NULL,
+                       checkpoint_callback = NULL,
+                       resume_state = NULL) {
   positive_data <- as.numeric(positive_data)
   negative_data <- as.numeric(negative_data)
   if (!length(positive_data) || !length(negative_data)) {
@@ -139,84 +154,232 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
   n_workers <- as.integer(checkmate::qassert(n_workers, "X1[1,)"))
   checkmate::qassert(progress, "B1")
 
-  n_positive_windows <- length(positive_data) - window_size + 1L
-  excluded_query_mask <- logical(n_positive_windows)
+  if (!is.null(query_block_size)) {
+    query_block_size <- as.integer(checkmate::qassert(query_block_size, "X1[1,)"))
+  }
+  if (!is.null(progress_callback)) {
+    checkmate::assert_function(progress_callback)
+  }
+  if (!is.null(checkpoint_callback)) {
+    checkmate::assert_function(checkpoint_callback)
+  }
+  if (!is.null(resume_state)) {
+    checkmate::assert_list(resume_state)
+  }
 
-  current_negative <- negative_data
-  platos_found <- vector("list", k_platos)
-  count_found <- 0L
+  initial_n_positive <- length(positive_data)
+  initial_n_negative <- length(negative_data)
+  n_positive_windows <- initial_n_positive - window_size + 1L
 
-  for (k_iter in seq_len(k_platos)) {
-    current_freq <- max_freq_vec[[k_iter]]
-
-    res <- rfcp(
-      positive_data = positive_data,
-      negative_data = current_negative,
-      window_size = window_size,
-      max_freq = current_freq,
-      exclusion_radius = exclusion_radius,
-      return_profiles = FALSE,
-      n_workers = n_workers,
-      progress = progress,
-      backend = backend
-    )
-
-    # Determine best candidate outside the excluded query mask
-    rms_prof <- res$rms_profile
-    if (is.null(rms_prof) || !length(rms_prof)) {
-      break
+  if (!is.null(resume_state)) {
+    sig <- resume_state$signature
+    if (is.null(sig) || !is.list(sig) ||
+        !identical(as.integer(sig$n_positive), initial_n_positive) ||
+        !identical(as.integer(sig$n_negative_initial), initial_n_negative) ||
+        !identical(as.integer(sig$window_size), window_size) ||
+        !identical(as.integer(sig$k_platos), k_platos) ||
+        !identical(as.integer(sig$exclusion_radius), exclusion_radius) ||
+        !identical(as.logical(sig$adaptive_max_freq), adaptive_max_freq) ||
+        !identical(as.integer(sig$min_freq), min_freq) ||
+        !identical(as.character(sig$backend), backend)) {
+      stop("resume_state is incompatible with current input parameters.", call. = FALSE)
     }
 
-    # Mask previously excluded queries
-    rms_prof[excluded_query_mask] <- NA_real_
-
-    valid_candidates <- which(is.finite(rms_prof))
-    if (!length(valid_candidates)) {
-      break
+    count_found <- as.integer(resume_state$count_found)
+    platos_found <- vector("list", k_platos)
+    if (count_found > 0L && !is.null(resume_state$platos_found)) {
+      platos_found[seq_len(count_found)] <- resume_state$platos_found[seq_len(count_found)]
     }
+    current_negative <- resume_state$current_negative
+    excluded_query_mask <- resume_state$excluded_query_mask
+    max_freq_vec <- as.integer(resume_state$max_freq_vec)
+    k_start <- as.integer(resume_state$k_iter)
 
-    best_candidate_idx <- valid_candidates[[which.max(rms_prof[valid_candidates])]]
-    best_candidate_rms <- rms_prof[[best_candidate_idx]]
-
-    if (is.na(best_candidate_rms) || best_candidate_rms < min_rms) {
-      break
+    current_round_blocks <- resume_state$current_round_blocks
+    if (is.null(current_round_blocks)) {
+      current_round_blocks <- list()
     }
+    completed_cursor <- as.integer(resume_state$completed_query_cursor)
+    if (is.null(completed_cursor) || is.na(completed_cursor) || completed_cursor < 0L) {
+      completed_cursor <- 0L
+    }
+    cursor <- completed_cursor + 1L
+  } else {
+    count_found <- 0L
+    platos_found <- vector("list", k_platos)
+    current_negative <- negative_data
+    excluded_query_mask <- logical(n_positive_windows)
+    k_start <- 1L
+    current_round_blocks <- list()
+    cursor <- 1L
+  }
 
-    count_found <- count_found + 1L
-
-    # If the unexcluded best candidate matches the native Plato, we can reuse
-    # res$rfmpi_aa_at_plato directly; otherwise, run a single-query lookup
-    if (identical(best_candidate_idx, as.integer(res$plato_index))) {
-      aa_indices <- res$rfmpi_aa_at_plato
-      aa_distances <- res$rfmp_aa_at_plato
-      ab_distances <- res$rfmp_ab_at_plato
-      ab_indices <- res$rfmpi_ab_at_plato
-      rfcp_vec <- res$rfcp_at_plato
-      plato_twin <- res$plato_twin_index
-      effective_freq <- res$effective_max_freq
-    } else {
-      # Query single window to retrieve exact rank neighbors
-      single_res <- rfcp(
-        positive_data = positive_data,
-        negative_data = current_negative,
+  make_state <- function(k_iter, cursor_completed, round_blocks) {
+    list(
+      version = 1L,
+      algorithm = "rfcp_top_k",
+      signature = list(
+        n_positive = initial_n_positive,
+        n_negative_initial = initial_n_negative,
         window_size = window_size,
-        max_freq = current_freq,
+        k_platos = k_platos,
         exclusion_radius = exclusion_radius,
-        query_begin = best_candidate_idx,
-        query_end = best_candidate_idx,
-        return_profiles = FALSE,
-        n_workers = 1L,
-        progress = FALSE,
+        adaptive_max_freq = adaptive_max_freq,
+        min_freq = min_freq,
         backend = backend
+      ),
+      k_iter = as.integer(k_iter),
+      count_found = as.integer(count_found),
+      platos_found = platos_found[seq_len(count_found)],
+      max_freq_vec = as.integer(max_freq_vec),
+      excluded_query_mask = excluded_query_mask,
+      current_negative = current_negative,
+      current_round_blocks = round_blocks,
+      completed_query_cursor = as.integer(cursor_completed)
+    )
+  }
+
+  block_step <- if (is.null(query_block_size)) n_positive_windows else query_block_size
+  n_blocks <- ceiling(n_positive_windows / block_step)
+
+  if (k_start <= k_platos) {
+    for (k_iter in seq.int(k_start, k_platos)) {
+      if (k_iter > k_start) {
+        current_round_blocks <- list()
+        cursor <- 1L
+      }
+
+      current_freq <- max_freq_vec[[k_iter]]
+      t0_round <- proc.time()[["elapsed"]]
+
+      if (!is.null(progress_callback)) {
+        progress_callback(list(
+          event = "round_start",
+          k = k_iter,
+          max_freq = current_freq,
+          total_queries = n_positive_windows,
+          n_blocks = n_blocks
+        ))
+      }
+
+      while (cursor <= n_positive_windows) {
+        begin <- cursor
+        end <- min(begin + block_step - 1L, n_positive_windows)
+
+        t0_blk <- proc.time()[["elapsed"]]
+
+        res_block <- rfcp(
+          positive_data = positive_data,
+          negative_data = current_negative,
+          window_size = window_size,
+          max_freq = current_freq,
+          exclusion_radius = exclusion_radius,
+          query_begin = begin,
+          query_end = end,
+          return_profiles = FALSE,
+          n_workers = n_workers,
+          progress = if (is.null(query_block_size)) progress else FALSE,
+          backend = backend
+        )
+
+        elapsed_blk <- proc.time()[["elapsed"]] - t0_blk
+
+        block_entry <- list(
+          query_begin = begin,
+          query_end = end,
+          rms_profile = as.numeric(res_block$rms_profile),
+          plato_index = res_block$plato_index,
+          plato_rms = res_block$plato_rms,
+          rfmpi_aa_at_plato = res_block$rfmpi_aa_at_plato,
+          rfmp_aa_at_plato = res_block$rfmp_aa_at_plato,
+          rfmpi_ab_at_plato = res_block$rfmpi_ab_at_plato,
+          rfmp_ab_at_plato = res_block$rfmp_ab_at_plato,
+          rfcp_at_plato = res_block$rfcp_at_plato,
+          plato_twin_index = res_block$plato_twin_index,
+          effective_max_freq = res_block$effective_max_freq
+        )
+        current_round_blocks[[length(current_round_blocks) + 1L]] <- block_entry
+        cursor <- end + 1L
+
+        if (!is.null(progress_callback)) {
+          progress_callback(list(
+            event = "block_done",
+            k = k_iter,
+            block_index = length(current_round_blocks),
+            n_blocks = n_blocks,
+            query_begin = begin,
+            query_end = end,
+            elapsed_seconds = elapsed_blk,
+            block_plato_rms = res_block$plato_rms
+          ))
+        }
+
+        if (!is.null(checkpoint_callback)) {
+          checkpoint_callback(make_state(
+            k_iter = k_iter,
+            cursor_completed = end,
+            round_blocks = current_round_blocks
+          ))
+        }
+      }
+
+      # Determine best candidate outside the excluded query mask
+      full_rms_profile <- unlist(lapply(current_round_blocks, `[[`, "rms_profile"), use.names = FALSE)
+      if (is.null(full_rms_profile) || !length(full_rms_profile)) {
+        break
+      }
+
+      # Mask previously excluded queries
+      full_rms_profile[excluded_query_mask] <- NA_real_
+
+      valid_candidates <- which(is.finite(full_rms_profile))
+      if (!length(valid_candidates)) {
+        break
+      }
+
+      best_candidate_idx <- valid_candidates[[which.max(full_rms_profile[valid_candidates])]]
+      best_candidate_rms <- full_rms_profile[[best_candidate_idx]]
+
+      if (is.na(best_candidate_rms) || best_candidate_rms < min_rms) {
+        break
+      }
+
+      count_found <- count_found + 1L
+
+      target_block <- Find(
+        function(b) best_candidate_idx >= b$query_begin && best_candidate_idx <= b$query_end,
+        current_round_blocks
       )
-      aa_indices <- single_res$rfmpi_aa_at_plato
-      aa_distances <- single_res$rfmp_aa_at_plato
-      ab_distances <- single_res$rfmp_ab_at_plato
-      ab_indices <- single_res$rfmpi_ab_at_plato
-      rfcp_vec <- single_res$rfcp_at_plato
-      plato_twin <- single_res$plato_twin_index
-      effective_freq <- single_res$effective_max_freq
-    }
+      if (!is.null(target_block) && identical(best_candidate_idx, as.integer(target_block$plato_index))) {
+        aa_indices <- target_block$rfmpi_aa_at_plato
+        aa_distances <- target_block$rfmp_aa_at_plato
+        ab_distances <- target_block$rfmp_ab_at_plato
+        ab_indices <- target_block$rfmpi_ab_at_plato
+        rfcp_vec <- target_block$rfcp_at_plato
+        plato_twin <- target_block$plato_twin_index
+        effective_freq <- target_block$effective_max_freq
+      } else {
+        single_res <- rfcp(
+          positive_data = positive_data,
+          negative_data = current_negative,
+          window_size = window_size,
+          max_freq = current_freq,
+          exclusion_radius = exclusion_radius,
+          query_begin = best_candidate_idx,
+          query_end = best_candidate_idx,
+          return_profiles = FALSE,
+          n_workers = 1L,
+          progress = FALSE,
+          backend = backend
+        )
+        aa_indices <- single_res$rfmpi_aa_at_plato
+        aa_distances <- single_res$rfmp_aa_at_plato
+        ab_distances <- single_res$rfmp_ab_at_plato
+        ab_indices <- single_res$rfmpi_ab_at_plato
+        rfcp_vec <- single_res$rfcp_at_plato
+        plato_twin <- single_res$plato_twin_index
+        effective_freq <- single_res$effective_max_freq
+      }
 
     subseq <- positive_data[best_candidate_idx:(best_candidate_idx + window_size - 1L)]
 
@@ -301,11 +464,37 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
       )
       max_freq_vec[(k_iter + 1L):k_platos] <- next_freq
     }
-  }
 
-  if (count_found < k_platos) {
-    platos_found <- platos_found[seq_len(count_found)]
+    elapsed_round <- proc.time()[["elapsed"]] - t0_round
+
+    if (!is.null(progress_callback)) {
+      progress_callback(list(
+        event = "round_done",
+        k = k_iter,
+        plato_index = best_candidate_idx,
+        plato_rms = best_candidate_rms,
+        effective_max_freq = effective_freq,
+        next_max_freq = if (k_iter < k_platos) max_freq_vec[[k_iter + 1L]] else current_freq,
+        elapsed_seconds = elapsed_round
+      ))
+    }
+
+    current_round_blocks <- list()
+    cursor <- 1L
+
+    if (!is.null(checkpoint_callback)) {
+      checkpoint_callback(make_state(
+        k_iter = k_iter + 1L,
+        cursor_completed = 0L,
+        round_blocks = list()
+      ))
+    }
   }
+}
+
+if (count_found < k_platos) {
+  platos_found <- platos_found[seq_len(count_found)]
+}
 
   structure(
     list(

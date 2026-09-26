@@ -2,9 +2,25 @@ NEWS
 ================
 Francisco Bischoff
 
-21 Sep 2026
+26 Sep 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+## matrixprofiler 0.1.11.9012
+
+- Added query chunking and tiled execution support to `rfcp_top_k()` via
+  `query_block_size`, dividing long query streams into bounded blocks
+  while preserving exact numeric equivalence to monolithic execution.
+- Added `progress_callback` reporting structured events
+  (`"round_start"`, `"block_done"`, `"round_done"`) with execution
+  timings and local block/Plato metrics.
+- Added serializable state checkpointing and resumption via
+  `checkpoint_callback` and `resume_state`, supporting idempotent
+  recovery from both intra-round (query block) and inter-round (Plato)
+  interruptions.
+- Added unit test coverage for chunked invariance, mid-round and
+  inter-round state resumption, callback events, and input/signature
+  compatibility validation.
 
 ## matrixprofiler 0.1.11.9011
 

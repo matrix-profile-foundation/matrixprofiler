@@ -131,6 +131,8 @@ that extends \code{mp_time_constraint} indices into the past.}
 \item{batch_size}{size of the new data}
 
 \item{stats}{obj with stats for mpx}
+
+\item{threshold}{Optional numeric threshold for distance comparison. Defaults to -1.0.}
 }
 \value{
 Returns a \code{list} with the \code{matrix_profile}, \code{profile_index} (if \code{idxs} is \code{TRUE} in \code{mpx()}), and some
@@ -230,7 +232,7 @@ regular MPX paths or the serial NA-aware implementations.
 }
 }
 \section{This document}{
-Last updated on 2026-09-21 using R version 4.6.1.
+Last updated on 2026-09-26 using R version 4.6.1.
 }
 
 \examples{

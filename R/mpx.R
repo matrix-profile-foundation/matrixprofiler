@@ -324,6 +324,7 @@ mpx_stream_right <- function(new_data, start_obj, history = 0, mp_time_constrain
 #' @param stats obj with stats for mpx
 #' @param history an `int`. Max distance where to look for the best match in matrix profile.
 #' (default is NULL).
+#' @param threshold Optional numeric threshold for distance comparison. Defaults to -1.0.
 #' @export
 #' @rdname mp_algos
 

@@ -16,7 +16,11 @@ rfcp_top_k(
   min_freq = 2L,
   n_workers = 1L,
   backend = "cpu",
-  progress = FALSE
+  progress = FALSE,
+  query_block_size = NULL,
+  progress_callback = NULL,
+  checkpoint_callback = NULL,
+  resume_state = NULL
 )
 }
 \arguments{
@@ -56,6 +60,21 @@ Ignored when \code{backend = "cuda"}. Defaults to \code{1L}.}
 \item{backend}{Computation backend: \code{"cpu"} (default) or \code{"cuda"}.}
 
 \item{progress}{Logical progress flag for each RFCP iteration. Defaults to \code{FALSE}.}
+
+\item{query_block_size}{Optional integer query block size for chunked
+execution. If \code{NULL} (default), queries are processed monolithically in
+a single call. If specified, queries are processed in contiguous blocks of
+size \code{query_block_size}.}
+
+\item{progress_callback}{Optional callback function \code{function(event)}
+invoked periodically with structured progress events (\code{"round_start"},
+\code{"block_done"}, \code{"round_done"}).}
+
+\item{checkpoint_callback}{Optional callback function \code{function(state)}
+invoked after each block and Plato with a serializable state list.}
+
+\item{resume_state}{Optional state list from a previous execution
+(\code{checkpoint_callback}) used to resume execution idempotently.}
 }
 \value{
 An object of class \code{"rfcp_top_k"}, which is a list containing:
