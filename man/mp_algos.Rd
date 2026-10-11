@@ -264,5 +264,8 @@ Website: \url{http://www.cs.ucr.edu/~eamonn/MatrixProfile.html}
 \code{mass()} for the underlying algorithm that finds best match of a query.
 
 \code{mpxab()} for the forward and reverse join-similarity.
+
+Other matrix profile computations:
+\code{\link[=mstomp]{mstomp()}}
 }
 \concept{matrix profile computations}

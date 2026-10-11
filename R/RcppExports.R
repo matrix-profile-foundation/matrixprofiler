@@ -175,6 +175,10 @@ mpxab_na_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size = 1.
     .Call(`_matrixprofiler_mpxab_na_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress, n_workers)
 }
 
+mstomp_rcpp <- function(data_ref, window_size, ez, must_dim, exc_dim, n_workers, progress) {
+    .Call(`_matrixprofiler_mstomp_rcpp`, data_ref, window_size, ez, must_dim, exc_dim, n_workers, progress)
+}
+
 rfcp_na_segmented_native_rcpp_parallel <- function(positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, n_workers, return_profiles, progress) {
     .Call(`_matrixprofiler_rfcp_na_segmented_native_rcpp_parallel`, positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, n_workers, return_profiles, progress)
 }
@@ -215,44 +219,44 @@ stomp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, n_workers 
     .Call(`_matrixprofiler_stomp_rcpp_parallel`, data_ref, query_ref, window_size, ez, n_workers, progress, left_right_profile)
 }
 
-movmean_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movmean_rcpp`, data, window_size)
+movmean_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movmean_rcpp`, data, window_size, na_mode)
 }
 
-movstd_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movstd_rcpp`, data, window_size)
+movsum_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movsum_rcpp`, data, window_size, na_mode)
 }
 
-movmean_std_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movmean_std_rcpp`, data, window_size)
+movsum_ogita_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movsum_ogita_rcpp`, data, window_size, na_mode)
 }
 
-movvar_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movvar_rcpp`, data, window_size)
+movvar2_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movvar2_rcpp`, data, window_size, na_mode)
 }
 
-movvar2_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movvar2_rcpp`, data, window_size)
+movvar_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movvar_rcpp`, data, window_size, na_mode)
 }
 
-movsum_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movsum_rcpp`, data, window_size)
+movstd_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movstd_rcpp`, data, window_size, na_mode)
 }
 
-movsum_ogita_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movsum_ogita_rcpp`, data, window_size)
+movmean_std_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movmean_std_rcpp`, data, window_size, na_mode)
 }
 
 precision_test_rcpp <- function(dd) {
     .Call(`_matrixprofiler_precision_test_rcpp`, dd)
 }
 
-movmin_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movmin_rcpp`, data, window_size)
+movmin_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movmin_rcpp`, data, window_size, na_mode)
 }
 
-movmax_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_movmax_rcpp`, data, window_size)
+movmax_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_movmax_rcpp`, data, window_size, na_mode)
 }
 
 movmean_weighted_rcpp <- function(data, window_size, eps) {
@@ -279,12 +283,12 @@ movvar_fading_rcpp <- function(data, window_size, eps) {
     .Call(`_matrixprofiler_movvar_fading_rcpp`, data, window_size, eps)
 }
 
-muinvn_rcpp <- function(data, window_size) {
-    .Call(`_matrixprofiler_muinvn_rcpp`, data, window_size)
+muinvn_rcpp <- function(data, window_size, na_mode) {
+    .Call(`_matrixprofiler_muinvn_rcpp`, data, window_size, na_mode)
 }
 
-muinvn_rcpp_parallel <- function(data, window_size, n_workers) {
-    .Call(`_matrixprofiler_muinvn_rcpp_parallel`, data, window_size, n_workers)
+muinvn_rcpp_parallel <- function(data, window_size, n_workers, na_mode) {
+    .Call(`_matrixprofiler_muinvn_rcpp_parallel`, data, window_size, n_workers, na_mode)
 }
 
 zero_crossing_rcpp <- function(data, window_size) {

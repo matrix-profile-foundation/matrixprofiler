@@ -24,6 +24,8 @@ knitr::opts_chunk$set(
 
 ## matrixprofiler 0.1.11.9014
 
+* **Native Multivariate STOMP (`mstomp`)**: Added native high-performance C++ engine (`mstomp_rcpp`) with multi-threading via `RcppThread`, properly sorting must/exclusion dimensions, and fixing historical edge cases where must dimensions could be omitted from accumulated distances. Delivers ~197x speedup over legacy pure R execution.
+* **Missing Value Handling in Rolling Window Functions (`na_strategy` & `na.rm`)**: Implemented complete missing/non-finite value support across `mov_mean()`, `mov_sum()`, `mov_var()`, `mov_std()`, `mov_min()`, `mov_max()`, `movmean_std()`, and `muinvn()` with explicit `na_strategy = c("window_na", "remove", "error")` and standard `na.rm` argument compatibility. Default `"window_na"` returns `NA_real_` strictly for windows intersecting non-finite values without corrupting adjacent valid windows or stopping execution.
 * **Native MPdist Engine**: Added native high-performance C++ implementation of MPdist (`mpdist_vect_rcpp` and `mpdist_simple_rcpp`) with multi-threaded parallel execution via `RcppThread`.
 * **Zero Allocation & O(N) Sliding Min**: Implemented linear-time monotonic deque for sliding window minimum and $O(K)$ selection with `std::nth_element`, replacing expensive R matrix and data frame allocations and providing massive speedups (over 10x-100x).
 * **Exported `mpdist()` API**: Exported `mpdist(ref_data, query_data, window_size, type = c("simple", "vector"), thr = 0.05, n_workers = 1)` in R with dedicated unit test suite.
