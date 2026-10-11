@@ -6,7 +6,7 @@ Francisco Bischoff
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
 
-## matrixprofiler 0.1.11.9014
+## matrixprofiler 0.1.12
 
 - **Native Multivariate STOMP (`mstomp`)**: Added native
   high-performance C++ engine (`mstomp_rcpp`) with multi-threading via

@@ -381,10 +381,35 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
     const double *data_ptr = data_ref.begin();
     const double *win_ptr = query_window.begin();
 
-    std::vector<std::pair<std::size_t, std::size_t>> chunks;
-    for (std::size_t cur = 0; cur < data_size; cur += grain) {
-      std::size_t end = std::min(cur + grain, static_cast<std::size_t>(data_size));
-      chunks.emplace_back(cur, end);
+    uint64_t const w_size = window_size;
+    uint64_t const d_size = data_size;
+    uint64_t const p_size = profile_len;
+
+    std::vector<double> rev_query(grain, 0.0);
+    std::reverse_copy(win_ptr, win_ptr + w_size, rev_query.begin());
+    std::vector<std::complex<double>> const Y_full = fft_rcpp(rev_query, false);
+
+    uint64_t const jump = grain - w_size + 1;
+    uint64_t const seq_end = (d_size >= grain) ? (d_size - grain) : 0;
+
+    struct Mass3Task {
+      uint64_t j;
+      uint64_t data_len;
+      uint64_t n_pts;
+      bool is_tail;
+    };
+
+    std::vector<Mass3Task> chunks;
+    uint64_t j = 0;
+    if (d_size >= grain) {
+      for (j = 0; j <= seq_end; j += jump) {
+        chunks.push_back({j, grain, jump, false});
+      }
+    }
+
+    uint64_t const tail_jump = d_size - j;
+    if (tail_jump >= w_size && (tail_jump - (w_size - 1) + j) <= p_size) {
+      chunks.push_back({j, tail_jump, tail_jump - w_size + 1, true});
     }
 
     uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
@@ -392,42 +417,30 @@ List mass3_rcpp_parallel(const NumericVector query_window, const NumericVector d
 
     try {
       RcppThread::parallelFor(0, chunks.size(), [&](std::size_t chunk_idx) {
-        std::size_t begin = chunks[chunk_idx].first;
-        std::size_t end = chunks[chunk_idx].second;
-        if (begin >= data_size - window_size + 1) return;
+        const Mass3Task &task = chunks[chunk_idx];
+        uint64_t const c_j = task.j;
+        uint64_t const c_data_len = task.data_len;
+        uint64_t const c_n_pts = task.n_pts;
 
-        uint64_t jump = end - begin;
-        uint64_t k = jump + window_size - 1;
-        if (end > data_size - window_size) {
-          jump = (data_size - window_size + 1) - begin;
-          k = end - begin;
+        std::vector<double> data_chunk(data_ptr + c_j, data_ptr + c_j + c_data_len);
+        std::vector<std::complex<double>> X = fft_rcpp(data_chunk, false);
+
+        std::vector<std::complex<double>> Z(c_data_len);
+        if (!task.is_tail) {
+          std::transform(X.begin(), X.end(), Y_full.begin(), Z.begin(), std::multiplies<std::complex<double>>());
+        } else {
+          std::vector<double> const rev_query_tail(rev_query.begin(), rev_query.begin() + static_cast<int64_t>(c_data_len));
+          std::vector<std::complex<double>> const Y_tail = fft_rcpp(rev_query_tail, false);
+          std::transform(X.begin(), X.end(), Y_tail.begin(), Z.begin(), std::multiplies<std::complex<double>>());
         }
-        if (jump == 0) return;
 
-        uint64_t const s = static_cast<uint64_t>(std::pow(2.0, std::ceil(std::log2(static_cast<double>(k)))));
-        std::unique_ptr<FFT::fftw> fft(new FFT::fftw());
+        std::vector<double> z = fft_rcpp_real(Z, true);
 
-        std::vector<std::complex<double>> rev_query(s);
-        for (uint64_t i = window_size, j = 0; i > 0; --i, ++j) {
-          rev_query[i - 1] = std::complex<double>(win_ptr[j], 0.0);
-        }
-        std::vector<std::complex<double>> Y = fft->fft(rev_query, false);
-
-        std::vector<std::complex<double>> data(s);
-        for (uint64_t i = 0; i < k; ++i) {
-          data[i] = std::complex<double>(data_ptr[begin + i], 0.0);
-        }
-        std::vector<std::complex<double>> X = fft->fft(data, false);
-
-        std::vector<std::complex<double>> Z(s);
-        std::transform(X.begin(), X.end(), Y.begin(), Z.begin(), std::multiplies<std::complex<double>>());
-        std::vector<std::complex<double>> z = fft->fft(Z, true);
-
-        for (uint64_t i = 0; i < jump; ++i) {
-          dp[begin + i] =
-              2.0 * (window_size - (z[k - jump + i].real() - window_size * d_mean[begin + i] * query_mean) /
-                                       (d_std[begin + i] * query_sd));
-          lp[begin + i] = z[k - jump + i].real();
+        for (uint64_t i = 0; i < c_n_pts; ++i) {
+          dp[c_j + i] =
+              2.0 * (w_size - (z[w_size - 1 + i] - w_size * d_mean[c_j + i] * query_mean) /
+                                       (d_std[c_j + i] * query_sd));
+          lp[c_j + i] = z[w_size - 1 + i];
         }
       }, actual_workers);
 
