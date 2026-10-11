@@ -5,16 +5,16 @@ contrast_profile_rcpp <- function(negative_data, positive_data, window_size, pos
     .Call(`_matrixprofiler_contrast_profile_rcpp`, negative_data, positive_data, window_size, positive_matrix, ez, s_size, n_workers, euclidean, progress)
 }
 
-mass_weighted_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, data_pre, weight, normalized) {
-    .Call(`_matrixprofiler_mass_weighted_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, data_pre, weight, normalized)
+mass_weighted_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, data_pre, weight, normalized, n_workers = 1L) {
+    .Call(`_matrixprofiler_mass_weighted_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, data_pre, weight, normalized, n_workers)
 }
 
-mass_absolute_rcpp <- function(data_fft, query_window, data_size, window_size, sumx2, sumy2) {
-    .Call(`_matrixprofiler_mass_absolute_rcpp`, data_fft, query_window, data_size, window_size, sumx2, sumy2)
+mass_absolute_rcpp <- function(data_fft, query_window, data_size, window_size, sumx2, sumy2, n_workers = 1L) {
+    .Call(`_matrixprofiler_mass_absolute_rcpp`, data_fft, query_window, data_size, window_size, sumx2, sumy2, n_workers)
 }
 
-mass2_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd) {
-    .Call(`_matrixprofiler_mass2_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd)
+mass2_rcpp <- function(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, n_workers = 1L) {
+    .Call(`_matrixprofiler_mass2_rcpp`, data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, n_workers)
 }
 
 mass3_rcpp <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain) {

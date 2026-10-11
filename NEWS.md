@@ -22,6 +22,11 @@ Francisco Bischoff
   standard `na.rm` argument compatibility. Default `"window_na"` returns
   `NA_real_` strictly for windows intersecting non-finite values without
   corrupting adjacent valid windows or stopping execution.
+- **Multithreaded MASS Variants (`mass`)**: Extended multi-threading via
+  `RcppThread` to all MASS variants (`v2`, `weighted`, `non_normalized`,
+  `absolute`) in `mass()` and C++ backend (`mass2_rcpp`,
+  `mass_weighted_rcpp`, `mass_absolute_rcpp`), matching
+  `mass3_rcpp_parallel` with identical numerical output.
 - **Native MPdist Engine**: Added native high-performance C++
   implementation of MPdist (`mpdist_vect_rcpp` and `mpdist_simple_rcpp`)
   with multi-threaded parallel execution via `RcppThread`.

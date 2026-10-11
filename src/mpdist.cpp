@@ -65,7 +65,7 @@ double mpdist_simple_rcpp(NumericVector ref_data, NumericVector query_data, uint
     NumericVector query_mean = pre["query_mean"];
     NumericVector query_sd = pre["query_sd"];
     List res = mass2_rcpp(pre["data_fft"], query_data, ref_size, window_size, pre["data_mean"], pre["data_sd"],
-                          query_mean[0], query_sd[0]);
+                          query_mean[0], query_sd[0], n_workers);
     NumericVector dp = res["distance_profile"];
     std::vector<double> dp_vec(dp.begin(), dp.end());
     double dist = cal_mp_dist_cpp(dp_vec, thr, ref_size);

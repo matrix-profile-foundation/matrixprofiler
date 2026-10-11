@@ -36,7 +36,7 @@ self-similarity. \strong{IMPORTANT} Use the same data used on \code{mass_pre()}.
 \item{version}{A \code{string}. Chooses the version of MASS what will be used. Ignored if \code{mass_pre()} is not the
 "normalized" type.}
 
-\item{n_workers}{An \code{integer} The number of threads using for computing. Defaults to \code{1}.}
+\item{n_workers}{An \code{integer}. The number of threads used for computing. Defaults to \code{1}.}
 
 \item{window_size}{Required. An integer defining the rolling window size.}
 

@@ -25,101 +25,233 @@ inline void clamp_negative(NumericVector &v) {
 List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
                         uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd,
                         double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight,
-                        const bool normalized) {
-  NumericVector distance_profile;
-  NumericVector last_product;
+                        const bool normalized, uint32_t n_workers = 1) {
+  const uint32_t profile_len = data_size - window_size + 1;
+  NumericVector distance_profile(profile_len);
+  NumericVector last_product(profile_len);
 
-  NumericVector query;
-  NumericVector rev_query(data_fft.length());
-  NumericVector rev_weight(data_fft.length());
-
-  // normalized query
-  if (normalized) {
-    query = (query_window - query_mean) / query_sd;
-  } else {
-    query = query_window;
-  }
-
-  double const sumwy = sum(query * weight);
-  double const sumwy2 = sum(weight * query * query);
-
-  std::reverse_copy(query.begin(), query.end(), rev_query.begin());
-  std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
-
-  ComplexVector const prod = data_fft * fft_rcpp(rev_weight * rev_query);
-  NumericVector data_queryw = Re(fft_rcpp(prod, true));
-
-  IntegerVector const range_d = Range(window_size - 1, data_size - 1);
-
-  last_product = data_queryw[range_d];
-
-  distance_profile = data_pre - 2 * (last_product - sumwy * data_mean) / data_sd + sumwy2;
-  clamp_negative(distance_profile);
-
-  return (List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product));
-}
-
-//[[Rcpp::export]]
-List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
-                        uint32_t window_size, const NumericVector sumx2, double sumy2) {
-  NumericVector distance_profile;
-  NumericVector last_product;
-
-  // pre-process query for fft
   try {
-    NumericVector rev_query(data_fft.length()); // use data_fft because is padded to a power of 2
-    std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
+    const R_xlen_t fft_len = data_fft.length();
+    NumericVector query;
+    NumericVector rev_query(fft_len);
+    NumericVector rev_weight(fft_len);
 
-    // compute the product
-    ComplexVector const prod = data_fft * fft_rcpp(rev_query);
-    NumericVector z = Re(fft_rcpp(prod, true));
-    // compute the distance profile
-    IntegerVector const range_z = Range(window_size - 1, data_size - 1);
-    IntegerVector const range_d = Range(0, data_size - window_size);
-    last_product = z[range_z];
-    distance_profile = as<NumericVector>(sumx2[range_d]) - 2 * last_product + sumy2;
-    clamp_negative(distance_profile);
+    // normalized query
+    if (normalized) {
+      query = (query_window - query_mean) / query_sd;
+    } else {
+      query = query_window;
+    }
+
+    double const sumwy = sum(query * weight);
+    double const sumwy2 = sum(weight * query * query);
+
+    std::reverse_copy(query.begin(), query.end(), rev_query.begin());
+    std::reverse_copy(weight.begin(), weight.end(), rev_weight.begin());
+
+    ComplexVector const q_fft = fft_rcpp(rev_weight * rev_query);
+    ComplexVector prod(fft_len);
+
+    uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
+
+    if (actual_workers > 1 && fft_len >= 1024) {
+      const Rcomplex *d_ptr = reinterpret_cast<const Rcomplex *>(data_fft.begin());
+      const Rcomplex *q_ptr = reinterpret_cast<const Rcomplex *>(q_fft.begin());
+      Rcomplex *p_ptr = reinterpret_cast<Rcomplex *>(prod.begin());
+
+      RcppThread::parallelFor(0, static_cast<std::size_t>(fft_len), [&](std::size_t i) {
+        p_ptr[i].r = d_ptr[i].r * q_ptr[i].r - d_ptr[i].i * q_ptr[i].i;
+        p_ptr[i].i = d_ptr[i].r * q_ptr[i].i + d_ptr[i].i * q_ptr[i].r;
+      }, actual_workers);
+    } else {
+      prod = data_fft * q_fft;
+    }
+
+    NumericVector data_queryw = Re(fft_rcpp(prod, true));
+
+    double *dp = distance_profile.begin();
+    double *lp = last_product.begin();
+    const double *dq_w = data_queryw.begin();
+    const double *d_pre = data_pre.begin();
+    const double *d_mean = data_mean.begin();
+    const double *d_sd = data_sd.begin();
+
+    if (actual_workers > 1 && profile_len >= 1024) {
+      RcppThread::parallelFor(0, static_cast<std::size_t>(profile_len), [&](std::size_t i) {
+        double prod_val = dq_w[window_size - 1 + i];
+        lp[i] = prod_val;
+        double dist = d_pre[i] - 2.0 * (prod_val - sumwy * d_mean[i]) / d_sd[i] + sumwy2;
+        if (!NumericVector::is_na(dist) && !std::isnan(dist) && dist < 0.0) {
+          dist = 0.0;
+        }
+        dp[i] = dist;
+      }, actual_workers);
+    } else {
+      for (std::size_t i = 0; i < profile_len; ++i) {
+        double prod_val = dq_w[window_size - 1 + i];
+        lp[i] = prod_val;
+        double dist = d_pre[i] - 2.0 * (prod_val - sumwy * d_mean[i]) / d_sd[i] + sumwy2;
+        if (!NumericVector::is_na(dist) && !std::isnan(dist) && dist < 0.0) {
+          dist = 0.0;
+        }
+        dp[i] = dist;
+      }
+    }
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
+  } catch (const std::exception &ex) {
+    Rcpp::stop(ex.what());
   } catch (...) {
     Rcpp::stop("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product));
+  return List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product);
+}
+
+//[[Rcpp::export]]
+List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size,
+                        uint32_t window_size, const NumericVector sumx2, double sumy2, uint32_t n_workers = 1) {
+  const uint32_t profile_len = data_size - window_size + 1;
+  NumericVector distance_profile(profile_len);
+  NumericVector last_product(profile_len);
+
+  try {
+    const R_xlen_t fft_len = data_fft.length();
+    NumericVector rev_query(fft_len); // use data_fft because is padded to a power of 2
+    std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
+
+    ComplexVector const q_fft = fft_rcpp(rev_query);
+    ComplexVector prod(fft_len);
+
+    uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
+
+    if (actual_workers > 1 && fft_len >= 1024) {
+      const Rcomplex *d_ptr = reinterpret_cast<const Rcomplex *>(data_fft.begin());
+      const Rcomplex *q_ptr = reinterpret_cast<const Rcomplex *>(q_fft.begin());
+      Rcomplex *p_ptr = reinterpret_cast<Rcomplex *>(prod.begin());
+
+      RcppThread::parallelFor(0, static_cast<std::size_t>(fft_len), [&](std::size_t i) {
+        p_ptr[i].r = d_ptr[i].r * q_ptr[i].r - d_ptr[i].i * q_ptr[i].i;
+        p_ptr[i].i = d_ptr[i].r * q_ptr[i].i + d_ptr[i].i * q_ptr[i].r;
+      }, actual_workers);
+    } else {
+      prod = data_fft * q_fft;
+    }
+
+    NumericVector z = Re(fft_rcpp(prod, true));
+
+    double *dp = distance_profile.begin();
+    double *lp = last_product.begin();
+    const double *z_ptr = z.begin();
+    const double *sx2_ptr = sumx2.begin();
+
+    if (actual_workers > 1 && profile_len >= 1024) {
+      RcppThread::parallelFor(0, static_cast<std::size_t>(profile_len), [&](std::size_t i) {
+        double prod_val = z_ptr[window_size - 1 + i];
+        lp[i] = prod_val;
+        double dist = sx2_ptr[i] - 2.0 * prod_val + sumy2;
+        if (!NumericVector::is_na(dist) && !std::isnan(dist) && dist < 0.0) {
+          dist = 0.0;
+        }
+        dp[i] = dist;
+      }, actual_workers);
+    } else {
+      for (std::size_t i = 0; i < profile_len; ++i) {
+        double prod_val = z_ptr[window_size - 1 + i];
+        lp[i] = prod_val;
+        double dist = sx2_ptr[i] - 2.0 * prod_val + sumy2;
+        if (!NumericVector::is_na(dist) && !std::isnan(dist) && dist < 0.0) {
+          dist = 0.0;
+        }
+        dp[i] = dist;
+      }
+    }
+  } catch (RcppThread::UserInterruptException &ex) {
+    Rcout << "Process terminated." << std::endl;
+  } catch (const std::exception &ex) {
+    Rcpp::stop(ex.what());
+  } catch (...) {
+    Rcpp::stop("c++ exception (unknown reason)");
+  }
+
+  return List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product);
 }
 
 //[[Rcpp::export]]
 List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint64_t data_size,
                 uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean,
-                double query_sd) {
-  NumericVector distance_profile;
-  NumericVector last_product;
-  double q_mean = 0.0, q_std = 0.0;
+                double query_sd, uint32_t n_workers = 1) {
+  const uint64_t profile_len = data_size - window_size + 1;
+  NumericVector distance_profile(profile_len);
+  NumericVector last_product(profile_len);
+  double q_mean = query_mean;
+  double q_std = query_sd;
 
-  // compute query_window stats -- O(d_size)
-  q_mean = query_mean;
-  q_std = query_sd;
-
-  // pre-process query for fft
   try {
-    NumericVector rev_query(data_fft.length()); // use data_fft because is padded to a power of 2
+    const R_xlen_t fft_len = data_fft.length();
+    NumericVector rev_query(fft_len); // use data_fft because is padded to a power of 2
     std::reverse_copy(query_window.begin(), query_window.end(), rev_query.begin());
 
-    // compute the product
-    ComplexVector const prod = data_fft * fft_rcpp(rev_query);
-    NumericVector z = Re(fft_rcpp(prod, true));
-    // compute the distance profile
-    last_product = z[Range(window_size - 1, data_size - 1)];
+    ComplexVector const q_fft = fft_rcpp(rev_query);
+    ComplexVector prod(fft_len);
 
-    distance_profile = 2 * (window_size - (last_product - window_size * data_mean * q_mean) / (data_sd * q_std));
-    clamp_negative(distance_profile);
+    uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
+
+    if (actual_workers > 1 && fft_len >= 1024) {
+      const Rcomplex *d_ptr = reinterpret_cast<const Rcomplex *>(data_fft.begin());
+      const Rcomplex *q_ptr = reinterpret_cast<const Rcomplex *>(q_fft.begin());
+      Rcomplex *p_ptr = reinterpret_cast<Rcomplex *>(prod.begin());
+
+      RcppThread::parallelFor(0, static_cast<std::size_t>(fft_len), [&](std::size_t i) {
+        p_ptr[i].r = d_ptr[i].r * q_ptr[i].r - d_ptr[i].i * q_ptr[i].i;
+        p_ptr[i].i = d_ptr[i].r * q_ptr[i].i + d_ptr[i].i * q_ptr[i].r;
+      }, actual_workers);
+    } else {
+      prod = data_fft * q_fft;
+    }
+
+    NumericVector z = Re(fft_rcpp(prod, true));
+
+    double *dp = distance_profile.begin();
+    double *lp = last_product.begin();
+    const double *z_ptr = z.begin();
+    const double *d_mean = data_mean.begin();
+    const double *d_std = data_sd.begin();
+
+    if (actual_workers > 1 && profile_len >= 1024) {
+      RcppThread::parallelFor(0, static_cast<std::size_t>(profile_len), [&](std::size_t i) {
+        double z_val = z_ptr[window_size - 1 + i];
+        lp[i] = z_val;
+        double dist = 2.0 * (static_cast<double>(window_size) -
+                             (z_val - static_cast<double>(window_size) * d_mean[i] * q_mean) /
+                             (d_std[i] * q_std));
+        if (!NumericVector::is_na(dist) && !std::isnan(dist) && dist < 0.0) {
+          dist = 0.0;
+        }
+        dp[i] = dist;
+      }, actual_workers);
+    } else {
+      for (std::size_t i = 0; i < profile_len; ++i) {
+        double z_val = z_ptr[window_size - 1 + i];
+        lp[i] = z_val;
+        double dist = 2.0 * (static_cast<double>(window_size) -
+                             (z_val - static_cast<double>(window_size) * d_mean[i] * q_mean) /
+                             (d_std[i] * q_std));
+        if (!NumericVector::is_na(dist) && !std::isnan(dist) && dist < 0.0) {
+          dist = 0.0;
+        }
+        dp[i] = dist;
+      }
+    }
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated." << std::endl;
+  } catch (const std::exception &ex) {
+    Rcpp::stop(ex.what());
   } catch (...) {
     Rcpp::stop("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product));
+  return List::create(Rcpp::Named("distance_profile") = distance_profile, Rcpp::Named("last_product") = last_product);
 }
 
 //[[Rcpp::export]]

@@ -23,6 +23,9 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
   data <- as.numeric(data)
   checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
+  if (window_size < 2L) {
+    stop("'window_size' must be at least 2.", call. = FALSE)
+  }
   if (!is.null(query)) {
     query <- as.numeric(query)
     checkmate::qassert(query, c("0", "n>=4"))

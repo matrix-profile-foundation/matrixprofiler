@@ -1,5 +1,14 @@
 # CRAN Comments
 
+## Comments for this version (0.1.12)
+
+- Complete migration from Intel TBB / `RcppParallel` to `RcppThread`: all multithreaded algorithms (`scrimp`, `stomp`, `mpx`, `mstomp`, `mass`) are now cleanly threaded with `RcppThread` without external TBB linkage issues or fork-unsafe crashes.
+- Implemented high-performance native C++ `mSTOMP` engine (`mstomp()`), yielding dramatic speedups for multidimensional matrix profile computation.
+- Rolling window functions (`mov_mean`, `mov_sum`, `mov_var`, `mov_std`, `mov_min`, `mov_max`, `movmean_std`, `muinvn`) now support explicit `na_strategy = c("window_na", "remove", "error")` and standard `na.rm`.
+- Extended multithreading to all MASS variants (`v2`, `weighted`, `non_normalized`, `absolute`).
+- Standardized invalid profile indices to `NA_integer_` across algorithms.
+- `R CMD check --as-cran` passed with 0 errors and 0 warnings.
+
 ## Comments for this version (0.1.10)
 
 C++11 flags are deprecated and defaults to C++17, so this requirement was removed from the package.

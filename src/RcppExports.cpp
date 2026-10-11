@@ -31,8 +31,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mass_weighted_rcpp
-List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight, const bool normalized);
-RcppExport SEXP _matrixprofiler_mass_weighted_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP data_preSEXP, SEXP weightSEXP, SEXP normalizedSEXP) {
+List mass_weighted_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, const NumericVector data_pre, const NumericVector weight, const bool normalized, uint32_t n_workers);
+RcppExport SEXP _matrixprofiler_mass_weighted_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP data_preSEXP, SEXP weightSEXP, SEXP normalizedSEXP, SEXP n_workersSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -47,13 +47,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector >::type data_pre(data_preSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type weight(weightSEXP);
     Rcpp::traits::input_parameter< const bool >::type normalized(normalizedSEXP);
-    rcpp_result_gen = Rcpp::wrap(mass_weighted_rcpp(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, data_pre, weight, normalized));
+    Rcpp::traits::input_parameter< uint32_t >::type n_workers(n_workersSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass_weighted_rcpp(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, data_pre, weight, normalized, n_workers));
     return rcpp_result_gen;
 END_RCPP
 }
 // mass_absolute_rcpp
-List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size, uint32_t window_size, const NumericVector sumx2, double sumy2);
-RcppExport SEXP _matrixprofiler_mass_absolute_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP sumx2SEXP, SEXP sumy2SEXP) {
+List mass_absolute_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint32_t data_size, uint32_t window_size, const NumericVector sumx2, double sumy2, uint32_t n_workers);
+RcppExport SEXP _matrixprofiler_mass_absolute_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP sumx2SEXP, SEXP sumy2SEXP, SEXP n_workersSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -63,13 +64,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< uint32_t >::type window_size(window_sizeSEXP);
     Rcpp::traits::input_parameter< const NumericVector >::type sumx2(sumx2SEXP);
     Rcpp::traits::input_parameter< double >::type sumy2(sumy2SEXP);
-    rcpp_result_gen = Rcpp::wrap(mass_absolute_rcpp(data_fft, query_window, data_size, window_size, sumx2, sumy2));
+    Rcpp::traits::input_parameter< uint32_t >::type n_workers(n_workersSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass_absolute_rcpp(data_fft, query_window, data_size, window_size, sumx2, sumy2, n_workers));
     return rcpp_result_gen;
 END_RCPP
 }
 // mass2_rcpp
-List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd);
-RcppExport SEXP _matrixprofiler_mass2_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP) {
+List mass2_rcpp(const ComplexVector data_fft, const NumericVector query_window, uint64_t data_size, uint32_t window_size, const NumericVector data_mean, const NumericVector data_sd, double query_mean, double query_sd, uint32_t n_workers);
+RcppExport SEXP _matrixprofiler_mass2_rcpp(SEXP data_fftSEXP, SEXP query_windowSEXP, SEXP data_sizeSEXP, SEXP window_sizeSEXP, SEXP data_meanSEXP, SEXP data_sdSEXP, SEXP query_meanSEXP, SEXP query_sdSEXP, SEXP n_workersSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -81,7 +83,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const NumericVector >::type data_sd(data_sdSEXP);
     Rcpp::traits::input_parameter< double >::type query_mean(query_meanSEXP);
     Rcpp::traits::input_parameter< double >::type query_sd(query_sdSEXP);
-    rcpp_result_gen = Rcpp::wrap(mass2_rcpp(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd));
+    Rcpp::traits::input_parameter< uint32_t >::type n_workers(n_workersSEXP);
+    rcpp_result_gen = Rcpp::wrap(mass2_rcpp(data_fft, query_window, data_size, window_size, data_mean, data_sd, query_mean, query_sd, n_workers));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1081,9 +1084,9 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_matrixprofiler_contrast_profile_rcpp", (DL_FUNC) &_matrixprofiler_contrast_profile_rcpp, 9},
-    {"_matrixprofiler_mass_weighted_rcpp", (DL_FUNC) &_matrixprofiler_mass_weighted_rcpp, 11},
-    {"_matrixprofiler_mass_absolute_rcpp", (DL_FUNC) &_matrixprofiler_mass_absolute_rcpp, 6},
-    {"_matrixprofiler_mass2_rcpp", (DL_FUNC) &_matrixprofiler_mass2_rcpp, 8},
+    {"_matrixprofiler_mass_weighted_rcpp", (DL_FUNC) &_matrixprofiler_mass_weighted_rcpp, 12},
+    {"_matrixprofiler_mass_absolute_rcpp", (DL_FUNC) &_matrixprofiler_mass_absolute_rcpp, 7},
+    {"_matrixprofiler_mass2_rcpp", (DL_FUNC) &_matrixprofiler_mass2_rcpp, 9},
     {"_matrixprofiler_mass3_rcpp", (DL_FUNC) &_matrixprofiler_mass3_rcpp, 9},
     {"_matrixprofiler_mass3_rcpp_parallel", (DL_FUNC) &_matrixprofiler_mass3_rcpp_parallel, 10},
     {"_matrixprofiler_set_k_rcpp", (DL_FUNC) &_matrixprofiler_set_k_rcpp, 3},

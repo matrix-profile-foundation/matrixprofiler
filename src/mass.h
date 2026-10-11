@@ -9,11 +9,11 @@ using namespace Rcpp;
 
 List mass_weighted_rcpp(ComplexVector data_fft, NumericVector query_window, uint32_t data_size, uint32_t window_size,
                         NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd,
-                        NumericVector data_pre, NumericVector weight, bool normalized = true);
+                        NumericVector data_pre, NumericVector weight, bool normalized, uint32_t n_workers);
 List mass_absolute_rcpp(ComplexVector data_fft, NumericVector query_window, uint32_t data_size, uint32_t window_size,
-                        NumericVector sumx2, double sumy2);
+                        NumericVector sumx2, double sumy2, uint32_t n_workers);
 List mass2_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t data_size, uint32_t window_size,
-                NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd);
+                NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd, uint32_t n_workers);
 List mass3_rcpp(const NumericVector &query_window, const NumericVector &data_ref, uint64_t data_size,
                 uint32_t window_size, const NumericVector &data_mean, const NumericVector &data_sd, double query_mean,
                 double query_sd, uint32_t grain = 4096);

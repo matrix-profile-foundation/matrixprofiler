@@ -91,7 +91,7 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "no
 #'   `length(data) - window_size + 1`.
 #' @param version A `string`. Chooses the version of MASS what will be used. Ignored if `mass_pre()` is not the
 #'   "normalized" type.
-#' @param n_workers An `integer` The number of threads using for computing. Defaults to `1`.
+#' @param n_workers An `integer`. The number of threads used for computing. Defaults to `1`.
 #'
 #' @return
 #' `mass()` returns a `list` with the `distance_profile` and the `last_product` that is only useful for computing the
@@ -177,22 +177,26 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
       mass2_rcpp(
         pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
         as.integer(pre_obj$window_size), pre_obj$data_mean, pre_obj$data_sd, pre_obj$query_mean[index],
-        pre_obj$query_sd[index]
+        pre_obj$query_sd[index],
+        n_workers = n_workers
       )
     },
     non_normalized = mass_weighted_rcpp(
       pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
       as.integer(pre_obj$window_size), pre_obj$data_mean, pre_obj$data_sd,
-      pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, rep(1, pre_obj$window_size), FALSE
+      pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, rep(1, pre_obj$window_size), FALSE,
+      n_workers = n_workers
     ),
     absolute = mass_absolute_rcpp(
       pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
-      as.integer(pre_obj$window_size), pre_obj$sumx2, pre_obj$sumy2[index]
+      as.integer(pre_obj$window_size), pre_obj$sumx2, pre_obj$sumy2[index],
+      n_workers = n_workers
     ),
     weighted = mass_weighted_rcpp(
       pre_obj$data_fft, query_window, as.integer(pre_obj$data_size),
       as.integer(pre_obj$window_size), pre_obj$data_mean, pre_obj$data_sd,
-      pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, pre_obj$weight, TRUE
+      pre_obj$query_mean[index], pre_obj$query_sd[index], pre_obj$data_pre, pre_obj$weight, TRUE,
+      n_workers = n_workers
     )
   )
 }
