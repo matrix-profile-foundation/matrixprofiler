@@ -59,31 +59,15 @@ mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", 
   type <- match.arg(type)
   checkmate::qassert(eps, "N1")
 
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
-
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- switch(type,
-        ogita = movsum_ogita_rcpp(data, window_size) / window_size,
-        normal = movmean_rcpp(data, window_size),
-        weighted = movmean_weighted_rcpp(data, window_size, eps),
-        fading = movmean_fading_rcpp(data, window_size, eps)
-      )
-    },
-    error = print
+  result <- switch(type,
+    ogita = movsum_ogita_rcpp(data, window_size) / window_size,
+    normal = movmean_rcpp(data, window_size),
+    weighted = movmean_weighted_rcpp(data, window_size, eps),
+    fading = movmean_fading_rcpp(data, window_size, eps)
   )
+  return(result)
 }
 
 #' Fast implementation of moving variance
@@ -107,31 +91,15 @@ mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   type <- match.arg(type)
   checkmate::qassert(eps, "N1")
 
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
-
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- switch(type,
-        ogita = movvar_rcpp(data, window_size),
-        normal = movvar2_rcpp(data, window_size),
-        weighted = movvar_weighted_rcpp(data, window_size, eps),
-        fading = movvar_fading_rcpp(data, window_size, eps)
-      )
-    },
-    error = print
+  result <- switch(type,
+    ogita = movvar_rcpp(data, window_size),
+    normal = movvar2_rcpp(data, window_size),
+    weighted = movvar_weighted_rcpp(data, window_size, eps),
+    fading = movvar_fading_rcpp(data, window_size, eps)
   )
+  return(result)
 }
 
 #' Fast implementation of moving sum
@@ -154,31 +122,15 @@ mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "
   type <- match.arg(type)
   checkmate::qassert(eps, "N1")
 
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
-
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- switch(type,
-        ogita = movsum_ogita_rcpp(data, window_size),
-        normal = movsum_rcpp(data, window_size),
-        weighted = movsum_weighted_rcpp(data, window_size, eps),
-        fading = movsum_fading_rcpp(data, window_size, eps)
-      )
-    },
-    error = print
+  result <- switch(type,
+    ogita = movsum_ogita_rcpp(data, window_size),
+    normal = movsum_rcpp(data, window_size),
+    weighted = movsum_weighted_rcpp(data, window_size, eps),
+    fading = movsum_fading_rcpp(data, window_size, eps)
   )
+  return(result)
 }
 
 #' Fast implementation of moving max
@@ -200,26 +152,10 @@ mov_max <- function(data, window_size) {
     stop("'window_size' must be at least 2.")
   }
 
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
-
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- movmax_rcpp(data, window_size)
-    },
-    error = print
-  )
+  result <- movmax_rcpp(data, window_size)
+  return(result)
 }
 
 #' Fast implementation of moving min
@@ -240,26 +176,10 @@ mov_min <- function(data, window_size) {
     stop("'window_size' must be at least 2.")
   }
 
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
-
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- movmin_rcpp(data, window_size)
-    },
-    error = print
-  )
+  result <- movmin_rcpp(data, window_size)
+  return(result)
 }
 
 
@@ -286,26 +206,21 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
 
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      if (rcpp) {
-        data_sd <- movstd_rcpp(data, window_size) # nolint
-      } else {
-        # Improve the numerical analysis by subtracting off the series mean
-        # this has no effect on the standard deviation.
-        data <- data - mean(data)
+  if (rcpp) {
+    data_sd <- movstd_rcpp(data, window_size) # nolint
+  } else {
+    # Improve the numerical analysis by subtracting off the series mean
+    # this has no effect on the standard deviation.
+    data <- data - mean(data)
 
-        data_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
-        data_mean <- data_sum / window_size
+    data_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
+    data_mean <- data_sum / window_size
 
-        data2 <- data^2.0
-        data2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
-        data_sd2 <- (data2_sum / window_size) - (data_mean^2.0) # variance
-        data_sd <- sqrt(data_sd2)
-      }
-    },
-    error = print
-  )
+    data2 <- data^2.0
+    data2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
+    data_sd2 <- (data2_sum / window_size) - (data_mean^2.0) # variance
+    data_sd <- sqrt(data_sd2)
+  }
 
   return(data_sd)
 }
@@ -364,15 +279,23 @@ muinvn <- function(data, window_size, n_workers = 1L) {
   if (!is.numeric(n_workers)) {
     n_workers <- 1L
   }
+  n_workers <- as.integer(n_workers)
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(
+      get("isChild", envir = asNamespace("parallel"))(),
+      error = function(e) FALSE
+    )
+    if (isTRUE(is_child)) {
+      warning("Multithreaded muinvn execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
 
   if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   if (n_workers > 1L) {
-    p <- RcppParallel::defaultNumThreads()
-    n_workers <- min(n_workers, p)
-    RcppParallel::setThreadOptions(numThreads = n_workers)
-    result <- muinvn_rcpp_parallel(data, window_size) # nolint
+    result <- muinvn_rcpp_parallel(data, window_size, n_workers) # nolint
   } else {
     result <- muinvn_rcpp(data, window_size) # nolint
   }

@@ -52,7 +52,7 @@ test_that("SCRIMP handles non-finite and constant windows safely", {
   }
 })
 
-test_that("SCRIMP AB-join agrees with MPXAB and accepts unequal lengths", {
+test_that("SCRIMP AB-join agrees with MPXAB and supports multithreading", {
   set.seed(54)
   data <- rnorm(100)
   query <- rnorm(130)
@@ -61,14 +61,28 @@ test_that("SCRIMP AB-join agrees with MPXAB and accepts unequal lengths", {
   original_data <- data
   original_query <- query
   truth <- mpx(data, 12, query = query, progress = FALSE)
-  result <- scrimp(data, 12, query = query, progress = FALSE)
 
-  expect_identical(data, original_data)
-  expect_identical(query, original_query)
-  expect_equal(result$matrix_profile, truth$matrix_profile, tolerance = 1e-10)
-  expect_equal(result$profile_index, truth$profile_index)
-  expect_equal(result$mpb, truth$mpb, tolerance = 1e-10)
-  expect_equal(result$pib, truth$pib)
+  for (n_workers in c(1, 2)) {
+    result <- expect_silent(scrimp(data, 12, query = query, n_workers = n_workers, progress = FALSE))
+
+    expect_identical(data, original_data)
+    expect_identical(query, original_query)
+    expect_equal(result$matrix_profile, truth$matrix_profile, tolerance = 1e-10)
+    expect_equal(result$profile_index, truth$profile_index)
+    expect_equal(result$mpb, truth$mpb, tolerance = 1e-10)
+    expect_equal(result$pib, truth$pib)
+  }
+})
+
+test_that("SCRIMP respects pre_scrimp in both serial and parallel", {
+  set.seed(56)
+  data <- rnorm(150)
+
+  serial <- scrimp(data, 20L, pre_scrimp = 0.25, n_workers = 1L, progress = FALSE)
+  parallel <- scrimp(data, 20L, pre_scrimp = 0.25, n_workers = 2L, progress = FALSE)
+
+  expect_equal(serial$matrix_profile, parallel$matrix_profile, tolerance = 1e-10)
+  expect_identical(serial$profile_index, parallel$profile_index)
 })
 
 test_that("parallel SCRIMP respects anytime sampling", {

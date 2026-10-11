@@ -88,9 +88,6 @@ brute_force_mpxab_na <- function(data, query, window_size) {
 }
 
 with_mpx_test_threads <- function(code, n = 4L) {
-  previous <- RcppParallel::defaultNumThreads()
-  on.exit(RcppParallel::setThreadOptions(numThreads = previous), add = TRUE)
-  RcppParallel::setThreadOptions(numThreads = n)
   force(code)
 }
 

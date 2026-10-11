@@ -232,7 +232,7 @@ regular MPX paths or the serial NA-aware implementations.
 }
 }
 \section{This document}{
-Last updated on 2026-09-26 using R version 4.6.1.
+Last updated on 2026-10-11 using R version 4.6.1.
 }
 
 \examples{

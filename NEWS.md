@@ -2,9 +2,22 @@ NEWS
 ================
 Francisco Bischoff
 
-26 Sep 2026
+11 Oct 2026
 
 <!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+
+## matrixprofiler 0.1.11.9014
+
+- **Native MPdist Engine**: Added native high-performance C++
+  implementation of MPdist (`mpdist_vect_rcpp` and `mpdist_simple_rcpp`)
+  with multi-threaded parallel execution via `RcppThread`.
+- **Zero Allocation & O(N) Sliding Min**: Implemented linear-time
+  monotonic deque for sliding window minimum and $O(K)$ selection with
+  `std::nth_element`, replacing expensive R matrix and data frame
+  allocations and providing massive speedups (over 10x-100x).
+- **Exported `mpdist()` API**: Exported
+  `mpdist(ref_data, query_data, window_size, type = c("simple", "vector"), thr = 0.05, n_workers = 1)`
+  in R with dedicated unit test suite.
 
 ## matrixprofiler 0.1.11.9013
 

@@ -21,8 +21,8 @@ mass3_rcpp <- function(query_window, data_ref, data_size, window_size, data_mean
     .Call(`_matrixprofiler_mass3_rcpp`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain)
 }
 
-mass3_rcpp_parallel <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain) {
-    .Call(`_matrixprofiler_mass3_rcpp_parallel`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain)
+mass3_rcpp_parallel <- function(query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain, n_workers) {
+    .Call(`_matrixprofiler_mass3_rcpp_parallel`, query_window, data_ref, data_size, window_size, data_mean, data_sd, query_mean, query_sd, grain, n_workers)
 }
 
 set_k_rcpp <- function(grain, data_size, window_size) {
@@ -89,6 +89,14 @@ fft_rcpp <- function(z, invert) {
     .Call(`_matrixprofiler_fft_rcpp`, z, invert)
 }
 
+mpdist_simple_rcpp <- function(ref_data, query_data, window_size, thr = 0.05, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpdist_simple_rcpp`, ref_data, query_data, window_size, thr, n_workers)
+}
+
+mpdist_vect_rcpp <- function(data, query, window_size, thr = 0.05, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpdist_vect_rcpp`, data, query, window_size, thr, n_workers)
+}
+
 mpxis_rcpp <- function(data_ref, batch_size, object, stats, history, mp_time_constraint, progress, threshold) {
     .Call(`_matrixprofiler_mpxis_rcpp`, data_ref, batch_size, object, stats, history, mp_time_constraint, progress, threshold)
 }
@@ -129,32 +137,42 @@ mpxab_gpu_rcpp <- function(data_ref, query_ref, window_size, idxs, euclidean) {
     .Call(`_matrixprofiler_mpxab_gpu_rcpp`, data_ref, query_ref, window_size, idxs, euclidean)
 }
 
-mpx_rcpp_parallel <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpx_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress)
+#' Check if package was compiled with CUDA support
+#'
+#' @return A logical value: `TRUE` if CUDA support was enabled at compile time, `FALSE` otherwise.
+#' @export
+#' @examples
+#' has_cuda()
+has_cuda <- function() {
+    .Call(`_matrixprofiler_has_cuda`)
 }
 
-mpx_na_rcpp_parallel <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpx_na_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress)
+mpx_rcpp_parallel <- function(data_ref, window_size, ez = 0.5, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpx_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress, n_workers)
 }
 
-mpxab_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpxab_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
+mpx_na_rcpp_parallel <- function(data_ref, window_size, ez = 0.5, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpx_na_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress, n_workers)
 }
 
-mpxab_na_segmented_native_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpxab_na_segmented_native_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
+mpxab_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpxab_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress, n_workers)
 }
 
-mpx_na_segmented_native_rcpp_parallel <- function(data_ref, window_size, ez, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpx_na_segmented_native_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress)
+mpxab_na_segmented_native_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpxab_na_segmented_native_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress, n_workers)
 }
 
-mpxab_na_segmented_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpxab_na_segmented_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
+mpx_na_segmented_native_rcpp_parallel <- function(data_ref, window_size, ez = 0.5, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpx_na_segmented_native_rcpp_parallel`, data_ref, window_size, ez, s_size, idxs, euclidean, progress, n_workers)
 }
 
-mpxab_na_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress) {
-    .Call(`_matrixprofiler_mpxab_na_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress)
+mpxab_na_segmented_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpxab_na_segmented_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress, n_workers)
+}
+
+mpxab_na_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size = 1.0, idxs = TRUE, euclidean = TRUE, progress = FALSE, n_workers = 1L) {
+    .Call(`_matrixprofiler_mpxab_na_rcpp_parallel`, data_ref, query_ref, window_size, s_size, idxs, euclidean, progress, n_workers)
 }
 
 rfcp_na_segmented_native_rcpp_parallel <- function(positive_ref, negative_ref, window_size, max_freq, exclusion_radius, query_begin, query_end, n_workers, return_profiles, progress) {
@@ -169,28 +187,32 @@ scrimp_rcpp <- function(data_ref, query_ref, window_size, ez, s_size, pre_scrimp
     .Call(`_matrixprofiler_scrimp_rcpp`, data_ref, query_ref, window_size, ez, s_size, pre_scrimp, progress)
 }
 
-scrimp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, s_size, progress) {
-    .Call(`_matrixprofiler_scrimp_rcpp_parallel`, data_ref, query_ref, window_size, ez, s_size, progress)
+scrimp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, s_size, pre_scrimp, progress, n_workers) {
+    .Call(`_matrixprofiler_scrimp_rcpp_parallel`, data_ref, query_ref, window_size, ez, s_size, pre_scrimp, progress, n_workers)
 }
 
 scrimpab_rcpp <- function(data_ref, query_ref, window_size, s_size, progress) {
     .Call(`_matrixprofiler_scrimpab_rcpp`, data_ref, query_ref, window_size, s_size, progress)
 }
 
+scrimpab_rcpp_parallel <- function(data_ref, query_ref, window_size, s_size, progress, n_workers) {
+    .Call(`_matrixprofiler_scrimpab_rcpp_parallel`, data_ref, query_ref, window_size, s_size, progress, n_workers)
+}
+
 stamp_rcpp <- function(data_ref, query_ref, window_size, ez, s_size, progress) {
     .Call(`_matrixprofiler_stamp_rcpp`, data_ref, query_ref, window_size, ez, s_size, progress)
 }
 
-stamp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, s_size, progress) {
-    .Call(`_matrixprofiler_stamp_rcpp_parallel`, data_ref, query_ref, window_size, ez, s_size, progress)
+stamp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, s_size, n_workers = 1L, progress = FALSE) {
+    .Call(`_matrixprofiler_stamp_rcpp_parallel`, data_ref, query_ref, window_size, ez, s_size, n_workers, progress)
 }
 
 stomp_rcpp <- function(data_ref, query_ref, window_size, ez, progress, left_right_profile) {
     .Call(`_matrixprofiler_stomp_rcpp`, data_ref, query_ref, window_size, ez, progress, left_right_profile)
 }
 
-stomp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, progress, left_right_profile) {
-    .Call(`_matrixprofiler_stomp_rcpp_parallel`, data_ref, query_ref, window_size, ez, progress, left_right_profile)
+stomp_rcpp_parallel <- function(data_ref, query_ref, window_size, ez, n_workers = 1L, progress = FALSE, left_right_profile = FALSE) {
+    .Call(`_matrixprofiler_stomp_rcpp_parallel`, data_ref, query_ref, window_size, ez, n_workers, progress, left_right_profile)
 }
 
 movmean_rcpp <- function(data, window_size) {
@@ -261,8 +283,8 @@ muinvn_rcpp <- function(data, window_size) {
     .Call(`_matrixprofiler_muinvn_rcpp`, data, window_size)
 }
 
-muinvn_rcpp_parallel <- function(data, window_size) {
-    .Call(`_matrixprofiler_muinvn_rcpp_parallel`, data, window_size)
+muinvn_rcpp_parallel <- function(data, window_size, n_workers) {
+    .Call(`_matrixprofiler_muinvn_rcpp_parallel`, data, window_size, n_workers)
 }
 
 zero_crossing_rcpp <- function(data, window_size) {

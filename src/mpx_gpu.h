@@ -13,5 +13,6 @@ List mpxab_gpu_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t wi
                     bool euclidean = true);
 List mpxab_na_gpu_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, bool idxs = true,
                        bool euclidean = true);
+bool has_cuda();
 
 #endif // MATRIXPROFILER_MPX_GPU_H

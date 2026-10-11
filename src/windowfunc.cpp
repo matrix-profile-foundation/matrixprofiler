@@ -19,18 +19,8 @@
 #include "windowfunc.h"
 #include <limits>
 
-// [[Rcpp::depends(RcppParallel)]]
-#include <RcppParallel.h>
-using namespace RcppParallel;
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
-
-#if RCPP_PARALLEL_USE_TBB
-#include "tbb/mutex.h"
-#else
-#include "rcpp_parallel_fix.h"
-#include "tthread/tinythread.h"
-#endif
 
 //[[Rcpp::export]]
 NumericVector movmean_rcpp(const NumericVector data, const uint32_t window_size) {
@@ -495,45 +485,11 @@ inline bool inverse_centered_norm(const double *data, uint32_t start, uint32_t w
   return std::isfinite(centered_norm) && std::isfinite(inverse_norm);
 }
 
-struct MuinvnNAWorker : public Worker {
-private:
-  const RVector<double> data;
-  const RVector<double> mu;
-  const uint32_t window_size;
-  RVector<int> valid_window;
-  RVector<double> sig;
-
-public:
-  MuinvnNAWorker(const NumericVector &data, const NumericVector &mu, uint32_t window_size,
-                 const LogicalVector &valid_window, const NumericVector &sig)
-      : data(data), mu(mu), window_size(window_size), valid_window(valid_window), sig(sig) {}
-
-  void operator()(std::size_t begin, std::size_t end) override {
-    double const *const data_ptr = data.begin();
-    double const *const mu_ptr = mu.begin();
-    int *const valid_window_ptr = valid_window.begin();
-    double *const sig_ptr = sig.begin();
-
-    for (std::size_t i = begin; i < end; i++) {
-      if (!valid_window_ptr[i]) {
-        continue;
-      }
-
-      double inverse_norm = std::numeric_limits<double>::quiet_NaN();
-      if (!inverse_centered_norm(data_ptr, i, window_size, mu_ptr[i], inverse_norm)) {
-        valid_window_ptr[i] = false;
-        continue;
-      }
-      sig_ptr[i] = inverse_norm;
-    }
-  }
-};
-
 // Precondition data for MPX joins containing non-finite samples. This follows
 // the MATLAB implementation: non-finite samples are zeroed only for the
 // recurrence, the rolling mean is compensated, and each centered norm is
 // computed directly instead of being derived from rolling sums of squares.
-List muinvn_na_impl(NumericVector data_ref, uint32_t window_size, bool parallel) {
+List muinvn_na_impl(NumericVector data_ref, uint32_t window_size, bool parallel, uint32_t n_workers) {
   uint32_t const data_size = data_ref.length();
   uint32_t const profile_len = data_size - window_size + 1;
   NumericVector data = clone(data_ref);
@@ -564,13 +520,19 @@ List muinvn_na_impl(NumericVector data_ref, uint32_t window_size, bool parallel)
 
   uint64_t const norm_work = static_cast<uint64_t>(profile_len) * window_size;
   if (parallel && norm_work >= 1000000ULL) {
-    MuinvnNAWorker worker(data, mu, window_size, valid_window, sig);
-    std::size_t const grain_size = std::max<std::size_t>(1, 32768 / window_size);
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, profile_len, worker, grain_size);
-#else
-    RcppParallel2::ttParallelFor(0, profile_len, worker, grain_size);
-#endif
+    uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
+    RcppThread::parallelFor(0, profile_len, [&](std::size_t i) {
+      if (!valid_window_ptr[i]) {
+        return;
+      }
+
+      double inverse_norm = std::numeric_limits<double>::quiet_NaN();
+      if (!inverse_centered_norm(data_ptr, i, window_size, mu_ptr[i], inverse_norm)) {
+        valid_window_ptr[i] = false;
+        return;
+      }
+      sig_ptr[i] = inverse_norm;
+    }, actual_workers);
   } else {
     for (uint32_t i = 0; i < profile_len; i++) {
       if (!valid_window_ptr[i]) {
@@ -590,10 +552,10 @@ List muinvn_na_impl(NumericVector data_ref, uint32_t window_size, bool parallel)
                       Rcpp::Named("valid_window") = valid_window);
 }
 
-List muinvn_na(NumericVector data_ref, uint32_t window_size) { return muinvn_na_impl(data_ref, window_size, false); }
+List muinvn_na(NumericVector data_ref, uint32_t window_size) { return muinvn_na_impl(data_ref, window_size, false, 1); }
 
-List muinvn_na_parallel(NumericVector data_ref, uint32_t window_size) {
-  return muinvn_na_impl(data_ref, window_size, true);
+List muinvn_na_parallel(NumericVector data_ref, uint32_t window_size, uint32_t n_workers) {
+  return muinvn_na_impl(data_ref, window_size, true, n_workers);
 }
 
 // A finite series can still contain constant windows, which the NA-aware
@@ -638,32 +600,8 @@ bool mpx_finite_fast_path_safe(const NumericVector &data, uint32_t window_size) 
   return (max_abs / scale) <= max_offset_to_range;
 }
 
-struct MuinWorker : public Worker {
-
-private:
-  // input
-  const RVector<double> data2_sum;
-  const RVector<double> mu;
-  const uint32_t w_size;
-  // output
-  RVector<double> sig;
-
-public:
-  // initialize from Rcpp input and output matrixes (the RMatrix class
-  // can be automatically converted to from the Rcpp matrix type)
-  MuinWorker(const NumericVector &data2_sum, const NumericVector &mu, const uint32_t w_size, const NumericVector &sig)
-      : data2_sum(data2_sum), mu(mu), w_size(w_size), sig(sig) {}
-
-  // function call operator that work for the specified range (begin/end)
-  void operator()(std::size_t begin, std::size_t end) override {
-    for (uint32_t i = begin; i < end; i++) {
-      sig[i] = 1 / sqrt(data2_sum[i] - mu[i] * mu[i] * w_size);
-    }
-  }
-};
-
 //[[Rcpp::export]]
-List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
+List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size, uint32_t n_workers) {
   // Functions here are based on the work in
   // Ogita et al, Accurate Sum and Dot Product
   // results here are a moving average and stable inverse centered norm based
@@ -673,15 +611,17 @@ List muinvn_rcpp_parallel(const NumericVector data, uint32_t window_size) {
   NumericVector const mu = movsum_ogita_rcpp(data, window_size) / window_size;
   NumericVector const data2_sum = movsum_ogita_rcpp(data * data, window_size);
 
-  MuinWorker muin_worker(data2_sum, mu, window_size, sig);
+  double *const sig_ptr = sig.begin();
+  double const *const mu_ptr = mu.begin();
+  double const *const d2_ptr = data2_sum.begin();
+  uint32_t const len = mu.length();
 
-  // call parallelFor to do the work
+  uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
+
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, mu.length(), muin_worker);
-#else
-    RcppParallel2::ttParallelFor(0, mu.length(), muin_worker);
-#endif
+    RcppThread::parallelFor(0, len, [&](std::size_t i) {
+      sig_ptr[i] = 1.0 / std::sqrt(d2_ptr[i] - mu_ptr[i] * mu_ptr[i] * window_size);
+    }, actual_workers);
   } catch (RcppThread::UserInterruptException &ex) {
     Rcout << "Process terminated.\n";
   } catch (...) {

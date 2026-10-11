@@ -5,24 +5,7 @@
 #include "rfcp.h"
 #include "windowfunc.h"
 
-#include <RcppParallel.h>
 #include <RcppThread.h>
-
-#if !RCPP_PARALLEL_USE_TBB
-#include "rcpp_parallel_fix.h"
-#include "tthread/tinythread.h"
-#endif
-
-#include <algorithm>
-#include <cmath>
-#include <complex>
-#include <cstdint>
-#include <cstdlib>
-#include <functional>
-#include <limits>
-#include <vector>
-
-using namespace RcppParallel;
 
 namespace {
 
@@ -98,33 +81,33 @@ static void rfcp_fill_differences(const NumericVector &data, const NumericVector
   }
 }
 
-class RFCPWorker : public Worker {
+class RFCPWorker {
 private:
-  const RVector<double> positive;
-  const RVector<double> negative;
-  const RVector<double> mean_positive;
-  const RVector<double> mean_negative;
-  const RVector<double> sig_positive;
-  const RVector<double> sig_negative;
-  const RVector<double> df_positive;
-  const RVector<double> df_negative;
-  const RVector<double> dg_positive;
-  const RVector<double> dg_negative;
-  const RVector<int> valid_positive;
-  const RVector<int> valid_negative;
+  const NumericVector &positive;
+  const NumericVector &negative;
+  const NumericVector &mean_positive;
+  const NumericVector &mean_negative;
+  const NumericVector &sig_positive;
+  const NumericVector &sig_negative;
+  const NumericVector &df_positive;
+  const NumericVector &df_negative;
+  const NumericVector &dg_positive;
+  const NumericVector &dg_negative;
+  const LogicalVector &valid_positive;
+  const LogicalVector &valid_negative;
   const std::vector<RFCPQueryTask> &tasks;
   const uint32_t window_size;
   const uint32_t max_freq;
   const uint32_t exclusion_radius;
   const uint32_t request_begin;
-  RVector<double> rms_profile;
-  RVector<int> completed;
-  RVector<int> paired_frequency;
-  RVector<double> profile_aa;
-  RVector<double> profile_ab;
-  RVector<double> profile_rfcp;
-  RVector<int> profile_index_aa;
-  RVector<int> profile_index_ab;
+  NumericVector rms_profile;
+  LogicalVector completed;
+  IntegerVector paired_frequency;
+  NumericVector profile_aa;
+  NumericVector profile_ab;
+  NumericVector profile_rfcp;
+  IntegerVector profile_index_aa;
+  IntegerVector profile_index_ab;
   const bool keep_profiles;
   std::vector<RFCPTaskBest> &task_best;
 
@@ -328,7 +311,7 @@ public:
         profile_index_aa(profile_index_aa), profile_index_ab(profile_index_ab),
         keep_profiles(keep_profiles), task_best(task_best) {}
 
-  void operator()(std::size_t begin, std::size_t end) override {
+  void operator()(std::size_t begin, std::size_t end) {
     double const *const positive_ptr = positive.begin();
     double const *const negative_ptr = negative.begin();
     double const *const mean_positive_ptr = mean_positive.begin();
@@ -561,11 +544,10 @@ List rfcp_na_segmented_native_rcpp_parallel(NumericVector positive_ref,
 
   bool partial = false;
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, tasks.size(), worker, 1);
-#else
-    RcppParallel2::ttParallelFor(0, tasks.size(), worker, 1);
-#endif
+    uint32_t actual_workers = std::max<uint32_t>(1, n_workers);
+    RcppThread::parallelFor(0, tasks.size(), [&](std::size_t i) {
+      worker(i, i + 1);
+    }, actual_workers);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
   } catch (...) {

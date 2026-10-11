@@ -100,9 +100,13 @@ List scrimp_rcpp(const NumericVector data_ref, const NumericVector query_ref, ui
 
 // [[Rcpp::export]]
 List scrimp_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double ez,
-                          double s_size, bool progress) {
+                          double s_size, double pre_scrimp, bool progress, uint32_t n_workers) {
   validate_scrimp_inputs(data_ref, query_ref, window_size, ez, s_size);
-  List const profile = mpx_na_rcpp_parallel(data_ref, window_size, ez, s_size, true, true, progress);
+  if (!std::isfinite(pre_scrimp) || pre_scrimp < 0.0 || pre_scrimp > 1.0) {
+    Rcpp::stop("pre_scrimp must be between 0 and 1");
+  }
+  List profile = mpx_na_rcpp_parallel(data_ref, window_size, ez, s_size, true, true, progress, n_workers);
+  apply_pre_scrimp(profile, data_ref, window_size, ez, pre_scrimp, progress);
   return scrimp_result(profile, ez);
 }
 
@@ -113,3 +117,12 @@ List scrimpab_rcpp(const NumericVector data_ref, const NumericVector query_ref, 
   List const profile = mpxab_na_rcpp(data_ref, query_ref, window_size, s_size, true, true, progress);
   return scrimp_ab_result(profile);
 }
+
+// [[Rcpp::export]]
+List scrimpab_rcpp_parallel(const NumericVector data_ref, const NumericVector query_ref, uint32_t window_size, double s_size,
+                            bool progress, uint32_t n_workers) {
+  validate_scrimp_inputs(data_ref, query_ref, window_size, 0.0, s_size);
+  List const profile = mpxab_na_rcpp_parallel(data_ref, query_ref, window_size, s_size, true, true, progress, n_workers);
+  return scrimp_ab_result(profile);
+}
+

@@ -82,19 +82,30 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
     stop("`s_size` must be between 0 and 1.", call. = FALSE)
   }
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(
+      get("isChild", envir = asNamespace("parallel"))(),
+      error = function(e) FALSE
+    )
+    if (isTRUE(is_child)) {
+      warning("Multithreaded STAMP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
   checkmate::qassert(progress, "B+")
 
   ez <- exclusion_zone
   result <- NULL
 
-  query_size <- ifelse(is.null(query), length(data),
-    ifelse(length(data) > length(query), length(query),
-      length(data)
-    )
-  )
-
-  if (window_size > ceiling(query_size / 2)) {
+  min_size <- if (is.null(query)) length(data) else min(length(data), length(query))
+  if (window_size >= min_size) {
     stop("Time series is too short relative to desired window size.", call. = FALSE)
+  }
+  if (is.null(query) && exclusion_zone > 0) {
+    ez_points <- round(window_size * exclusion_zone)
+    if ((length(data) - window_size) <= ez_points) {
+      stop("Time series is too short relative to desired window size and exclusion zone.", call. = FALSE)
+    }
   }
 
   # Register anytime exit point ----------------------
@@ -114,70 +125,52 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
   if (is.null(query)) {
     ## Self-Join ====================================
     "!DEBUG Self-Join"
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- stamp_rcpp_parallel(
-            data,
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-        } else {
-          result <- stamp_rcpp(
-            data,
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-        }
-      },
-      error = print
-    )
+    if (n_workers > 1) {
+      result <- stamp_rcpp_parallel(
+        data,
+        data,
+        window_size,
+        ez,
+        s_size,
+        n_workers,
+        as.logical(progress)
+      )
+    } else {
+      result <- stamp_rcpp(
+        data,
+        data,
+        window_size,
+        ez,
+        s_size,
+        as.logical(progress)
+      )
+    }
     "!DEBUG End Self-Join"
   } else {
     ## AB-Join ====================================
     "!DEBUG AB-Join"
     ez <- 0
 
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- stamp_rcpp_parallel(
-            data,
-            query,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-        } else {
-          result <- stamp_rcpp(
-            data,
-            query,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-        }
-      },
-      error = print
-    )
+    if (n_workers > 1) {
+      result <- stamp_rcpp_parallel(
+        data,
+        query,
+        window_size,
+        ez,
+        s_size,
+        n_workers,
+        as.logical(progress)
+      )
+    } else {
+      result <- stamp_rcpp(
+        data,
+        query,
+        window_size,
+        ez,
+        s_size,
+        as.logical(progress)
+      )
+    }
     "!DEBUG End AB-Join"
   }
 }

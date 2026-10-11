@@ -57,9 +57,14 @@ contrast <- function(negative_data, positive_data, window_size, positive_matrix 
   result <- NULL
 
   smaller_size <- min(length(negative_data), length(positive_data))
-
-  if (window_size > ceiling(smaller_size / 2)) {
+  if (window_size >= smaller_size) {
     stop("The smaller time series is too short relative to desired window size.", call. = FALSE)
+  }
+  if (exclusion_zone > 0) {
+    ez_points <- round(window_size * exclusion_zone)
+    if ((length(positive_data) - window_size) <= ez_points) {
+      stop("`positive_data` is too short relative to desired window size and exclusion zone.", call. = FALSE)
+    }
   }
 
   # Register anytime exit point ----------------------
@@ -75,39 +80,18 @@ contrast <- function(negative_data, positive_data, window_size, positive_matrix 
 
   # Computation ------------------------------------
   "!DEBUG Computation"
-  tryCatch(
-    {
-      "!DEBUG n_workers = `n_workers`"
-      if (n_workers > 1) {
-        p <- RcppParallel::defaultNumThreads()
-        n_workers <- min(n_workers, p)
-        RcppParallel::setThreadOptions(numThreads = n_workers)
-        result <- contrast_profile_rcpp(
-          negative_data,
-          positive_data,
-          window_size,
-          positive_matrix,
-          ez = ez,
-          s_size = 1,
-          n_workers = as.integer(n_workers),
-          as.logical(dist),
-          as.logical(progress)
-        )
-        RcppParallel::setThreadOptions(numThreads = p)
-      } else {
-        result <- contrast_profile_rcpp(
-          negative_data,
-          positive_data,
-          window_size,
-          positive_matrix,
-          ez = ez,
-          s_size = 1,
-          n_workers = 1L,
-          as.logical(dist),
-          as.logical(progress)
-        )
-      }
-    },
-    error = print
+  "!DEBUG n_workers = `n_workers`"
+  result <- contrast_profile_rcpp(
+    negative_data,
+    positive_data,
+    window_size,
+    positive_matrix,
+    ez = ez,
+    s_size = 1,
+    n_workers = as.integer(n_workers),
+    as.logical(dist),
+    as.logical(progress)
   )
+  return(result)
 }
+

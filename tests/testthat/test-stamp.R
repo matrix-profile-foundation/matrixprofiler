@@ -59,7 +59,7 @@ test_that("STAMP handles non-finite data without mutating its inputs", {
     any(!is.finite(data[i:(i + 15)]))
   }, logical(1))
   expect_true(all(is.infinite(serial$matrix_profile[invalid])))
-  expect_true(all(serial$profile_index[invalid] == -1L))
+  expect_true(all(is.na(serial$profile_index[invalid])))
 })
 
 test_that("parallel STAMP respects anytime sampling", {

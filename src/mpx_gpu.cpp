@@ -242,3 +242,18 @@ List mpxab_gpu_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t wi
   return List::create(Rcpp::Named("matrix_profile") = result["matrix_profile"], Rcpp::Named("mpb") = result["mpb"],
                       Rcpp::Named("partial") = result["partial"]);
 }
+
+//' Check if package was compiled with CUDA support
+//'
+//' @return A logical value: `TRUE` if CUDA support was enabled at compile time, `FALSE` otherwise.
+//' @export
+//' @examples
+//' has_cuda()
+// [[Rcpp::export]]
+bool has_cuda() {
+#ifdef MATRIXPROFILER_ENABLE_CUDA
+  return true;
+#else
+  return false;
+#endif
+}

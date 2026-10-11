@@ -6,9 +6,7 @@
 }
 
 .onAttach <- function(libname, pkgname) {
-  Sys.setenv(RCPP_PARALLEL_BACKEND = "tbb")
   packageStartupMessage("Welcome to Matrix ProfileR")
-  packageStartupMessage("Using TBB backend. Type help(matrixprofiler) for further help.")
 }
 
 .onUnload <- function(libpath) {

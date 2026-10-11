@@ -3,7 +3,6 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 #include "mathtools.h" // math first to fix OSX error
-#include "mpx_parallel.h"
 #include "windowfunc.h"
 #include <cfloat> // DBL_EPSILON when STRICT_R_HEADERS
 #include <chrono>
@@ -19,16 +18,62 @@
 #include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
-// [[Rcpp::depends(RcppParallel)]]
-#include <RcppParallel.h>
-using namespace RcppParallel;
 
-#if RCPP_PARALLEL_USE_TBB
-#include "tbb/mutex.h"
-#else
-#include "rcpp_parallel_fix.h"
-#include "tthread/tinythread.h"
-#endif
+struct Worker {
+  virtual ~Worker() = default;
+  virtual void operator()(std::size_t begin, std::size_t end) {}
+};
+
+template <typename T>
+class RVector {
+private:
+  T *data_;
+  std::size_t length_;
+
+public:
+  RVector() : data_(nullptr), length_(0) {}
+  RVector(T *data, std::size_t length) : data_(data), length_(length) {}
+  template <int RTYPE, template <class> class Storage>
+  RVector(const Rcpp::Vector<RTYPE, Storage> &vec)
+      : data_(const_cast<T *>(reinterpret_cast<const T *>(vec.begin()))), length_(vec.size()) {}
+
+  template <int RTYPE, template <class> class Storage>
+  RVector(Rcpp::Vector<RTYPE, Storage> &vec)
+      : data_(reinterpret_cast<T *>(vec.begin())), length_(vec.size()) {}
+
+  inline T &operator[](std::size_t index) { return data_[index]; }
+  inline const T &operator[](std::size_t index) const { return data_[index]; }
+  inline std::size_t size() const { return length_; }
+  inline std::size_t length() const { return length_; }
+  inline T *begin() { return data_; }
+  inline const T *begin() const { return data_; }
+  inline T *end() { return data_ + length_; }
+  inline const T *end() const { return data_ + length_; }
+};
+
+template <typename WorkerFunc>
+inline void parallel_for_range(std::size_t begin, std::size_t end, WorkerFunc &worker, std::size_t grainsize,
+                               uint32_t n_workers) {
+  if (begin >= end) {
+    return;
+  }
+  if (n_workers <= 1) {
+    worker(begin, end);
+    return;
+  }
+  std::size_t total = end - begin;
+  std::size_t chunk_sz = grainsize > 0 ? grainsize : (total + n_workers - 1) / n_workers;
+  std::vector<std::pair<std::size_t, std::size_t>> chunks;
+  for (std::size_t cur = begin; cur < end; cur += chunk_sz) {
+    chunks.emplace_back(cur, std::min(cur + chunk_sz, end));
+  }
+  RcppThread::parallelFor(
+      0, chunks.size(),
+      [&](std::size_t i) {
+        worker(chunks[i].first, chunks[i].second);
+      },
+      n_workers);
+}
 
 // Worker instrumentation is deliberately opt-in.  The hot loops only update
 // local counters when MATRIXPROFILER_PROFILE_WORKERS is enabled; aggregation
@@ -175,11 +220,7 @@ private:
   RVector<int> mpi;
   const bool keep_indices;
 
-#if RCPP_PARALLEL_USE_TBB
-  tbb::spin_mutex m;
-#else
-  tthread::mutex m;
-#endif
+  std::mutex m;
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
@@ -260,11 +301,7 @@ private:
   RVector<int> mpi;
   const bool keep_indices;
 
-#if RCPP_PARALLEL_USE_TBB
-  tbb::spin_mutex mutex;
-#else
-  tthread::mutex mutex;
-#endif
+  std::mutex mutex;
 
 public:
   MatrixProfilePNA(const NumericVector &data, uint64_t window_size, const IntegerVector &compute_order,
@@ -345,8 +382,8 @@ public:
 };
 
 // [[Rcpp::export]]
-List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs,
-                       bool euclidean, bool progress) {
+List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez = 0.5, double s_size = 1.0,
+                       bool idxs = true, bool euclidean = true, bool progress = false, uint32_t n_workers = 1) {
 
   uint64_t const exclusion_zone = round(window_size * ez + DBL_EPSILON) + 1;
 
@@ -393,11 +430,7 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, 
     MatrixProfileP matrix_profile(data_ref, window_size, compute_order, df, dg, mu, sig, ww, mp, mpi, idxs);
 
     try {
-#if RCPP_PARALLEL_USE_TBB
-      RcppParallel::parallelFor(0, work_size, matrix_profile, 4 * window_size);
-#else
-      RcppParallel2::ttParallelFor(0, work_size, matrix_profile, 4 * window_size);
-#endif
+      parallel_for_range(0, work_size, matrix_profile, 4 * window_size, n_workers);
       p.increment(100);
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
@@ -426,8 +459,8 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, 
 
 // Parallel MPX self-join with explicit support for non-finite samples.
 // [[Rcpp::export]]
-List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size, bool idxs,
-                          bool euclidean, bool progress) {
+List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez = 0.5, double s_size = 1.0,
+                          bool idxs = true, bool euclidean = true, bool progress = false, uint32_t n_workers = 1) {
   uint64_t const data_size = data_ref.length();
   if (window_size < 2 || window_size >= data_size) {
     Rcpp::stop("window_size must leave at least two subsequences");
@@ -440,7 +473,7 @@ List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double e
   }
 
   if (mpx_finite_fast_path_safe(data_ref, window_size)) {
-    List result = mpx_rcpp_parallel(data_ref, window_size, ez, s_size, idxs, euclidean, progress);
+    List result = mpx_rcpp_parallel(data_ref, window_size, ez, s_size, idxs, euclidean, progress, n_workers);
     result["valid_window"] = LogicalVector(data_ref.length() - window_size + 1, true);
     return result;
   }
@@ -485,11 +518,7 @@ List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double e
   MatrixProfilePNA matrix_profile(data, window_size, compute_order, df, dg, mu, sig, first_window, valid_window, mp,
                                   mpi, idxs);
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, work_size, matrix_profile, 4 * window_size);
-#else
-    RcppParallel2::ttParallelFor(0, work_size, matrix_profile, 4 * window_size);
-#endif
+    parallel_for_range(0, work_size, matrix_profile, 4 * window_size, n_workers);
     progress_bar.increment(100);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
@@ -555,13 +584,8 @@ private:
   const bool keep_indices;
   MatrixProfileWorkerDiagnostics *const diagnostics;
 
-#if RCPP_PARALLEL_USE_TBB
-  tbb::spin_mutex m;
-  tbb::mutex m1;
-#else
-  tthread::mutex m;
-  tthread::mutex m1;
-#endif
+  std::mutex m;
+  std::mutex m1;
 
   // initialize from Rcpp input and output matrixes (the RMatrix class
   // can be automatically converted to from the Rcpp matrix type)
@@ -842,11 +866,7 @@ private:
   const bool skip_invalid_blocks;
   MatrixProfileWorkerDiagnostics *const diagnostics;
 
-#if RCPP_PARALLEL_USE_TBB
-  tbb::spin_mutex mutex;
-#else
-  tthread::mutex mutex;
-#endif
+  std::mutex mutex;
 
 public:
   MatrixProfilePABNA(const NumericVector &data, const NumericVector &query, uint64_t window_size,
@@ -1263,8 +1283,8 @@ public:
 };
 
 // [[Rcpp::export]]
-List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size,
-                         bool idxs, bool euclidean, bool progress) {
+List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size = 1.0,
+                         bool idxs = true, bool euclidean = true, bool progress = false, uint32_t n_workers = 1) {
 
   try {
     // matrix profile using cross correlation,
@@ -1272,8 +1292,8 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     uint32_t a_len = data_ref.length();
     uint32_t b_len = query_ref.length();
 
-    List msd_a = muinvn_rcpp_parallel(data_ref, window_size);
-    List msd_b = muinvn_rcpp_parallel(query_ref, window_size);
+    List msd_a = muinvn_rcpp_parallel(data_ref, window_size, n_workers);
+    List msd_b = muinvn_rcpp_parallel(query_ref, window_size, n_workers);
 
     NumericVector mu_a = msd_a["avg"];
     NumericVector sig_a = msd_a["sig"];
@@ -1324,11 +1344,7 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
                                     &diagnostics);
 
     try {
-#if RCPP_PARALLEL_USE_TBB
-      RcppParallel::parallelFor(0, profile_len_a, matrix_profile, 4 * window_size);
-#else
-      RcppParallel2::ttParallelFor(0, profile_len_a, matrix_profile, 4 * window_size);
-#endif
+      parallel_for_range(0, profile_len_a, matrix_profile, 4 * window_size, n_workers);
       p.increment(50);
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
@@ -1341,11 +1357,7 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     matrix_profile.set_ba();
 
     try {
-#if RCPP_PARALLEL_USE_TBB
-      RcppParallel::parallelFor(1, profile_len_b, matrix_profile, 4 * window_size);
-#else
-      RcppParallel2::ttParallelFor(1, profile_len_b, matrix_profile, 4 * window_size);
-#endif
+      parallel_for_range(1, profile_len_b, matrix_profile, 4 * window_size, n_workers);
       p.increment(50);
     } catch (RcppThread::UserInterruptException &e) {
       partial = true;
@@ -1632,7 +1644,7 @@ static void matrix_profile_add_native_aa_block_tasks(const std::vector<MatrixPro
 // Statistics are calculated once for the complete input, and every task
 // evaluates one finite A x B block directly against those global statistics.
 // It never calls an exported MPX routine from inside C++, avoiding repeated
-// normalization, R allocations, and nested RcppParallel scheduling.
+// normalization, R allocations, and nested parallel scheduling.
 class MatrixProfileSegmentedNativeAB : public Worker {
 private:
   const RVector<double> data;
@@ -1653,11 +1665,7 @@ private:
   RVector<int> mpi_b;
   const bool keep_indices;
 
-#if RCPP_PARALLEL_USE_TBB
-  tbb::spin_mutex mutex;
-#else
-  tthread::mutex mutex;
-#endif
+  std::mutex mutex;
 
   static double covariance_at(const double *data_ptr, const double *query_ptr, const double *mu_a_ptr,
                               const double *mu_b_ptr, uint32_t a_start, uint32_t b_start, uint32_t window_size) {
@@ -1779,7 +1787,8 @@ public:
 // are shared by the whole join.
 // [[Rcpp::export]]
 List mpxab_na_segmented_native_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size,
-                                             double s_size, bool idxs, bool euclidean, bool progress) {
+                                             double s_size = 1.0, bool idxs = true, bool euclidean = true,
+                                             bool progress = false, uint32_t n_workers = 1) {
   uint64_t const data_size = data_ref.length();
   uint64_t const query_size = query_ref.length();
   if (window_size < 2 || window_size >= data_size || window_size >= query_size) {
@@ -1845,11 +1854,7 @@ List mpxab_na_segmented_native_rcpp_parallel(NumericVector data_ref, NumericVect
                                         window_size, mp_a, mp_b, mpi_a, mpi_b, idxs);
   (void)progress;
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, tasks.size(), worker, 1);
-#else
-    RcppParallel2::ttParallelFor(0, tasks.size(), worker, 1);
-#endif
+    parallel_for_range(0, tasks.size(), worker, 1, n_workers);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Native segmented AB join terminated by the user successfully, partial results were returned." << std::endl;
@@ -1901,11 +1906,7 @@ private:
   RVector<int> mpi;
   const bool keep_indices;
 
-#if RCPP_PARALLEL_USE_TBB
-  tbb::spin_mutex mutex;
-#else
-  tthread::mutex mutex;
-#endif
+  std::mutex mutex;
 
   static double covariance_at(const double *data_ptr, const double *mu_ptr, uint32_t a_start, uint32_t b_start,
                               uint32_t window_size) {
@@ -2106,8 +2107,9 @@ public:
 // within-segment block is traversed; cross-segment blocks are evaluated once
 // and update both profile positions.
 // [[Rcpp::export]]
-List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez, double s_size,
-                                           bool idxs, bool euclidean, bool progress) {
+List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez = 0.5,
+                                           double s_size = 1.0, bool idxs = true, bool euclidean = true,
+                                           bool progress = false, uint32_t n_workers = 1) {
   uint64_t const data_size = data_ref.length();
   if (window_size < 2 || window_size >= data_size) {
     Rcpp::stop("window_size must leave at least two subsequences");
@@ -2158,11 +2160,7 @@ List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t wind
   MatrixProfileSegmentedNativeAA worker(data, mu, sig, df, dg, tasks, window_size, exclusion, mp, mpi, idxs);
   (void)progress;
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, tasks.size(), worker, 1);
-#else
-    RcppParallel2::ttParallelFor(0, tasks.size(), worker, 1);
-#endif
+    parallel_for_range(0, tasks.size(), worker, 1, n_workers);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
     Rcout << "Native segmented self join terminated by the user successfully, partial results were returned." << std::endl;
@@ -2193,7 +2191,8 @@ List mpx_na_segmented_native_rcpp_parallel(NumericVector data_ref, uint64_t wind
 // silently switching algorithms.
 // [[Rcpp::export]]
 List mpxab_na_segmented_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size,
-                                      double s_size, bool idxs, bool euclidean, bool progress) {
+                                      double s_size = 1.0, bool idxs = true, bool euclidean = true,
+                                      bool progress = false, uint32_t n_workers = 1) {
   uint64_t const data_size = data_ref.length();
   uint64_t const query_size = query_ref.length();
   if (window_size < 2 || window_size >= data_size || window_size >= query_size) {
@@ -2233,7 +2232,7 @@ List mpxab_na_segmented_rcpp_parallel(NumericVector data_ref, NumericVector quer
   bool partial = false;
   // Segment calls delegate to the regular parallel kernel, whose own progress
   // object is intentionally disabled here.  A single outer progress object is
-  // not safe while repeatedly entering RcppParallel from this native entry.
+  // not safe while repeatedly entering parallel workers from this native entry.
   (void)progress;
   for (std::size_t a_segment_index = 0; a_segment_index < segments_a.size() && !partial; a_segment_index++) {
     MatrixProfileFiniteSegment const &a_segment = segments_a[a_segment_index];
@@ -2265,7 +2264,7 @@ List mpxab_na_segmented_rcpp_parallel(NumericVector data_ref, NumericVector quer
           }
         }
       } else {
-        List const local = mpxab_rcpp_parallel(a, b, window_size, 1.0, idxs, euclidean, false);
+        List const local = mpxab_rcpp_parallel(a, b, window_size, 1.0, idxs, euclidean, false, n_workers);
         NumericVector const local_mp_a = local["matrix_profile"];
         NumericVector const local_mp_b = local["mpb"];
         IntegerVector local_mpi_a;
@@ -2321,8 +2320,9 @@ List mpxab_na_segmented_rcpp_parallel(NumericVector data_ref, NumericVector quer
 
 // Parallel MPX AB-join with explicit support for non-finite samples.
 // [[Rcpp::export]]
-List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size,
-                            bool idxs, bool euclidean, bool progress) {
+List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64_t window_size, double s_size = 1.0,
+                            bool idxs = true, bool euclidean = true, bool progress = false,
+                            uint32_t n_workers = 1) {
   uint64_t const data_size = data_ref.length();
   uint64_t const query_size = query_ref.length();
   if (window_size < 2 || window_size >= data_size || window_size >= query_size) {
@@ -2334,7 +2334,7 @@ List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uin
 
   if (mpx_finite_fast_path_safe(data_ref, window_size) &&
       mpx_finite_fast_path_safe(query_ref, window_size)) {
-    List result = mpxab_rcpp_parallel(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress);
+    List result = mpxab_rcpp_parallel(data_ref, query_ref, window_size, s_size, idxs, euclidean, progress, n_workers);
     result["valid_window_a"] = LogicalVector(data_ref.length() - window_size + 1, true);
     result["valid_window_b"] = LogicalVector(query_ref.length() - window_size + 1, true);
     return result;
@@ -2426,11 +2426,7 @@ List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uin
                                     idxs, skip_invalid_blocks, &diagnostics);
 
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, work_a, matrix_profile, 4 * window_size);
-#else
-    RcppParallel2::ttParallelFor(0, work_a, matrix_profile, 4 * window_size);
-#endif
+    parallel_for_range(0, work_a, matrix_profile, 4 * window_size, n_workers);
     progress_bar.increment(50);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;
@@ -2441,11 +2437,7 @@ List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uin
 
   matrix_profile.set_ba();
   try {
-#if RCPP_PARALLEL_USE_TBB
-    RcppParallel::parallelFor(0, work_b, matrix_profile, 4 * window_size);
-#else
-    RcppParallel2::ttParallelFor(0, work_b, matrix_profile, 4 * window_size);
-#endif
+    parallel_for_range(0, work_b, matrix_profile, 4 * window_size, n_workers);
     progress_bar.increment(50);
   } catch (RcppThread::UserInterruptException &e) {
     partial = true;

@@ -57,9 +57,6 @@ test_that("MPXABs are equal", {
 
 test_that("parallel MPXAB omits indices when idxs is FALSE", {
   with_mpx_test_threads <- function(code, n = 2L) {
-    previous <- RcppParallel::defaultNumThreads()
-    on.exit(RcppParallel::setThreadOptions(numThreads = previous), add = TRUE)
-    RcppParallel::setThreadOptions(numThreads = n)
     force(code)
   }
 

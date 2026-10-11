@@ -30,7 +30,7 @@ List contrast_profile_rcpp(NumericVector negative_data, NumericVector positive_d
   List ab_mp;
 
   if (n_workers > 1) {
-    ab_mp = mpxab_rcpp_parallel(positive_data, negative_data, window_size, s_size, false, euclidean, progress);
+    ab_mp = mpxab_rcpp_parallel(positive_data, negative_data, window_size, s_size, false, euclidean, progress, n_workers);
   } else {
     ab_mp = mpxab_rcpp(positive_data, negative_data, window_size, s_size, false, euclidean, progress);
   }
@@ -39,7 +39,7 @@ List contrast_profile_rcpp(NumericVector negative_data, NumericVector positive_d
     positive_mp = positive_matrix;
   } else {
     if (n_workers > 1) {
-      positive_mp = mpx_rcpp_parallel(positive_data, window_size, ez, s_size, true, euclidean, progress);
+      positive_mp = mpx_rcpp_parallel(positive_data, window_size, ez, s_size, true, euclidean, progress, n_workers);
     } else {
       positive_mp = mpx_rcpp(positive_data, window_size, ez, s_size, true, euclidean, progress);
     }

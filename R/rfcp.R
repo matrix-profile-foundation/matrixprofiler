@@ -134,10 +134,16 @@ rfcp <- function(positive_data, negative_data, window_size, max_freq,
     ))
   }
 
-  previous_threads <- RcppParallel::defaultNumThreads()
-  on.exit(RcppParallel::setThreadOptions(numThreads = previous_threads), add = TRUE)
-  n_workers <- min(n_workers, previous_threads)
-  RcppParallel::setThreadOptions(numThreads = n_workers)
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(
+      get("isChild", envir = asNamespace("parallel"))(),
+      error = function(e) FALSE
+    )
+    if (isTRUE(is_child)) {
+      warning("Multithreaded RFCP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
 
   rfcp_na_segmented_native_rcpp_parallel(
     positive_data,

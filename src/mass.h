@@ -19,7 +19,7 @@ List mass3_rcpp(const NumericVector &query_window, const NumericVector &data_ref
                 double query_sd, uint32_t grain = 4096);
 List mass3_rcpp_parallel(NumericVector query_window, NumericVector data_ref, uint64_t data_size, uint32_t window_size,
                          NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd,
-                         uint16_t grain = 8192);
+                         uint16_t grain = 8192, uint32_t n_workers = 1);
 uint32_t set_k_rcpp(uint32_t grain, uint64_t data_size, uint64_t window_size);
 uint32_t find_best_k_rcpp(NumericVector data_ref, NumericVector query_ref, uint32_t window_size);
 List mass_pre_rcpp(NumericVector data, NumericVector query, uint32_t window_size);

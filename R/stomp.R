@@ -21,28 +21,39 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
   "!!!DEBUG Parsing Arguments"
 
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   if (!is.null(query)) {
     query <- as.numeric(query)
-    checkmate::qassert(query, c("0", "N>=4"))
+    checkmate::qassert(query, c("0", "n>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(
+      get("isChild", envir = asNamespace("parallel"))(),
+      error = function(e) FALSE
+    )
+    if (isTRUE(is_child)) {
+      warning("Multithreaded STOMP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
   checkmate::qassert(progress, "B+")
   checkmate::qassert(left_right_profile, "B1")
 
   ez <- exclusion_zone
   result <- NULL
 
-  query_size <- ifelse(is.null(query), length(data),
-    ifelse(length(data) > length(query), length(query),
-      length(data)
-    )
-  )
-
-  if (window_size > ceiling(query_size / 2)) {
+  min_size <- if (is.null(query)) length(data) else min(length(data), length(query))
+  if (window_size >= min_size) {
     stop("Time series is too short relative to desired window size.", call. = FALSE)
+  }
+  if (is.null(query) && exclusion_zone > 0) {
+    ez_points <- round(window_size * exclusion_zone)
+    if ((length(data) - window_size) <= ez_points) {
+      stop("Time series is too short relative to desired window size and exclusion zone.", call. = FALSE)
+    }
   }
 
   # Register anytime exit point ----------------------
@@ -51,6 +62,12 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
     if (is.null(result)) {
       return(invisible(NULL))
     } else {
+      if (isTRUE(result$partial)) {
+        warning(
+          "STOMP computation was interrupted by the user: returning an incomplete matrix profile covering only the initial windows processed.",
+          call. = FALSE
+        )
+      }
       result$ez <- ez
       return(result)
     },
@@ -63,35 +80,26 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
     ## Self-Join ====================================
     # Can return LMP or RMP
     "!DEBUG Self-Join"
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- stomp_rcpp_parallel(
-            data,
-            data,
-            window_size,
-            ez,
-            as.logical(progress),
-            as.logical(left_right_profile)
-          )
-        } else {
-          result <- stomp_rcpp(
-            data,
-            data,
-            window_size,
-            ez,
-            as.logical(progress),
-            as.logical(left_right_profile)
-          )
-        }
-      },
-      error = print
-    )
+    if (n_workers > 1) {
+      result <- stomp_rcpp_parallel(
+        data,
+        data,
+        window_size,
+        ez,
+        n_workers,
+        as.logical(progress),
+        as.logical(left_right_profile)
+      )
+    } else {
+      result <- stomp_rcpp(
+        data,
+        data,
+        window_size,
+        ez,
+        as.logical(progress),
+        as.logical(left_right_profile)
+      )
+    }
     "!DEBUG End Self-Join"
   } else {
     ## AB-Join ====================================
@@ -104,35 +112,26 @@ stomp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, n_worke
     "!DEBUG AB-Join"
     ez <- 0
 
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          on.exit(RcppParallel::setThreadOptions(numThreads = p), add = TRUE)
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- stomp_rcpp_parallel(
-            data,
-            query,
-            window_size,
-            ez,
-            as.logical(progress),
-            as.logical(FALSE)
-          )
-        } else {
-          result <- stomp_rcpp(
-            data,
-            query,
-            window_size,
-            ez,
-            as.logical(progress),
-            as.logical(FALSE)
-          )
-        }
-      },
-      error = print
-    )
+    if (n_workers > 1) {
+      result <- stomp_rcpp_parallel(
+        data,
+        query,
+        window_size,
+        ez,
+        n_workers,
+        as.logical(progress),
+        as.logical(FALSE)
+      )
+    } else {
+      result <- stomp_rcpp(
+        data,
+        query,
+        window_size,
+        ez,
+        as.logical(progress),
+        as.logical(FALSE)
+      )
+    }
     "!DEBUG End AB-Join"
   }
 }
