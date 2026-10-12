@@ -13,6 +13,7 @@
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Matrix Profile for R">
 <meta property="og:description" content="This is the core functions needed by the tsmp package. The low level and carefully checked mathematical functions are here. These are implementations of the Matrix Profile concept that was created by CS-UCR &lt;http://www.cs.ucr.edu/~eamonn/MatrixProfile.html&gt;.">
+<meta property="og:image" content="/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -69,7 +70,7 @@
 <div class="page-header"><h1 id="readme">README<a class="anchor" aria-label="anchor" href="#readme"></a>
 </h1></div>
 <p>Francisco Bischoff</p>
-<p>01 Dec 2025</p>
+<p>12 Oct 2026</p>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <p><img src="reference/figures/logo.png" align="right" style="float:right;"></p>
 <div class="section level2">
@@ -81,22 +82,29 @@
 
 
 <!-- badges: end -->
+</div>
+<div class="section level2">
+<h2 id="whats-new--v0112-october-2026">What’s New — v0.1.12 (October 2026)<a class="anchor" aria-label="anchor" href="#whats-new--v0112-october-2026"></a>
+</h2>
+<blockquote>
+<p><strong><code>matrixprofiler</code> is the high-performance C++ engine</strong> of the Matrix Profile ecosystem. This release focuses on native parallelism, new algorithms, and safer NA handling.</p>
+</blockquote>
+<p>Key highlights:</p>
+<ul>
+<li>⚡ <strong><code>RcppThread</code></strong> replaces <code>RcppParallel</code>/Intel TBB — zero-dependency, fork-safe multithreading on all platforms.</li>
+<li>🆕 <strong><code><a href="reference/contrast.html">contrast()</a></code></strong> — native Contrast Profile computation with multi-threading, Pearson and Euclidean distance metrics.</li>
+<li>🆕 <strong><code><a href="reference/rfcp.html">rfcp()</a></code> &amp; <code><a href="reference/rfcp_top_k.html">rfcp_top_k()</a></code></strong> — Relative Frequency Contrast Profile with Top-K morphology discovery, frequency adaptation, checkpoints, and CUDA acceleration.</li>
+<li>🆕 <strong><code><a href="reference/mstomp.html">mstomp()</a></code></strong> — native C++ Multivariate STOMP with <code>n_workers</code> support.</li>
+<li>🆕 <strong><code><a href="reference/mpdist.html">mpdist()</a></code></strong> — native C++ MPdist (scalar and vector variants), multi-thread.</li>
+<li>🔢 <strong><code>NA_integer_</code></strong> — invalid profile indices now follow R’s canonical missing-value convention (was <code>-1L</code>).</li>
+<li>🛡️ <strong><code>na_strategy</code></strong> for all <code>mov_*</code> window functions — predictable, non-cascading NA handling.</li>
+</ul>
+<p>📄 Full API changes, breaking changes, and migration guide: <strong><a href="MIGRATION.html">MIGRATION.md</a></strong></p>
 <div class="section level3">
 <h3 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h3>
-<p>R Functions implementing UCR Matrix Profile Algorithm (<a href="http://www.cs.ucr.edu/~eamonn/MatrixProfile.html" class="external-link uri">http://www.cs.ucr.edu/~eamonn/MatrixProfile.html</a>).</p>
-<p>This package will keep all core functions that will allow you to use the Matrix Profile concept as a toolkit.</p>
-<p>This package provides (almost all) algorithms to build a Matrix Profile.</p>
-<p>The package <code>tsmp</code> will still be developed as “how we do data mining with Matrix Profile”, keeping all slow stuff to be handled by this optimized package.</p>
-<p>This will not be covered here, as it is a <code>tsmp</code> purpose:</p>
-<ul>
-<li>Algorithms for MOTIF search for Unidimensional and Multidimensional Matrix Profiles.</li>
-<li>Algorithm for Chains search for Unidimensional Matrix Profile.</li>
-<li>Algorithms for Semantic Segmentation (FLUSS) and Weakly Labeled data (SDTS).</li>
-<li>Algorithm for Salient Subsections detection allowing MDS plotting.</li>
-<li>Basic plotting for all outputs generated here.</li>
-</ul>
-<p>You can find the current <code>tsmp</code> package here: <a href="https://CRAN.R-project.org/package=tsmp" class="external-link uri">https://CRAN.R-project.org/package=tsmp</a></p>
+<p>R package implementing the UCR Matrix Profile Algorithm (<a href="http://www.cs.ucr.edu/~eamonn/MatrixProfile.html" class="external-link uri">http://www.cs.ucr.edu/~eamonn/MatrixProfile.html</a>) as an optimised C++17 engine.</p>
+<p>This package provides the <strong>core computational primitives</strong> for building and querying Matrix Profiles. Higher-level analytics (motif search, segmentation, snippets, plotting) live in the <a href="https://CRAN.R-project.org/package=tsmp" class="external-link"><code>tsmp</code></a> package, which uses <code>matrixprofiler</code> as its backend.</p>
 </div>
 <div class="section level3">
 <h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -112,49 +120,49 @@
 <h3 id="currently-available-features">Currently available Features<a class="anchor" aria-label="anchor" href="#currently-available-features"></a>
 </h3>
 <ul>
-<li>STAMP (single and multi-thread versions)</li>
-<li>STOMP (single and multi-thread versions)</li>
-<li>SCRIMP (single and multi-thread versions, not for AB-joins yet)</li>
-<li>MPX (single and multi-thread versions)</li>
+<li>
+<strong>STAMP</strong> (single and multi-thread)</li>
+<li>
+<strong>STOMP</strong> (single and multi-thread)</li>
+<li>
+<strong>SCRIMP</strong> (single and multi-thread, not for AB-joins yet)</li>
+<li>
+<strong>MPX</strong> (single and multi-thread)</li>
+<li>
+<strong>Contrast Profile (<code>contrast</code>)</strong> — Contrast profile between positive and negative classes (Euclidean/Pearson, multi-thread)</li>
+<li>
+<strong>RFCP (<code>rfcp</code>)</strong> — Relative Frequency Contrast Profile for discriminative pattern discovery (CPU multi-threaded &amp; CUDA GPU)</li>
+<li>
+<strong>Top-K Morphology Discovery (<code>rfcp_top_k</code>)</strong> — Iterative discovery of top-K distinct morphologies with frequency adaptation and checkpointing</li>
+<li>
+<strong>mSTOMP</strong> — Multivariate STOMP, native C++ with <code>n_workers</code>
+</li>
+<li>
+<strong>MPdist</strong> — Matrix Profile Distance, scalar and vector variants, multi-thread</li>
 <li>Misc:
 <ul>
-<li>MASS v2.0</li>
-<li>MASS v3.0</li>
-<li>MASS extensions: UN (Unnormalized Query)</li>
-<li>MASS extensions: WQ (Weighted Query)</li>
-<li>MASS extensions: ABS (Absolute Query and Data)</li>
-<li>Window functions like mov_mean() and others.</li>
+<li>MASS v2.0 / v3.0 (multi-variant)</li>
+<li>MASS extensions: WQ (Weighted Query), ABS (Absolute), UN (Unnormalized)</li>
+<li>Sliding-window functions (<code>mov_mean</code>, <code>mov_std</code>, <code>mov_var</code>, <code>mov_min</code>, <code>mov_max</code>, <code>muinvn</code>, <code>zero_crossing</code>) with <code>na_strategy = c("window_na", "remove", "error")</code> and <code>na.rm</code> control</li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="on-roadmap">On Roadmap<a class="anchor" aria-label="anchor" href="#on-roadmap"></a>
+<h3 id="roadmap">Roadmap<a class="anchor" aria-label="anchor" href="#roadmap"></a>
 </h3>
-<ul>
-<li>STOMPi (On-line version)</li>
-<li>Multivariate STOMP (mSTOMP)</li>
-<li>SiMPle-Fast (Fast Similarity Matrix Profile for Music Analysis and Exploration)</li>
-<li>Exact Detection of Variable Length Motifs (VALMOD) (maybe will stay on <code>tsmp</code> package)</li>
-<li>MPdist: Matrix Profile Distance</li>
-<li>MASS extensions: ADP (Approximate Distance Profile, with PAA) (maybe)</li>
-<li>MASS extensions: QwG (Query with Gap)</li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="will-stay-on-tsmp-package">Will stay on TSMP package<a class="anchor" aria-label="anchor" href="#will-stay-on-tsmp-package"></a>
-</h3>
-<ul>
-<li>Time Series Chains</li>
-<li>Multivariate MOTIF Search (from mSTOMP)</li>
-<li>Salient Subsequences search for Multidimensional Space</li>
-<li>Scalable Dictionary learning for Time Series (SDTS) prediction</li>
-<li>FLUSS (Fast Low-cost Unipotent Semantic Segmentation)</li>
-<li>FLOSS (Fast Low-cost On-line Unipotent Semantic Segmentation)</li>
-<li>Annotation vectors (e.g., Stop-word MOTIF bias, Actionability bias)</li>
-<li>FLUSS Arc Plot and SiMPle Arc Plot</li>
-<li>Time Series Snippets</li>
-<li>Subsetting Matrix Profiles (<code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code>, <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">tail()</a></code>, <code>[</code>, etc.)</li>
+<ul class="task-list">
+<li><label><input type="checkbox" checked>Replace Intel TBB / <code>RcppParallel</code> with <code>RcppThread</code> (fork-safe, zero external dep)</label></li>
+<li><label><input type="checkbox" checked>Native Multivariate STOMP (<code><a href="reference/mstomp.html">mstomp()</a></code>) in C++</label></li>
+<li><label><input type="checkbox" checked>Native MPdist (<code><a href="reference/mpdist.html">mpdist()</a></code>) in C++</label></li>
+<li><label><input type="checkbox" checked>Contrast Profile (<code><a href="reference/contrast.html">contrast()</a></code>) in native C++</label></li>
+<li><label><input type="checkbox" checked>Relative Frequency Contrast Profile (<code><a href="reference/rfcp.html">rfcp()</a></code>) and Top-K Morphology Discovery (<code><a href="reference/rfcp_top_k.html">rfcp_top_k()</a></code>)</label></li>
+<li><label><input type="checkbox" checked>Standardise invalid indices to <code>NA_integer_</code></label></li>
+<li><label><input type="checkbox" checked><code>na_strategy</code> for all sliding-window functions</label></li>
+<li><label><input type="checkbox">STOMPi (On-line / streaming version)</label></li>
+<li><label><input type="checkbox">SiMPle-Fast (Music Analysis)</label></li>
+<li><label><input type="checkbox">VALMOD (Variable Length Motifs) — candidate for <code>matrixprofiler</code> core</label></li>
+<li><label><input type="checkbox">MASS extensions: ADP (Approximate Distance Profile, with PAA), QwG (Query with Gap)</label></li>
 </ul>
 </div>
 <div class="section level3">
