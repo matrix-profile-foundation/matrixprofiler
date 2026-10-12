@@ -57,7 +57,7 @@ cat(sprintf("  Plato RMS:   CPU = %.8f, GPU = %.8f\n", cpu2$plato_rms, gpu2$plat
 diff_rms2 <- max(abs(cpu2$rms_profile - gpu2$rms_profile), na.rm = TRUE)
 diff_rfmp_aa <- max(abs(cpu2$rfmp_aa - gpu2$rfmp_aa), na.rm = TRUE)
 diff_rfmp_ab <- max(abs(cpu2$rfmp_ab - gpu2$rfmp_ab), na.rm = TRUE)
-diff_rfcp    <- max(abs(cpu2$rfcp - gpu2$rfcp), na.rm = TRUE)
+diff_rfcp <- max(abs(cpu2$rfcp - gpu2$rfcp), na.rm = TRUE)
 
 mismatched_aa <- sum(cpu2$rfmpi_aa != gpu2$rfmpi_aa, na.rm = TRUE)
 mismatched_ab <- sum(cpu2$rfmpi_ab != gpu2$rfmpi_ab, na.rm = TRUE)

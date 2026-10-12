@@ -121,4 +121,3 @@ test_that("STOMP supports NA and infinite values with skip_location", {
   valid_windows <- which(!invalid_windows)
   expect_true(any(is.finite(serial$matrix_profile[valid_windows])))
 })
-

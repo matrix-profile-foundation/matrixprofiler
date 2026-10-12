@@ -7,10 +7,9 @@
 #include "windowfunc.h"
 #include <cfloat> // DBL_EPSILON when STRICT_R_HEADERS
 
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
+#include "progress_bar.h"
 
 // MPX stream version for the right side, getting stats from input, in review
 // [[Rcpp::export]]
@@ -73,7 +72,7 @@ List mpxis_rcpp(NumericVector data_ref, uint64_t batch_size, List object, List s
     // added double inside sqrt to avoid ambiguity on Solaris
     uint64_t num_progress = ceil(static_cast<double>(compute_order.size()) / 100.0);
 
-    Progress prog(100, progress);
+    matrixprofiler::ProgressBar prog(100, progress);
 
     // compute_order = sample(compute_order, compute_order.size());
 
@@ -294,7 +293,7 @@ List mpxi_rcpp(NumericVector new_data, List object, uint64_t history, uint64_t m
     uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
-    Progress prog(100, progress);
+    matrixprofiler::ProgressBar prog(100, progress);
 
     compute_order = sample(compute_order, compute_order.size());
 
@@ -439,7 +438,7 @@ List mpxiright_rcpp(NumericVector data_ref, uint64_t window_size, double ez, uin
     uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
-    Progress prog(100, progress);
+    matrixprofiler::ProgressBar prog(100, progress);
 
     compute_order = sample(compute_order, compute_order.size());
 
@@ -586,7 +585,7 @@ List mpxileft_rcpp(NumericVector data_ref, uint64_t window_size, double ez, doub
     uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
-    Progress prog(100, progress);
+    matrixprofiler::ProgressBar prog(100, progress);
 
     compute_order = sample(compute_order, compute_order.size());
 
@@ -750,7 +749,7 @@ List mpx_na_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double
     partial = work_size < static_cast<uint64_t>(compute_order.size());
   }
 
-  Progress prog(work_size, progress);
+  matrixprofiler::ProgressBar prog(work_size, progress);
 
   try {
     for (uint64_t k = 0; k < work_size; k++) {
@@ -880,7 +879,7 @@ List mpx_rcpp(NumericVector data_ref, uint64_t window_size, double ez, double s_
     uint64_t num_progress =
         ceil((double)compute_order.size() / 100); // added double inside sqrt to avoid ambiguity on Solaris
 
-    Progress prog(100, progress);
+    matrixprofiler::ProgressBar prog(100, progress);
 
     compute_order = sample(compute_order, compute_order.size());
 
@@ -1043,7 +1042,7 @@ List mpxab_na_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t win
     partial = work_a < static_cast<uint64_t>(order_a.size()) || work_b < static_cast<uint64_t>(order_b.size());
   }
 
-  Progress prog(work_a + work_b, progress);
+  matrixprofiler::ProgressBar prog(work_a + work_b, progress);
   try {
     NumericVector const first_b = query[Range(0, window_size - 1)] - mu_b[0];
     for (uint64_t order_index = 0; order_index < work_a; order_index++) {
@@ -1208,7 +1207,7 @@ List mpxab_rcpp(NumericVector data_ref, NumericVector query_ref, uint64_t window
     uint64_t num_progress = ceil((double)(profile_len_a + profile_len_b - 2 * exclusion_zone) /
                                  100); // added double inside sqrt to avoid ambiguity on Solaris
 
-    Progress prog(100, progress);
+    matrixprofiler::ProgressBar prog(100, progress);
 
     try {
       //// AB ----

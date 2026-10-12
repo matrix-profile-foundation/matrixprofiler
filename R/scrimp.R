@@ -131,4 +131,3 @@ scrimp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size
   }
   return(result)
 }
-

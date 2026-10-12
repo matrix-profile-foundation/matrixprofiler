@@ -45,3 +45,4 @@
 ^strace_out$
 ^src/PVS-Studio\..*$
 ^CRAN-SUBMISSION$
+^MIGRATION\.md$

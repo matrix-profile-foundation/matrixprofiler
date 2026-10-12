@@ -94,4 +94,3 @@ contrast <- function(negative_data, positive_data, window_size, positive_matrix 
   )
   return(result)
 }
-

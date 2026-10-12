@@ -174,14 +174,14 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
   if (!is.null(resume_state)) {
     sig <- resume_state$signature
     if (is.null(sig) || !is.list(sig) ||
-        !identical(as.integer(sig$n_positive), initial_n_positive) ||
-        !identical(as.integer(sig$n_negative_initial), initial_n_negative) ||
-        !identical(as.integer(sig$window_size), window_size) ||
-        !identical(as.integer(sig$k_platos), k_platos) ||
-        !identical(as.integer(sig$exclusion_radius), exclusion_radius) ||
-        !identical(as.logical(sig$adaptive_max_freq), adaptive_max_freq) ||
-        !identical(as.integer(sig$min_freq), min_freq) ||
-        !identical(as.character(sig$backend), backend)) {
+      !identical(as.integer(sig$n_positive), initial_n_positive) ||
+      !identical(as.integer(sig$n_negative_initial), initial_n_negative) ||
+      !identical(as.integer(sig$window_size), window_size) ||
+      !identical(as.integer(sig$k_platos), k_platos) ||
+      !identical(as.integer(sig$exclusion_radius), exclusion_radius) ||
+      !identical(as.logical(sig$adaptive_max_freq), adaptive_max_freq) ||
+      !identical(as.integer(sig$min_freq), min_freq) ||
+      !identical(as.character(sig$backend), backend)) {
       stop("resume_state is incompatible with current input parameters.", call. = FALSE)
     }
 
@@ -381,120 +381,120 @@ rfcp_top_k <- function(positive_data, negative_data, window_size,
         effective_freq <- single_res$effective_max_freq
       }
 
-    subseq <- positive_data[best_candidate_idx:(best_candidate_idx + window_size - 1L)]
+      subseq <- positive_data[best_candidate_idx:(best_candidate_idx + window_size - 1L)]
 
-    platos_found[[count_found]] <- list(
-      k = count_found,
-      plato_index = best_candidate_idx,
-      plato_rms = best_candidate_rms,
-      plato_subsequence = subseq,
-      plato_twin_index = plato_twin,
-      rfcp_at_plato = rfcp_vec,
-      rfmp_aa_at_plato = aa_distances,
-      rfmp_ab_at_plato = ab_distances,
-      rfmpi_aa_at_plato = aa_indices,
-      rfmpi_ab_at_plato = ab_indices,
-      effective_max_freq = effective_freq
-    )
-
-    # Collect all occurrences belonging to this Plato's morphology
-    valid_aa_neighbors <- aa_indices[is.finite(aa_indices) & aa_indices > 0L]
-    all_occurrences <- unique(c(best_candidate_idx, as.integer(valid_aa_neighbors)))
-
-    # Mark the exclusion zone of all occurrences in the query mask
-    for (occ in all_occurrences) {
-      left_mask <- max(1L, occ - exclusion_radius)
-      right_mask <- min(n_positive_windows, occ + exclusion_radius)
-      excluded_query_mask[left_mask:right_mask] <- TRUE
-    }
-
-    # Extract concatenated segments with exclusion zone padding
-    intervals <- matrix(0L, nrow = length(all_occurrences), ncol = 2L)
-    for (idx in seq_along(all_occurrences)) {
-      occ <- all_occurrences[[idx]]
-      seg_start <- max(1L, occ - exclusion_radius)
-      seg_end <- min(length(positive_data), occ + window_size - 1L + exclusion_radius)
-      intervals[idx, ] <- c(seg_start, seg_end)
-    }
-
-    # Merge overlapping intervals to preserve continuous segments
-    intervals <- intervals[order(intervals[, 1L]), , drop = FALSE]
-    merged_intervals <- list()
-    cur_start <- intervals[1L, 1L]
-    cur_end <- intervals[1L, 2L]
-
-    if (nrow(intervals) > 1L) {
-      for (r in 2L:nrow(intervals)) {
-        next_start <- intervals[r, 1L]
-        next_end <- intervals[r, 2L]
-        if (next_start <= cur_end + 1L) {
-          cur_end <- max(cur_end, next_end)
-        } else {
-          merged_intervals[[length(merged_intervals) + 1L]] <- c(cur_start, cur_end)
-          cur_start <- next_start
-          cur_end <- next_end
-        }
-      }
-    }
-    merged_intervals[[length(merged_intervals) + 1L]] <- c(cur_start, cur_end)
-
-    # Append merged segments separated by NA barriers to current_negative
-    segments_to_add <- vector("list", length(merged_intervals))
-    for (m_idx in seq_along(merged_intervals)) {
-      s_bounds <- merged_intervals[[m_idx]]
-      segments_to_add[[m_idx]] <- c(
-        NA_real_,
-        positive_data[s_bounds[[1L]]:s_bounds[[2L]]],
-        NA_real_
-      )
-    }
-
-    current_negative <- c(current_negative, unlist(segments_to_add, use.names = FALSE))
-
-    # Adapt max_freq dynamically for subsequent iterations if enabled
-    if (isTRUE(adaptive_max_freq) && k_iter < k_platos) {
-      clip_distance <- sqrt(2 * window_size)
-      valid_support <- sum(
-        aa_distances < clip_distance & is.finite(aa_distances) & aa_distances >= 0,
-        na.rm = TRUE
-      )
-      next_freq <- max(
-        min_freq,
-        min(current_freq, as.integer(valid_support))
-      )
-      max_freq_vec[(k_iter + 1L):k_platos] <- next_freq
-    }
-
-    elapsed_round <- proc.time()[["elapsed"]] - t0_round
-
-    if (!is.null(progress_callback)) {
-      progress_callback(list(
-        event = "round_done",
-        k = k_iter,
+      platos_found[[count_found]] <- list(
+        k = count_found,
         plato_index = best_candidate_idx,
         plato_rms = best_candidate_rms,
-        effective_max_freq = effective_freq,
-        next_max_freq = if (k_iter < k_platos) max_freq_vec[[k_iter + 1L]] else current_freq,
-        elapsed_seconds = elapsed_round
-      ))
-    }
+        plato_subsequence = subseq,
+        plato_twin_index = plato_twin,
+        rfcp_at_plato = rfcp_vec,
+        rfmp_aa_at_plato = aa_distances,
+        rfmp_ab_at_plato = ab_distances,
+        rfmpi_aa_at_plato = aa_indices,
+        rfmpi_ab_at_plato = ab_indices,
+        effective_max_freq = effective_freq
+      )
 
-    current_round_blocks <- list()
-    cursor <- 1L
+      # Collect all occurrences belonging to this Plato's morphology
+      valid_aa_neighbors <- aa_indices[is.finite(aa_indices) & aa_indices > 0L]
+      all_occurrences <- unique(c(best_candidate_idx, as.integer(valid_aa_neighbors)))
 
-    if (!is.null(checkpoint_callback)) {
-      checkpoint_callback(make_state(
-        k_iter = k_iter + 1L,
-        cursor_completed = 0L,
-        round_blocks = list()
-      ))
+      # Mark the exclusion zone of all occurrences in the query mask
+      for (occ in all_occurrences) {
+        left_mask <- max(1L, occ - exclusion_radius)
+        right_mask <- min(n_positive_windows, occ + exclusion_radius)
+        excluded_query_mask[left_mask:right_mask] <- TRUE
+      }
+
+      # Extract concatenated segments with exclusion zone padding
+      intervals <- matrix(0L, nrow = length(all_occurrences), ncol = 2L)
+      for (idx in seq_along(all_occurrences)) {
+        occ <- all_occurrences[[idx]]
+        seg_start <- max(1L, occ - exclusion_radius)
+        seg_end <- min(length(positive_data), occ + window_size - 1L + exclusion_radius)
+        intervals[idx, ] <- c(seg_start, seg_end)
+      }
+
+      # Merge overlapping intervals to preserve continuous segments
+      intervals <- intervals[order(intervals[, 1L]), , drop = FALSE]
+      merged_intervals <- list()
+      cur_start <- intervals[1L, 1L]
+      cur_end <- intervals[1L, 2L]
+
+      if (nrow(intervals) > 1L) {
+        for (r in 2L:nrow(intervals)) {
+          next_start <- intervals[r, 1L]
+          next_end <- intervals[r, 2L]
+          if (next_start <= cur_end + 1L) {
+            cur_end <- max(cur_end, next_end)
+          } else {
+            merged_intervals[[length(merged_intervals) + 1L]] <- c(cur_start, cur_end)
+            cur_start <- next_start
+            cur_end <- next_end
+          }
+        }
+      }
+      merged_intervals[[length(merged_intervals) + 1L]] <- c(cur_start, cur_end)
+
+      # Append merged segments separated by NA barriers to current_negative
+      segments_to_add <- vector("list", length(merged_intervals))
+      for (m_idx in seq_along(merged_intervals)) {
+        s_bounds <- merged_intervals[[m_idx]]
+        segments_to_add[[m_idx]] <- c(
+          NA_real_,
+          positive_data[s_bounds[[1L]]:s_bounds[[2L]]],
+          NA_real_
+        )
+      }
+
+      current_negative <- c(current_negative, unlist(segments_to_add, use.names = FALSE))
+
+      # Adapt max_freq dynamically for subsequent iterations if enabled
+      if (isTRUE(adaptive_max_freq) && k_iter < k_platos) {
+        clip_distance <- sqrt(2 * window_size)
+        valid_support <- sum(
+          aa_distances < clip_distance & is.finite(aa_distances) & aa_distances >= 0,
+          na.rm = TRUE
+        )
+        next_freq <- max(
+          min_freq,
+          min(current_freq, as.integer(valid_support))
+        )
+        max_freq_vec[(k_iter + 1L):k_platos] <- next_freq
+      }
+
+      elapsed_round <- proc.time()[["elapsed"]] - t0_round
+
+      if (!is.null(progress_callback)) {
+        progress_callback(list(
+          event = "round_done",
+          k = k_iter,
+          plato_index = best_candidate_idx,
+          plato_rms = best_candidate_rms,
+          effective_max_freq = effective_freq,
+          next_max_freq = if (k_iter < k_platos) max_freq_vec[[k_iter + 1L]] else current_freq,
+          elapsed_seconds = elapsed_round
+        ))
+      }
+
+      current_round_blocks <- list()
+      cursor <- 1L
+
+      if (!is.null(checkpoint_callback)) {
+        checkpoint_callback(make_state(
+          k_iter = k_iter + 1L,
+          cursor_completed = 0L,
+          round_blocks = list()
+        ))
+      }
     }
   }
-}
 
-if (count_found < k_platos) {
-  platos_found <- platos_found[seq_len(count_found)]
-}
+  if (count_found < k_platos) {
+    platos_found <- platos_found[seq_len(count_found)]
+  }
 
   structure(
     list(

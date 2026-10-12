@@ -7,10 +7,9 @@
 #include "windowfunc.h"
 #include <cfloat>
 #include <cmath>
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
+#include "progress_bar.h"
 
 namespace {
 
@@ -51,7 +50,7 @@ void apply_pre_scrimp(List &profile, const NumericVector &data_ref, uint32_t win
   uint32_t const exclusion_zone = std::round(window_size * ez + DBL_EPSILON);
   uint32_t const step = std::max<uint32_t>(1, std::floor(window_size * pre_scrimp + DBL_EPSILON));
   uint32_t const samples = (profile_size + step - 1) / step;
-  Progress p(samples, progress);
+  matrixprofiler::ProgressBar p(samples, progress);
 
   for (uint32_t i = 0; i < profile_size; i += step) {
     RcppThread::checkUserInterrupt();

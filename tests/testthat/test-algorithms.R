@@ -101,4 +101,3 @@ test_that("Algorithms error informatively when window_size is truly impossible",
   expect_error(stamp(data, 45L, exclusion_zone = 0.5, progress = FALSE), "exclusion zone")
   expect_error(scrimp(data, 45L, exclusion_zone = 0.5, progress = FALSE), "exclusion zone")
 })
-

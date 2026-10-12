@@ -21,4 +21,9 @@ test_that("mpdist simple and vector work correctly", {
   # Argument validation
   expect_error(mpdist(ref_data, qd_data, window_size = 2L), "must be at least 4")
   expect_error(mpdist(ref_data, qd_data[1:10], window_size = 15L), "cannot be larger than query length")
+
+  # Query longer than reference (swapping branch)
+  d_swap <- mpdist(qd_data, ref_data, w, type = "simple")
+  expect_type(d_swap, "double")
+  expect_gt(d_swap, 0.0)
 })

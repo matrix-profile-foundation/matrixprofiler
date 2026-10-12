@@ -14,10 +14,9 @@
 #include <unordered_set>
 #include <vector>
 
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
+#include "progress_bar.h"
 
 struct Worker {
   virtual ~Worker() = default;
@@ -419,7 +418,7 @@ List mpx_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double ez =
     IntegerVector compute_order = Range(exclusion_zone, profile_len - 1);
     compute_order = sample(compute_order, compute_order.size());
 
-    Progress p(100, progress);
+    matrixprofiler::ProgressBar p(100, progress);
 
     uint64_t work_size = compute_order.size();
     if (s_size > 0.0 && s_size < 1.0) {
@@ -514,7 +513,7 @@ List mpx_na_rcpp_parallel(NumericVector data_ref, uint64_t window_size, double e
     partial = work_size < static_cast<uint64_t>(compute_order.size());
   }
 
-  Progress progress_bar(100, progress);
+  matrixprofiler::ProgressBar progress_bar(100, progress);
   MatrixProfilePNA matrix_profile(data, window_size, compute_order, df, dg, mu, sig, first_window, valid_window, mp,
                                   mpi, idxs);
   try {
@@ -1331,7 +1330,7 @@ List mpxab_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uint64
     NumericVector ww_a = (data_ref[Range(0, window_size - 1)] - mu_a[0]);
     NumericVector ww_b = (query_ref[Range(0, window_size - 1)] - mu_b[0]);
 
-    Progress p(100, progress);
+    matrixprofiler::ProgressBar p(100, progress);
 
     IntegerVector compute_ordera = Range(0, profile_len_a - 1);
     compute_ordera = sample(compute_ordera, compute_ordera.size());
@@ -2419,7 +2418,7 @@ List mpxab_na_rcpp_parallel(NumericVector data_ref, NumericVector query_ref, uin
     partial = work_a < static_cast<uint64_t>(order_a.size()) || work_b < static_cast<uint64_t>(order_b.size());
   }
 
-  Progress progress_bar(100, progress);
+  matrixprofiler::ProgressBar progress_bar(100, progress);
   MatrixProfileWorkerDiagnostics diagnostics(matrix_profile_worker_diagnostics_enabled());
   MatrixProfilePABNA matrix_profile(data, query, window_size, df_a, df_b, dg_a, dg_b, mu_a, mu_b, sig_a, sig_b,
                                     first_a, first_b, valid_a, valid_b, order_a, order_b, mp_a, mp_b, mpi_a, mpi_b,

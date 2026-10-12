@@ -232,11 +232,13 @@ test_that("RFCP serial, parallel, and adjacent query blocks compose", {
   )
   split <- 37L
   left <- rfcp(
-    positive, negative, 9L, 5L, query_end = split,
+    positive, negative, 9L, 5L,
+    query_end = split,
     return_profiles = TRUE, n_workers = 2L, progress = FALSE
   )
   right <- rfcp(
-    positive, negative, 9L, 5L, query_begin = split + 1L,
+    positive, negative, 9L, 5L,
+    query_begin = split + 1L,
     return_profiles = TRUE, n_workers = 3L, progress = FALSE
   )
 
@@ -257,13 +259,16 @@ test_that("RFCP serial, parallel, and adjacent query blocks compose", {
     tolerance = 1e-9
   )
   expect_equal(cbind(left$rfmp_aa, right$rfmp_aa), full_serial$rfmp_aa,
-               tolerance = 1e-9)
+    tolerance = 1e-9
+  )
   expect_equal(cbind(left$rfmp_ab, right$rfmp_ab), full_serial$rfmp_ab,
-               tolerance = 1e-9)
+    tolerance = 1e-9
+  )
   expect_identical(cbind(left$rfmpi_aa, right$rfmpi_aa), full_serial$rfmpi_aa)
   expect_identical(cbind(left$rfmpi_ab, right$rfmpi_ab), full_serial$rfmpi_ab)
   expect_equal(cbind(left$rfcp, right$rfcp), full_serial$rfcp,
-               tolerance = 1e-9)
+    tolerance = 1e-9
+  )
   combined_rms <- c(left$rms_profile, right$rms_profile)
   expect_identical(full_serial$plato_index, as.numeric(which.max(combined_rms)))
 })
