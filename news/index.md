@@ -2,6 +2,8 @@
 
 ## matrixprofiler 0.1.12
 
+CRAN release: 2026-10-14
+
 - **Parallel execution and fork**: Documented limitations of fork-based
   workers with native threads, including STOMP and MPX. Recommend PSOCK
   clusters with `n_workers = 1` per process for parallel execution
