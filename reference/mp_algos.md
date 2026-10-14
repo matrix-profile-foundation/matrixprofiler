@@ -304,7 +304,7 @@ serial NA-aware implementations.
 
 ## This document
 
-Last updated on 2026-10-12 using R version 4.6.1.
+Last updated on 2026-10-14 using R version 4.6.1.
 
 ## References
 
