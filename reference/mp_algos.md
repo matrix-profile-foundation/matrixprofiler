@@ -116,7 +116,10 @@ mpx_stream_s_right(
 - n_workers:
 
   An integer. The number of threads using for computing. Defaults to
-  `1`.
+  `1`. For parallel execution across processes, prefer a PSOCK cluster
+  and use `n_workers = 1` within each worker. See
+  [matrixprofiler](https://matrix-profile-foundation.github.io/matrixprofiler/reference/matrixprofiler.md)
+  for fork limitations.
 
 - progress:
 
@@ -213,13 +216,12 @@ discovery, clustering etc.
 `progress`, it is really recommended to use it as feedback for long
 computations. It indeed adds some (neglectable) overhead, but the
 benefit of knowing that your computer is still computing is much bigger
-than the seconds you may lose in the final benchmark. About `n_workers`,
-for Windows systems, this package uses TBB for multithreading, and Linux
-and macOS, use TinyThread++. This may or not raise some issues in the
-future, so we must be aware of slower processing due to different
-mutexes implementations or even unexpected crashes. The Windows version
-is usually more reliable. The `data` and `query` parameters will be
-internally converted to a single vector using
+than the seconds you may lose in the final benchmark. Native
+multithreading uses RcppThread and is controlled by `n_workers`. See
+[matrixprofiler](https://matrix-profile-foundation.github.io/matrixprofiler/reference/matrixprofiler.md)
+for guidance on parallel execution across processes and fork
+limitations. The `data` and `query` parameters will be internally
+converted to a single vector using
 [`as.numeric()`](https://rdrr.io/r/base/numeric.html), thus, bear in
 mind that a multidimensional matrix may not work as you expect, but most
 1-dimensional data types will work normally. If `query` is provided,

@@ -66,7 +66,11 @@ rfcp(
 - n_workers:
 
   Number of native worker threads for the CPU backend. Ignored when
-  `backend = "cuda"`. Defaults to `1`.
+  `backend = "cuda"`. Defaults to `1`. For parallel execution across
+  processes, prefer a PSOCK cluster and use `n_workers = 1` within each
+  worker. See
+  [matrixprofiler](https://matrix-profile-foundation.github.io/matrixprofiler/reference/matrixprofiler.md)
+  for fork limitations.
 
 - progress:
 

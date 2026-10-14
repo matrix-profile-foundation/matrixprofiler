@@ -108,7 +108,9 @@ to 5,000,000 rank-query cells. Defaults to <code>FALSE</code>.</p></dd>
 
 <dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
 <dd><p>Number of native worker threads for the CPU backend.
-Ignored when <code>backend = "cuda"</code>. Defaults to <code>1</code>.</p></dd>
+Ignored when <code>backend = "cuda"</code>. Defaults to <code>1</code>.
+For parallel execution across processes, prefer a PSOCK cluster and use
+<code>n_workers = 1</code> within each worker. See <a href="matrixprofiler.html">matrixprofiler</a> for fork limitations.</p></dd>
 
 
 <dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>

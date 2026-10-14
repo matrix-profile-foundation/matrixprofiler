@@ -55,6 +55,24 @@ discovery, clustering etc.</p>
 can be controlled directly via the <code>n_workers</code> argument in each function.</p>
     </div>
     <div class="section level2">
+    <h2 id="parallel-execution-and-forked-processes">Parallel execution and forked processes<a class="anchor" aria-label="anchor" href="#parallel-execution-and-forked-processes"></a></h2>
+    <p><code>matrixprofiler</code> uses native threads for parallel computation. To parallelize
+a single computation, use the function's <code>n_workers</code> argument.</p>
+<p>Avoid calling package functions from fork-based workers, such as those created
+by <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code>, particularly after multithreaded libraries have been
+initialized in the parent R session. Forked processes inherit library state
+that may cause deadlocks or crashes.</p>
+<p>Where fork detection is implemented, requesting multiple workers in a forked
+child triggers a warning and reduces <code>n_workers</code> to <code>1</code>. This precaution does
+not make fork-based execution safe, because it cannot undo inherited library
+state.</p>
+<p>To process multiple time series concurrently, prefer a PSOCK cluster, which
+starts independent R sessions (see <code><a href="https://rdrr.io/r/parallel/makeCluster.html" class="external-link">parallel::makePSOCKcluster()</a></code>). Use
+<code>n_workers = 1</code> within each worker to avoid excessive thread creation.</p>
+<p>This limitation concerns the execution environment and applies to both STOMP
+and MPX; switching algorithms does not remove it.</p>
+    </div>
+    <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
 
 <ul><li><p>Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All pairs similarity joins

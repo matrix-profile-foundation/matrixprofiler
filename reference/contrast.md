@@ -52,7 +52,10 @@ contrast(
 - n_workers:
 
   An integer. The number of threads using for computing. Defaults to
-  `1`.
+  `1`. For parallel execution across processes, prefer a PSOCK cluster
+  and use `n_workers = 1` within each worker. See
+  [matrixprofiler](https://matrix-profile-foundation.github.io/matrixprofiler/reference/matrixprofiler.md)
+  for fork limitations.
 
 - progress:
 

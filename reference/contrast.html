@@ -82,7 +82,9 @@ trivial matches. Default is <code>0.5</code>, i.e., half of the <code>window_siz
 
 
 <dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
-<dd><p>An integer. The number of threads using for computing. Defaults to <code>1</code>.</p></dd>
+<dd><p>An integer. The number of threads using for computing. Defaults to <code>1</code>.
+For parallel execution across processes, prefer a PSOCK cluster and use
+<code>n_workers = 1</code> within each worker. See <a href="matrixprofiler.html">matrixprofiler</a> for fork limitations.</p></dd>
 
 
 <dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>

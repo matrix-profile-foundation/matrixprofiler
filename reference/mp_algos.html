@@ -146,7 +146,9 @@ result can be less representative than a randomized partial run.</p></dd>
 
 
 <dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
-<dd><p>An integer. The number of threads using for computing. Defaults to <code>1</code>.</p></dd>
+<dd><p>An integer. The number of threads using for computing. Defaults to <code>1</code>.
+For parallel execution across processes, prefer a PSOCK cluster and use
+<code>n_workers = 1</code> within each worker. See <a href="matrixprofiler.html">matrixprofiler</a> for fork limitations.</p></dd>
 
 
 <dt id="arg-progress">progress<a class="anchor" aria-label="anchor" href="#arg-progress"></a></dt>
@@ -231,10 +233,9 @@ series joins, shapelet discovery (classification), density estimation, semantic 
 discovery, clustering etc.</p>
 <p><code>progress</code>, it is really recommended to use it as feedback for long computations. It indeed adds some
 (neglectable) overhead, but the benefit of knowing that your computer is still computing is much bigger than the
-seconds you may lose in the final benchmark. About <code>n_workers</code>, for Windows systems, this package uses TBB for
-multithreading, and Linux and macOS, use TinyThread++. This may or not raise some issues in the future, so we must be
-aware of slower processing due to different mutexes implementations or even unexpected crashes. The Windows version
-is usually more reliable. The <code>data</code> and <code>query</code> parameters will be internally converted to a single vector using
+seconds you may lose in the final benchmark. Native multithreading uses RcppThread and is controlled by
+<code>n_workers</code>. See <a href="matrixprofiler.html">matrixprofiler</a> for guidance on parallel execution across processes and fork limitations.
+The <code>data</code> and <code>query</code> parameters will be internally converted to a single vector using
 <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code>, thus, bear in mind that a multidimensional matrix may not work as you expect, but most 1-dimensional
 data types will work normally. If <code>query</code> is provided, expect the same pre-procesment done for <code>data</code>; in addition,
 <code>exclusion_zone</code> will be ignored and set to <code>0</code>. Both <code>data</code> and <code>query</code> doesn't need to have the same size and they

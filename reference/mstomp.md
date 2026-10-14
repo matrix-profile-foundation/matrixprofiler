@@ -46,6 +46,10 @@ mstomp(
 - n_workers:
 
   an `int`. Number of workers for parallel execution (default is `1`).
+  For parallel execution across processes, prefer a PSOCK cluster and
+  use `n_workers = 1` within each worker. See
+  [matrixprofiler](https://matrix-profile-foundation.github.io/matrixprofiler/reference/matrixprofiler.md)
+  for fork limitations.
 
 - progress:
 

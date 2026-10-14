@@ -151,7 +151,9 @@ that may or not be slower.</p></dd>
 
 
 <dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
-<dd><p>An <code>integer</code>. The number of threads using for computing. Defaults to <code>1</code>.</p></dd>
+<dd><p>An <code>integer</code>. The number of threads using for computing. Defaults to <code>1</code>.
+For parallel execution across processes, prefer a PSOCK cluster and use
+<code>n_workers = 1</code> within each worker. See <a href="matrixprofiler.html">matrixprofiler</a> for fork limitations.</p></dd>
 
 </dl></div>
     <div class="section level2">
