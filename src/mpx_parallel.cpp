@@ -655,14 +655,13 @@ public:
     // Keep scratch storage relative to the output range touched by this
     // scheduler task. In an unequal AB join, this avoids retaining a full
     // profile-B buffer per executor thread when only a much smaller slice is
-    // ever read or merged. Reusing vector capacity preserves the allocation
-    // benefit of the previous thread-local implementation, while initializing
-    // the current range removes the need to reset the preceding range.
-    thread_local std::vector<double> inn;
-    thread_local std::vector<double> mpp_a;
-    thread_local std::vector<int> mpip_a;
-    thread_local std::vector<double> mpp_b;
-    thread_local std::vector<int> mpip_b;
+    // ever read or merged. Keep ownership within the task, as in MatrixProfileP,
+    // so these buffers are destroyed before returning to the thread executor.
+    std::vector<double> inn;
+    std::vector<double> mpp_a;
+    std::vector<int> mpip_a;
+    std::vector<double> mpp_b;
+    std::vector<int> mpip_b;
 
     if (inn.size() != window_size) {
       inn.resize(window_size);

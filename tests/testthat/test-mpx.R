@@ -61,6 +61,33 @@ test_that("MPXABs are equal", {
                    mpxab_res_par[!names(mpxab_res_par) %in% profiles])
 })
 
+test_that("unequal MPXAB joins work with two workers with and without indices", {
+  positive <- motifs_discords_small[450:750]
+  negative <- motifs_discords_small[1:400]
+
+  for (indices in c(FALSE, TRUE)) {
+    set.seed(2021)
+    serial <- matrixprofiler:::mpxab_rcpp(
+      positive, negative, 50L, 1, indices, TRUE, FALSE
+    )
+    # Repeat to exercise worker creation and cleanup across consecutive joins.
+    for (iteration in seq_len(3L)) {
+      set.seed(2021)
+      parallel <- matrixprofiler:::mpxab_rcpp_parallel(
+        positive, negative, 50L, 1, indices, TRUE, FALSE, n_workers = 2L
+      )
+      expect_identical(names(parallel), names(serial))
+      expect_equal(parallel$matrix_profile, serial$matrix_profile, tolerance = 1e-10)
+      expect_equal(parallel$mpb, serial$mpb, tolerance = 1e-10)
+      expect_false(parallel$partial)
+      if (indices) {
+        expect_identical(parallel$profile_index, serial$profile_index)
+        expect_identical(parallel$pib, serial$pib)
+      }
+    }
+  }
+})
+
 test_that("parallel MPXAB omits indices when idxs is FALSE", {
   with_mpx_test_threads <- function(code, n = 2L) {
     force(code)
