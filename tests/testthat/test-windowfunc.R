@@ -111,7 +111,8 @@ test_that("muinvn", {
   expect_silent(muinvn_par <- muinvn(
     data = motifs_discords_small, window_size = 150, n_workers = 2
   ))
-  expect_identical(muinvn, muinvn_par)
+  # Serial Rcpp sugar and parallel scalar arithmetic can round differently.
+  expect_equal(muinvn, muinvn_par, tolerance = 1e-12)
   expect_snapshot_value(muinvn, style = "serialize")
 })
 

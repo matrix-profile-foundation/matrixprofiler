@@ -48,11 +48,17 @@ test_that("MPXAB Parallel", {
 })
 
 test_that("MPXs are equal", {
-  expect_identical(mpx_res, mpx_res_par)
+  # Parallel floating-point calculations can differ in their last few bits.
+  expect_equal(mpx_res$matrix_profile, mpx_res_par$matrix_profile, tolerance = 1e-12)
+  expect_identical(mpx_res[names(mpx_res) != "matrix_profile"],
+                   mpx_res_par[names(mpx_res_par) != "matrix_profile"])
 })
 
 test_that("MPXABs are equal", {
-  expect_identical(mpxab_res, mpxab_res_par)
+  profiles <- c("matrix_profile", "mpb")
+  expect_equal(mpxab_res[profiles], mpxab_res_par[profiles], tolerance = 1e-12)
+  expect_identical(mpxab_res[!names(mpxab_res) %in% profiles],
+                   mpxab_res_par[!names(mpxab_res_par) %in% profiles])
 })
 
 test_that("parallel MPXAB omits indices when idxs is FALSE", {
