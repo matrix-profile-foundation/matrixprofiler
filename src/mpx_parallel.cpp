@@ -943,14 +943,13 @@ public:
       }
     }
 
-    // Allocate only the output spans touched by this task. The vector capacity
-    // remains thread-local and is reused by TBB, but the active working set is
-    // bounded by the task's diagonal range rather than by both full profiles.
-    thread_local std::vector<double> centered_window;
-    thread_local std::vector<double> local_mp_a;
-    thread_local std::vector<double> local_mp_b;
-    thread_local std::vector<int> local_mpi_a;
-    thread_local std::vector<int> local_mpi_b;
+    // Allocate only the output spans touched by this task. Own the buffers
+    // locally so they are destroyed before returning to the thread executor.
+    std::vector<double> centered_window;
+    std::vector<double> local_mp_a;
+    std::vector<double> local_mp_b;
+    std::vector<int> local_mpi_a;
+    std::vector<int> local_mpi_b;
 
     if (centered_window.size() != window_size) {
       centered_window.resize(window_size);
@@ -1702,10 +1701,11 @@ public:
     int *const mpi_a_ptr = keep_indices ? mpi_a.begin() : nullptr;
     int *const mpi_b_ptr = keep_indices ? mpi_b.begin() : nullptr;
 
-    thread_local std::vector<double> local_mp_a;
-    thread_local std::vector<double> local_mp_b;
-    thread_local std::vector<int> local_mpi_a;
-    thread_local std::vector<int> local_mpi_b;
+    // Reuse capacity within this invocation, without thread-local lifetime.
+    std::vector<double> local_mp_a;
+    std::vector<double> local_mp_b;
+    std::vector<int> local_mpi_a;
+    std::vector<int> local_mpi_b;
 
     for (std::size_t task_index = begin; task_index < end; task_index++) {
       MatrixProfileSegmentPairTask const &task = tasks[task_index];
@@ -1932,10 +1932,11 @@ public:
     double *const mp_ptr = mp.begin();
     int *const mpi_ptr = keep_indices ? mpi.begin() : nullptr;
 
-    thread_local std::vector<double> local_a;
-    thread_local std::vector<double> local_b;
-    thread_local std::vector<int> local_i_a;
-    thread_local std::vector<int> local_i_b;
+    // Reuse capacity within this invocation, without thread-local lifetime.
+    std::vector<double> local_a;
+    std::vector<double> local_b;
+    std::vector<int> local_i_a;
+    std::vector<int> local_i_b;
 
     for (std::size_t task_index = begin; task_index < end; task_index++) {
       MatrixProfileSegmentPairTask const &task = tasks[task_index];

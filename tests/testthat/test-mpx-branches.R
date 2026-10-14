@@ -90,6 +90,46 @@ test_that("mpx AB-join with NA and n_workers = 1 (serial monolithic NA path)", {
   expect_type(res, "list")
 })
 
+test_that("NA-aware workers preserve results across repeated two-worker joins", {
+  set.seed(109L)
+  data <- rnorm(200L)
+  query <- rnorm(150L)
+  data[50L] <- NA_real_
+
+  # Exercise all three workers that previously retained thread-local buffers.
+  joins <- list(
+    monolithic_ab = function(workers, indices) {
+      matrixprofiler:::mpxab_na_rcpp_parallel(
+        data, query, 20L, idxs = indices, n_workers = workers
+      )
+    },
+    segmented_ab = function(workers, indices) {
+      matrixprofiler:::mpxab_na_segmented_native_rcpp_parallel(
+        data, query, 20L, idxs = indices, n_workers = workers
+      )
+    },
+    segmented_aa = function(workers, indices) {
+      matrixprofiler:::mpx_na_segmented_native_rcpp_parallel(
+        data, 20L, idxs = indices, n_workers = workers
+      )
+    }
+  )
+  for (join in joins) {
+    for (indices in c(FALSE, TRUE)) {
+      set.seed(2021L)
+      serial <- join(1L, indices)
+      for (iteration in seq_len(3L)) {
+        set.seed(2021L)
+        parallel <- join(2L, indices)
+        profiles <- intersect(c("matrix_profile", "mpb"), names(serial))
+        expect_equal(parallel[profiles], serial[profiles], tolerance = 1e-10)
+        expect_identical(parallel[!names(parallel) %in% profiles],
+                         serial[!names(serial) %in% profiles])
+      }
+    }
+  }
+})
+
 test_that("mpx self-join with Inf in data (non-finite routing)", {
   set.seed(111L)
   data <- rnorm(200L)
