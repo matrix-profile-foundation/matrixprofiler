@@ -1,7 +1,4 @@
 ---
-title: "NEWS"
-author: "Francisco Bischoff\n"
-date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
   github_document:
     md_extension: +blank_before_header

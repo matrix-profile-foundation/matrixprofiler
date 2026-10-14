@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-<img src="man/figures/logo.png" align="right" style="float:right;"/>
+<img src="man/figures/logo.png" align="right" alt="matrixprofiler logo" style="float:right;"/>
 
 ## Matrix Profile for R
 
@@ -54,7 +54,7 @@ Key highlights:
 - 🔢 **`NA_integer_`** — invalid profile indices now follow R's canonical missing-value convention (was `-1L`).
 - 🛡️ **`na_strategy`** for all `mov_*` window functions — predictable, non-cascading NA handling.
 
-📄 Full API changes, breaking changes, and migration guide: **[MIGRATION.md](MIGRATION.md)**
+📄 Full API changes, breaking changes, and migration guide: **[MIGRATION.md](https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/MIGRATION.md)**
 
 ### Overview
 
@@ -73,6 +73,31 @@ install.packages("matrixprofiler")
 # Or the development version from GitHub:
 # install.packages("devtools")
 devtools::install_github("matrix-profile-foundation/matrixprofiler")
+```
+
+#### Optional: NVIDIA CUDA GPU Acceleration
+
+By default, `matrixprofiler` installs as a portable, high-performance CPU engine with multi-threading via `RcppThread` (zero external dependencies, 100% CRAN compliant).
+
+If you have an **NVIDIA GPU** and the **CUDA Toolkit** installed, you can compile `matrixprofiler` with native CUDA acceleration for supported algorithms (such as `rfcp()` and `mpx()`):
+
+```bash
+# Clone the repository
+git clone https://github.com/matrix-profile-foundation/matrixprofiler.git
+cd matrixprofiler
+
+# Compile CUDA kernels and install directly into your R library
+./inst/cuda/build_cuda_rcpp.sh R CMD INSTALL .
+# or with devtools:
+./inst/cuda/build_cuda_rcpp.sh Rscript -e 'devtools::install()'
+```
+
+Once installed, check if CUDA is enabled in your R session:
+
+```{r cuda-check, eval = FALSE}
+library(matrixprofiler)
+has_cuda()
+#> [1] TRUE
 ```
 
 ### Currently available Features
@@ -138,7 +163,7 @@ Available at [RPubs](https://rpubs.com/franzbischoff/matrixprofiler).
 
 <center>
 
-```{r dependency_plot, echo = FALSE, fig.width = 5, fig.height = 5, message = FALSE, warning = FALSE, fig.path = "man/figures/"}
+```{r dependency_plot, echo = FALSE, fig.width = 5, fig.height = 5, message = FALSE, warning = FALSE, fig.path = "man/figures/", fig.alt = "Matrixprofiler package dependencies network graph"}
 source("https://gist.githubusercontent.com/franzbischoff/3b83243dfdfa73e459935112f3f783e3/raw/239548243f984843b3a87d8cc82f99395a8ed26e/plot_dependencies.R") # nolint
 plot_dependencies()
 ```

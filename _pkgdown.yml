@@ -1,0 +1,14 @@
+url: https://matrix-profile-foundation.github.io/matrixprofiler/
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [github]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: "NVIDIA CUDA GPU Acceleration"
+          href: articles/cuda-gpu.html

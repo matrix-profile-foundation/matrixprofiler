@@ -2,11 +2,11 @@ README
 ================
 Francisco Bischoff
 
-12 Oct 2026
+14 Oct 2026
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<img src="man/figures/logo.png" align="right" style="float:right;"/>
+<img src="man/figures/logo.png" align="right" alt="matrixprofiler logo" style="float:right;"/>
 
 ## Matrix Profile for R
 
@@ -54,7 +54,7 @@ Key highlights:
   non-cascading NA handling.
 
 📄 Full API changes, breaking changes, and migration guide:
-**[MIGRATION.md](MIGRATION.md)**
+**[MIGRATION.md](https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/MIGRATION.md)**
 
 ### Overview
 
@@ -76,6 +76,35 @@ install.packages("matrixprofiler")
 # Or the development version from GitHub:
 # install.packages("devtools")
 devtools::install_github("matrix-profile-foundation/matrixprofiler")
+```
+
+#### Optional: NVIDIA CUDA GPU Acceleration
+
+By default, `matrixprofiler` installs as a portable, high-performance
+CPU engine with multi-threading via `RcppThread` (zero external
+dependencies, 100% CRAN compliant).
+
+If you have an **NVIDIA GPU** and the **CUDA Toolkit** installed, you
+can compile `matrixprofiler` with native CUDA acceleration for supported
+algorithms (such as `rfcp()` and `mpx()`):
+
+``` bash
+# Clone the repository
+git clone https://github.com/matrix-profile-foundation/matrixprofiler.git
+cd matrixprofiler
+
+# Compile CUDA kernels and install directly into your R library
+./inst/cuda/build_cuda_rcpp.sh R CMD INSTALL .
+# or with devtools:
+./inst/cuda/build_cuda_rcpp.sh Rscript -e 'devtools::install()'
+```
+
+Once installed, check if CUDA is enabled in your R session:
+
+``` r
+library(matrixprofiler)
+has_cuda()
+#> [1] TRUE
 ```
 
 ### Currently available Features
@@ -153,7 +182,7 @@ Available at [RPubs](https://rpubs.com/franzbischoff/matrixprofiler).
 
 <center>
 
-![](man/figures/dependency_plot-1.png)<!-- -->
+<img src="man/figures/dependency_plot-1.png" alt="Matrixprofiler package dependencies network graph"  />
 
 </center>
 

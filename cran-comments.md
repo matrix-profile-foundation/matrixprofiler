@@ -8,13 +8,7 @@
 - Extended multithreading to all MASS variants (`v2`, `weighted`, `non_normalized`, `absolute`).
 - Standardized invalid profile indices to `NA_integer_` across algorithms.
 - `R CMD check --as-cran` passed with 0 errors and 0 warnings.
-
-## Comments for this version (0.1.10)
-
-C++11 flags are deprecated and defaults to C++17, so this requirement was removed from the package.
-Also, some old links were fixed.
-
-The new NOTE "‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’" appears only in my devcontainer, not on tested environments below, nevertheless seems ok
+- "The NOTE ‘-mno-omit-leaf-frame-pointer’ appears only on local Ubuntu build environment, not on CRAN test machines."
 
 ## Test environments
 
@@ -31,22 +25,14 @@ The new NOTE "‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’" ap
 
 ## R CMD check results
 
-── R CMD check results ──────────────────────────────────────── matrixprofiler 0.1.10 ────
-Duration: 1m 17s
-
-❯ checking installed package size ... NOTE
-    installed size is 13.1Mb
-    sub-directories of 1Mb or more:
-      libs  12.9Mb
-
-❯ checking for GNU extensions in Makefiles ... NOTE
-  GNU make is a SystemRequirements.
+── R CMD check results ───────────────────────────────────────── matrixprofiler 0.1.12 ────
+Duration: 1m 18.9s
 
 ❯ checking compilation flags used ... NOTE
   Compilation used the following non-portable flag(s):
-    ‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’
+    ‘-mno-omit-leaf-frame-pointer’
 
-0 errors ✔ | 0 warnings ✔ | 3 notes ✖
+0 errors ✔ | 0 warnings ✔ | 1 note ✖
 
 ## Downstream dependencies
 

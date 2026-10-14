@@ -46,3 +46,4 @@
 ^src/PVS-Studio\..*$
 ^CRAN-SUBMISSION$
 ^MIGRATION\.md$
+^vignettes$

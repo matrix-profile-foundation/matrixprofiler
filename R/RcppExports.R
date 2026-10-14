@@ -139,6 +139,28 @@ mpxab_gpu_rcpp <- function(data_ref, query_ref, window_size, idxs, euclidean) {
 
 #' Check if package was compiled with CUDA support
 #'
+#' @description
+#' Queries whether `matrixprofiler` was compiled with NVIDIA CUDA GPU acceleration
+#' (`MATRIXPROFILER_ENABLE_CUDA=1`).
+#'
+#' @details
+#' By default, `matrixprofiler` is compiled without CUDA to maintain portability and
+#' compliance with CRAN policies, running all algorithms on multi-threaded CPU engines
+#' powered by `RcppThread`.
+#'
+#' If an NVIDIA GPU and the CUDA Toolkit are available on the host system, the package
+#' can be recompiled with CUDA acceleration for supported algorithms (such as \code{\link{rfcp}}
+#' and \code{\link{mpx}}) using the helper script \code{inst/cuda/build_cuda_rcpp.sh}
+#' or by setting the environment variables:
+#' \itemize{
+#'   \item \code{MATRIXPROFILER_ENABLE_CUDA=1}
+#'   \item \code{MATRIXPROFILER_CUDA_OBJECT} pointing to precompiled CUDA object files (\code{.o})
+#'   \item \code{MATRIXPROFILER_CUDA_LIBS} pointing to the CUDA runtime library (e.g. \code{-lcudart})
+#' }
+#'
+#' When `has_cuda()` returns `FALSE`, attempting to execute an algorithm with
+#' `backend = "cuda"` will stop with an informative error instructing how to enable CUDA.
+#'
 #' @return A logical value: `TRUE` if CUDA support was enabled at compile time, `FALSE` otherwise.
 #' @export
 #' @examples

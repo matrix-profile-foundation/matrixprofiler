@@ -22,7 +22,8 @@ Description: This is the core functions needed by the 'tsmp' package.  The
     These are implementations of the Matrix Profile concept that was
     created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.
 License: GPL-3
-URL: https://github.com/matrix-profile-foundation/matrixprofiler
+URL: https://matrix-profile-foundation.github.io/matrixprofiler/,
+    https://github.com/matrix-profile-foundation/matrixprofiler
 BugReports:
     https://github.com/matrix-profile-foundation/matrixprofiler/issues
 Depends:
