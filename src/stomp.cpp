@@ -269,17 +269,17 @@ List stomp_rcpp_parallel(const NumericVector data_ref, const NumericVector query
   }
 
   grain = set_k_rcpp(1024, num_queries, window_size);
-  uint64_t chunk_size = 2 * grain;
+  size_t chunk_size = 2 * grain;
   if (chunk_size < 1) {
     chunk_size = 1;
   }
   if (num_queries / chunk_size < n_workers) {
-    chunk_size = std::max<uint64_t>(1, (num_queries + n_workers - 1) / n_workers);
+    chunk_size = std::max<size_t>(1, (num_queries + n_workers - 1) / n_workers);
   }
 
   std::vector<std::pair<size_t, size_t>> chunks;
   for (size_t cur = 0; cur < num_queries; cur += chunk_size) {
-    size_t cur_end = std::min(cur + chunk_size, static_cast<size_t>(num_queries));
+    size_t cur_end = std::min<size_t>(cur + chunk_size, static_cast<size_t>(num_queries));
     chunks.emplace_back(cur, cur_end);
   }
 

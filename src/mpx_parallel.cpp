@@ -1497,7 +1497,7 @@ static uint32_t matrix_profile_native_thread_hint() {
   if (value != nullptr && value[0] != '\0') {
     char *end = nullptr;
     long parsed = std::strtol(value, &end, 10);
-    if (end != value && parsed > 0 && parsed <= std::numeric_limits<uint32_t>::max()) {
+    if (end != value && parsed > 0 && static_cast<unsigned long>(parsed) <= std::numeric_limits<uint32_t>::max()) {
       return static_cast<uint32_t>(parsed);
     }
   }

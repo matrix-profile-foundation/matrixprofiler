@@ -6,7 +6,7 @@ linters: linters_with_defaults(
   class_equals_linter(),
   commented_code_linter = NULL,
   condition_message_linter(),
-  consecutive_stopifnot_linter(),
+  stopifnot_all_linter(),
   cyclocomp_linter(50),
   duplicate_argument_linter(),
   fixed_regex_linter(),
@@ -35,7 +35,7 @@ linters: linters_with_defaults(
   system_file_linter(),
   undesirable_function_linter(all_undesirable_functions),
   undesirable_operator_linter(all_undesirable_operators),
-  unneeded_concatenation_linter(),
+  unnecessary_concatenation_linter(),
   unreachable_code_linter(),
   unused_import_linter(),
   yoda_test_linter()

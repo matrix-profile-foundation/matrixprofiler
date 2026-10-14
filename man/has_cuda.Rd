@@ -23,9 +23,9 @@ can be recompiled with CUDA acceleration for supported algorithms (such as \code
 and \code{\link{mpx}}) using the helper script \code{inst/cuda/build_cuda_rcpp.sh}
 or by setting the environment variables:
 \itemize{
-  \item \code{MATRIXPROFILER_ENABLE_CUDA=1}
-  \item \code{MATRIXPROFILER_CUDA_OBJECT} pointing to precompiled CUDA object files (\code{.o})
-  \item \code{MATRIXPROFILER_CUDA_LIBS} pointing to the CUDA runtime library (e.g. \code{-lcudart})
+\item \code{MATRIXPROFILER_ENABLE_CUDA=1}
+\item \code{MATRIXPROFILER_CUDA_OBJECT} pointing to precompiled CUDA object files (\code{.o})
+\item \code{MATRIXPROFILER_CUDA_LIBS} pointing to the CUDA runtime library (e.g. \code{-lcudart})
 }
 
 When \code{has_cuda()} returns \code{FALSE}, attempting to execute an algorithm with
