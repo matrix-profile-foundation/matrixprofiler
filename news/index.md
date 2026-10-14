@@ -1,8 +1,8 @@
 # Changelog
 
-## matrixprofiler 0.1.12
+## matrixprofiler (development version)
 
-CRAN release: 2026-10-14
+### matrixprofiler 0.1.12
 
 - **Parallel execution and fork**: Documented limitations of fork-based
   workers with native threads, including STOMP and MPX. Recommend PSOCK
@@ -52,7 +52,7 @@ CRAN release: 2026-10-14
   `mpdist(ref_data, query_data, window_size, type = c("simple", "vector"), thr = 0.05, n_workers = 1)`
   in R with dedicated unit test suite.
 
-## matrixprofiler 0.1.11.9013
+### matrixprofiler 0.1.11.9013
 
 - **CUDA RFCP Optimization**: Replaced CUB Segmented Radix Sort with a
   parallel warp/block-level iterative top-$`K`$ reduction with exclusion
@@ -68,7 +68,7 @@ CRAN release: 2026-10-14
   down to tens of megabytes, preventing out-of-memory bottlenecks on
   multi-million sample series.
 
-## matrixprofiler 0.1.11.9012
+### matrixprofiler 0.1.11.9012
 
 - Added query chunking and tiled execution support to
   [`rfcp_top_k()`](https://matrix-profile-foundation.github.io/matrixprofiler/reference/rfcp_top_k.md)
@@ -86,7 +86,7 @@ CRAN release: 2026-10-14
   inter-round state resumption, callback events, and input/signature
   compatibility validation.
 
-## matrixprofiler 0.1.11.9011
+### matrixprofiler 0.1.11.9011
 
 - Added `adaptive_max_freq` support to
   [`rfcp_top_k()`](https://matrix-profile-foundation.github.io/matrixprofiler/reference/rfcp_top_k.md),
@@ -97,7 +97,7 @@ CRAN release: 2026-10-14
 - Added unit test coverage for adaptive frequency descent across
   dominant and secondary synthetic pulse morphologies.
 
-## matrixprofiler 0.1.11.9010
+### matrixprofiler 0.1.11.9010
 
 - Added
   [`rfcp_top_k()`](https://matrix-profile-foundation.github.io/matrixprofiler/reference/rfcp_top_k.md),
@@ -116,7 +116,7 @@ CRAN release: 2026-10-14
 - Added unit tests for input validation, multi-morphology discovery,
   frequency scaling, early stopping thresholds, and S3 print methods.
 
-## matrixprofiler 0.1.11.9009
+### matrixprofiler 0.1.11.9009
 
 - Added an optional CUDA backend for exact RFCP (Relative Frequency
   Contrast Profile) computations through `rfcp(..., backend = "cuda")`,
@@ -134,7 +134,7 @@ CRAN release: 2026-10-14
   `MATRIXPROFILER_ENABLE_CUDA`, preserving standard CUDA-free CRAN
   compatibility.
 
-## matrixprofiler 0.1.11.9008
+### matrixprofiler 0.1.11.9008
 
 - Added an optional CUDA backend for exact MPX self-joins and AB-joins
   through `mpx(..., backend = "cuda")`, including finite and NA-aware
@@ -144,7 +144,7 @@ CRAN release: 2026-10-14
 - Kept CUDA source and its local build helper distributed in
   `inst/cuda/` while preserving the default CUDA-free CRAN build.
 
-## matrixprofiler 0.1.11.9007
+### matrixprofiler 0.1.11.9007
 
 - Optimized RFCP worker execution by reusing covariance, candidate,
   rank, and exclusion buffers across query blocks and carrying exclusion
@@ -157,7 +157,7 @@ CRAN release: 2026-10-14
   [`rfcp()`](https://matrix-profile-foundation.github.io/matrixprofiler/reference/rfcp.md)
   API.
 
-## matrixprofiler 0.1.11.9006
+### matrixprofiler 0.1.11.9006
 
 - Completed the native NA-aware RFCP implementation with deterministic
   AA/AB neighbor ranks, restartable query blocks, compact Plato output,
@@ -172,7 +172,7 @@ CRAN release: 2026-10-14
 - Added RFCP correctness, barrier, tie-breaking, serial/parallel,
   block-composition, near-constant, and performance regression coverage.
 
-## matrixprofiler 0.1.11.9005
+### matrixprofiler 0.1.11.9005
 
 - Added
   [`rfcp()`](https://matrix-profile-foundation.github.io/matrixprofiler/reference/rfcp.md),
@@ -223,7 +223,7 @@ CRAN release: 2026-10-14
   MPX implementation and STAMP for non-finite barriers, one-window
   segments, distance, correlation, and sampled computations.
 
-## matrixprofiler 0.1.11.9003
+### matrixprofiler 0.1.11.9003
 
 - Clarified the MPX `s_size` semantics: values below `1` retain
   randomized anytime sampling, while `s_size = 1` processes all
@@ -255,7 +255,7 @@ CRAN release: 2026-10-14
 - Added reproducible fixture benchmarks and a persistent optimization
   workplan for NA-aware segmentation and parallel reductions.
 
-## matrixprofiler 0.1.11.9000
+### matrixprofiler 0.1.11.9000
 
 - Fixed parallel STOMP silently returning incomplete profiles when a
   worker received fewer query windows than the window size.
@@ -323,29 +323,23 @@ CRAN release: 2026-10-14
 - Added randomized MPX missing-data stress tests against serial STAMP
   and an independent brute-force implementation.
 
-## matrixprofiler 0.1.10
-
-CRAN release: 2025-12-01
+### matrixprofiler 0.1.10
 
 - C++11 flags are deprecated and defaults to C++17, so this requirement
   was removed from the package.
 - Some old links were fixed.
 
-## matrixprofiler 0.1.9
-
-CRAN release: 2023-01-26
+### matrixprofiler 0.1.9
 
 - Small fixes for cran
 
-## matrixprofiler 0.1.8
+### matrixprofiler 0.1.8
 
 - Fixed memory leak on mpx_rcpp_parallel().
 - Added contrast profile function: contrast().
 - Several code lint.
 
-## matrixprofiler 0.1.7
-
-CRAN release: 2021-11-23
+### matrixprofiler 0.1.7
 
 - Fixed issue on Makefile for Unix/Mac systems that triggered some CRAN
   policy about “Packages should not attempt to disable compiler
@@ -354,28 +348,22 @@ CRAN release: 2021-11-23
   library that even in release mode have being compiled in debug mode.
   More info at <http://dirk.eddelbuettel.com/blog/2017/08/14/>
 
-## matrixprofiler 0.1.5
-
-CRAN release: 2021-05-26
+### matrixprofiler 0.1.5
 
 - Fixed `Rcpp` as specified by the PR
   [\#15](https://github.com/matrix-profile-foundation/matrixprofiler/issues/15)
   from Dirk [@eddelbuettel](https://github.com/eddelbuettel)
 
-## matrixprofiler 0.1.4
-
-CRAN release: 2021-03-03
+### matrixprofiler 0.1.4
 
 - Dropped PAA algorithm
 - Added some math helper functions
 
-## matrixprofiler 0.1.3
-
-CRAN release: 2021-02-17
+### matrixprofiler 0.1.3
 
 - CRAN fixes
 
-## matrixprofiler 0.1.0
+### matrixprofiler 0.1.0
 
 - Initial implementation of this package.
 - This package will keep all core functions that will allow you to use

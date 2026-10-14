@@ -26,13 +26,13 @@ Source:
 [`DESCRIPTION`](https://github.com/matrix-profile-foundation/matrixprofiler/blob/develop/DESCRIPTION)
 
 Bischoff F (2026). *matrixprofiler: Matrix Profile for R*. R package
-version 0.1.12,
+version 0.1.12.9000,
 <https://matrix-profile-foundation.github.io/matrixprofiler/>.
 
     @Manual{,
       title = {matrixprofiler: Matrix Profile for R},
       author = {Francisco Bischoff},
       year = {2026},
-      note = {R package version 0.1.12},
+      note = {R package version 0.1.12.9000},
       url = {https://matrix-profile-foundation.github.io/matrixprofiler/},
     }
