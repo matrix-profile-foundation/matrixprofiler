@@ -23,7 +23,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/matrix-profile-foundation/matrixprofiler/blob/develop/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/DESCRIPTION)
 
 Bischoff F (2026). *matrixprofiler: Matrix Profile for R*. R package
 version 0.1.12,
