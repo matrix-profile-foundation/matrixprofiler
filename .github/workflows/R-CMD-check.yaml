@@ -54,6 +54,13 @@ jobs:
           needs: check
 
       - uses: r-lib/actions/check-r-package@v2
+        id: check
         with:
           upload-snapshots: true
           build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
+
+      - name: Diagnose Windows contrast failure
+        if: ${{ failure() && runner.os == 'Windows' && steps.check.outcome == 'failure' }}
+        timeout-minutes: 15
+        shell: Rscript {0}
+        run: source(".github/scripts/diagnose-contrast.R")
