@@ -1,7 +1,4 @@
 ---
-title: "NEWS"
-author: "Francisco Bischoff\n"
-date: "`r format(Sys.Date(), '%d %b %Y')`"
 output:
   github_document:
     md_extension: +blank_before_header
@@ -21,6 +18,118 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/NEWS-" # nolint
 )
 ```
+
+## matrixprofiler 0.1.12
+
+* **Native Multivariate STOMP (`mstomp`)**: Added native high-performance C++ engine (`mstomp_rcpp`) with multi-threading via `RcppThread`, properly sorting must/exclusion dimensions, and fixing historical edge cases where must dimensions could be omitted from accumulated distances. Delivers ~197x speedup over legacy pure R execution.
+* **Missing Value Handling in Rolling Window Functions (`na_strategy` & `na.rm`)**: Implemented complete missing/non-finite value support across `mov_mean()`, `mov_sum()`, `mov_var()`, `mov_std()`, `mov_min()`, `mov_max()`, `movmean_std()`, and `muinvn()` with explicit `na_strategy = c("window_na", "remove", "error")` and standard `na.rm` argument compatibility. Default `"window_na"` returns `NA_real_` strictly for windows intersecting non-finite values without corrupting adjacent valid windows or stopping execution.
+* **Multithreaded MASS Variants (`mass`)**: Extended multi-threading via `RcppThread` to all MASS variants (`v2`, `weighted`, `non_normalized`, `absolute`) in `mass()` and C++ backend (`mass2_rcpp`, `mass_weighted_rcpp`, `mass_absolute_rcpp`), matching `mass3_rcpp_parallel` with identical numerical output.
+* **Native MPdist Engine**: Added native high-performance C++ implementation of MPdist (`mpdist_vect_rcpp` and `mpdist_simple_rcpp`) with multi-threaded parallel execution via `RcppThread`.
+* **Zero Allocation & O(N) Sliding Min**: Implemented linear-time monotonic deque for sliding window minimum and $O(K)$ selection with `std::nth_element`, replacing expensive R matrix and data frame allocations and providing massive speedups (over 10x-100x).
+* **Exported `mpdist()` API**: Exported `mpdist(ref_data, query_data, window_size, type = c("simple", "vector"), thr = 0.05, n_workers = 1)` in R with dedicated unit test suite.
+
+## matrixprofiler 0.1.11.9013
+
+* **CUDA RFCP Optimization**: Replaced CUB Segmented Radix Sort with a parallel warp/block-level iterative top-$K$ reduction with exclusion zone support in `inst/cuda/rfcp_gpu_poc.cu`.
+* **Zero In-Loop PCIe Synchronization**: Removed all synchronous host-device transfers and pipeline flushes from the query loop, keeping query progression entirely asynchronous on the GPU.
+* **Efficient Plato Retrieval**: Eliminated repeated transfers of full distance vectors during record updates; distance profiles are now computed once post-loop for the winning Plato query.
+* **Massive Speedup & Scalability**: Drastically cuts per-query latency by up to ~100x and reduces device memory consumption from gigabytes down to tens of megabytes, preventing out-of-memory bottlenecks on multi-million sample series.
+
+## matrixprofiler 0.1.11.9012
+
+-   Added query chunking and tiled execution support to `rfcp_top_k()` via `query_block_size`, dividing long query streams into bounded blocks while preserving exact numeric equivalence to monolithic execution.
+-   Added `progress_callback` reporting structured events (`"round_start"`, `"block_done"`, `"round_done"`) with execution timings and local block/Plato metrics.
+-   Added serializable state checkpointing and resumption via `checkpoint_callback` and `resume_state`, supporting idempotent recovery from both intra-round (query block) and inter-round (Plato) interruptions.
+-   Added unit test coverage for chunked invariance, mid-round and inter-round state resumption, callback events, and input/signature compatibility validation.
+
+## matrixprofiler 0.1.11.9011
+
+-   Added `adaptive_max_freq` support to `rfcp_top_k()`, dynamically rescaling subsequent frequencies based on observed Plato support (count of positive self-join neighbors with distance below $\sqrt{2 \cdot \text{window\_size}}$) with configurable `min_freq` floor.
+-   Added unit test coverage for adaptive frequency descent across dominant and secondary synthetic pulse morphologies.
+
+## matrixprofiler 0.1.11.9010
+
+-   Added `rfcp_top_k()`, an iterative Top-K Plato discovery function for Relative Frequency Contrast Profiles (RFCP) that uncovers multiple distinct contrasting patterns between a positive and negative time series.
+-   Implemented iterative morphology suppression by concatenating each discovered Plato and its accepted positive self-join neighbors into the negative series, incorporating an exclusion zone around each occurrence (`[start - exclusion_radius, start + window_size - 1 + exclusion_radius]`) and fusing overlapping intervals with `NA` barriers to prevent boundary artifacts.
+-   Added support for dynamic `max_freq` specification across Plato iterations via vectors (e.g. `max_freq = c(10, 3)`).
+-   Added unit tests for input validation, multi-morphology discovery, frequency scaling, early stopping thresholds, and S3 print methods.
+
+## matrixprofiler 0.1.11.9009
+
+-   Added an optional CUDA backend for exact RFCP (Relative Frequency Contrast Profile) computations through `rfcp(..., backend = "cuda")`, with full support for finite and NA-barrier series, query subsetting, and full-profile matrix extraction (`return_profiles = TRUE`).
+-   Accelerated candidate sorting and greedy neighbor selection 100% on the GPU using `cub::DeviceSegmentedRadixSort` and a specialized CUDA exclusion kernel, eliminating PCIe bandwidth bottlenecks and delivering up to 55x speedup over CPU-sorting GPU baselines and over 12x speedup compared to single-threaded CPU execution.
+-   Added GPU regression and numerical equivalence tests against the native CPU implementation, verifying exact Plato detection and machine-precision distance profiles ($10^{-14}$) on real datasets.
+-   Kept CUDA source in `inst/cuda/` and linked conditionally via `MATRIXPROFILER_ENABLE_CUDA`, preserving standard CUDA-free CRAN compatibility.
+
+## matrixprofiler 0.1.11.9008
+
+-   Added an optional CUDA backend for exact MPX self-joins and AB-joins through `mpx(..., backend = "cuda")`, including finite and NA-aware inputs.
+-   Added GPU regression coverage against the parallel CPU implementations for profiles, indices, validity masks, and CUDA-free builds.
+-   Kept CUDA source and its local build helper distributed in `inst/cuda/` while preserving the default CUDA-free CRAN build.
+
+## matrixprofiler 0.1.11.9007
+
+-   Optimized RFCP worker execution by reusing covariance, candidate, rank, and exclusion buffers across query blocks and carrying exclusion stamps between blocks.
+-   Made RFCP query tiling worker-aware: the native kernel now starts the first tile at `query_begin`, derives the tile size from the query count and effective worker count, and reports `query_rows_per_task`, `n_tasks`, and `effective_workers` for diagnostics while preserving the public `rfcp()` API.
+
+## matrixprofiler 0.1.11.9006
+
+-   Completed the native NA-aware RFCP implementation with deterministic AA/AB neighbor ranks, restartable query blocks, compact Plato output, and optional allocation-guarded full-profile matrices.
+-   Added adaptive MASS-style FFT initialization for large RFCP blocks while retaining direct initialization for small inputs; the implementation advances subsequent rows with a STOMP-style covariance recurrence.
+-   Reused worker-local covariance, candidate, rank, and exclusion buffers across RFCP blocks, carrying exclusion stamps between blocks to reduce allocation and reset overhead.
+-   Added RFCP correctness, barrier, tie-breaking, serial/parallel, block-composition, near-constant, and performance regression coverage.
+
+## matrixprofiler 0.1.11.9005
+
+-   Added `rfcp()`, an exact parallel NA-aware Relative Frequency Contrast Profile implementation with deterministic greedy non-overlapping neighbor ranks, fixed-frequency RMSC semantics, restartable positive-query blocks, and an allocation-guarded full-profile validation mode.
+-   Added the fused native `rfcp_na_segmented_native_rcpp_parallel()` kernel, which shares rolling normalization across AA and AB computations, initializes large blocks with a MASS-style FFT convolution, advances subsequent distance profiles with a STOMP-style covariance recurrence, respects non-finite barriers and non-normalizable windows, and avoids materializing the pairwise distance matrix.
+-   Added independently selectable native finite-block segmentation for NA-aware MPX self-joins and AB-joins through `na_strategy = "segmented_native"` in `mpx()`, while retaining the monolithic implementation as the default.
+-   Added native diagonal-tile sampling for `s_size < 1`, with explicit `partial` results and adaptive tile subdivision based on the configured parallel thread count.
+-   Added global-coordinate reduction of native segmented profiles and indices, including cross-segment AB comparisons and exclusion-zone handling for AA joins.
+
+-   Optimized native segmented scheduling for highly unbalanced segment lengths, added cache-bounded rectangular blocks for exact AA joins, and allowed it to mask constant or otherwise non-normalizable windows without reverting to the monolithic NA-aware kernel.
+-   Set the native exact-AA block default to 8,192 windows and documented `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE` for cache-tuning large parallel NA-aware self-joins without changing the public `mpx()` API.
+-   Validated the native segmented implementation on the full fixture: exact AA and AB runs completed with `partial = FALSE`, identical validity masks, and substantial wall-time reductions compared with the previous native and monolithic NA-aware paths.
+-   Added regression and stress coverage against the monolithic NA-aware MPX implementation and STAMP for non-finite barriers, one-window segments, distance, correlation, and sampled computations.
+
+## matrixprofiler 0.1.11.9003
+
+-   Clarified the MPX `s_size` semantics: values below `1` retain randomized anytime sampling, while `s_size = 1` processes all diagonals in monotone order and may yield a less representative partial result if interrupted.
+
+-   Added a numerically guarded finite fast path for NA-aware MPX and MPXAB, preserving the stable normalization path for constant or large-offset windows.
+-   Reused parallel AB/BA worker scratch buffers per executor thread and limited mutex merges to ranges touched by each task.
+-   Avoided allocating and writing profile-index vectors in parallel self- and AB-joins when `idxs = FALSE`.
+-   Added an opt-in AB/BA worker profiler with per-task counts for pairs, invalid blocks, scratch resets, merges, mutex wait, and observed threads.
+-   Added a conservative native restart path that skips dense invalid blocks in parallel NA-aware AB/BA joins while preserving the original recurrence for sparse barriers.
+-   Kept complete NA-aware AB/BA joins in monotone diagonal order to reduce parallel scratch resets and merges; sampled joins retain randomized work order.
+-   Added reproducible fixture benchmarks and a persistent optimization workplan for NA-aware segmentation and parallel reductions.
+
+## matrixprofiler 0.1.11.9000
+
+-   Fixed parallel STOMP silently returning incomplete profiles when a worker received fewer query windows than the window size.
+-   Fixed `SIGFPE` crashes in parallel STOMP and MPX for computations with fewer than 100 query windows or diagonals.
+-   Fixed unsafe R and Rcpp API calls from TBB workers, including MASS result allocation and progress reporting, which could cause stack imbalance and abort forked workers.
+-   Fixed the public parallel STOMP AB-join call omitting the `left_right_profile` native argument.
+-   Added left and right profile computation to parallel STOMP and corrected exclusion-zone handling.
+-   Fixed parallel MPX ignoring `s_size` and added validation for values outside the `[0, 1]` interval.
+-   Fixed parallel thread options not being restored when STOMP or MPX failed or was interrupted.
+-   Added the serial `mpx_na_rcpp()` implementation, which excludes windows containing `NA`, `NaN`, or infinite samples while allowing later valid windows to recover, and optimized its quadratic kernel to avoid costly Rcpp proxy accesses.
+-   Optimized NA-aware moving normalization with direct contiguous storage and a hybrid parallel implementation; parallel MPX and MPXAB use it automatically for sufficiently large window workloads.
+-   Added `mpx_na_rcpp_parallel()` with the same missing-data semantics as the serial implementation and support for partial computations through `s_size`; its worker kernel uses direct contiguous storage without R API calls.
+-   Added the bidirectional `mpxab_na_rcpp()` AB-join for independently masking non-finite windows in both input series, with direct storage access in its quadratic kernel.
+-   Added `mpxab_na_rcpp_parallel()` with matching bidirectional masks and partial-computation behavior, using direct contiguous storage inside its workers.
+-   Updated `mpx()` to route self-joins and AB-joins automatically to the serial or parallel missing-data implementation whenever either input contains `NA`, `NaN`, or infinite values.
+-   Fixed serial STAMP modifying input vectors in place while sanitizing non-finite samples.
+-   Fixed serial STAMP AB-joins using the data validity mask for query windows instead of maintaining separate masks.
+-   Fixed parallel STAMP modifying input vectors, ignoring invalid query windows, ignoring `s_size`, and calling unsafe R APIs from worker threads.
+-   Fixed STAMP failures on short inputs by removing the runtime MASS grain-size benchmark and validating native arguments before index arithmetic.
+-   Fixed serial and parallel SCRIMP failures on non-finite and constant windows, including a parallel segmentation fault caused by zero-variance divisions and worker-thread R API calls.
+-   Fixed parallel SCRIMP ignoring `s_size`; its diagonal computation now shares the validated NA-aware MPX recurrence while serial PRE-SCRIMP still seeds sampled distance profiles.
+-   Fixed SCRIMP AB-joins skipping diagonals, omitting `s_size` in the R-to-C++ call, rejecting unequal input lengths, and failing to mask non-finite windows independently in both series.
+-   Fixed STAMP and SCRIMP thread options not being restored when a parallel computation failed.
+-   Added regression coverage for short parallel joins, small MPX/STOMP inputs, partial MPX computations, STOMP AB-joins, and left/right profiles.
+-   Added STAMP and SCRIMP regression tests against MPX/MPXAB for serial, parallel, AB-join, non-finite, constant-window, and anytime cases.
+-   Added randomized MPX missing-data stress tests against serial STAMP and an independent brute-force implementation.
 
 ## matrixprofiler 0.1.10
 

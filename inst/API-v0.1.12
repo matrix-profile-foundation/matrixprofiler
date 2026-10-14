@@ -1,0 +1,39 @@
+# API for matrixprofiler package
+
+## Exported functions
+
+binary_split(n, rcpp = TRUE)
+complexity(data)
+contrast(negative_data, positive_data, window_size, positive_matrix = NULL, exclusion_zone = 0.5, distance = c("euclidean", "pearson"), n_workers = 1L, progress = TRUE)
+corr_ed(data, w, rcpp = TRUE)
+ed_corr(data, w, rcpp = TRUE)
+has_cuda()
+mass(pre_obj, data, query = data, index = 1, version = c("v3", "v2"), n_workers = 1)
+mass_pre(data, window_size, query = NULL, type = c("normalized", "non_normalized", "absolute", "weighted"), weights = NULL)
+mode(x, rcpp = FALSE)
+mov_max(data, window_size, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+mov_mean(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+mov_min(data, window_size, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+mov_std(data, window_size, rcpp = TRUE, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+mov_sum(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+mov_var(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.9, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+movmean_std(data, window_size, rcpp = TRUE, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+mpdist(ref_data, query_data, window_size, type = c("simple", "vector"), thr = 0.05, n_workers = 1L)
+mpx(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1, idxs = TRUE, distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE, na_strategy = c("monolithic", "segmented", "segmented_native"), backend = c("cpu", "cuda"))
+mpx_stream_right(new_data, start_obj, history = 0, mp_time_constraint = 0, progress = TRUE)
+mpx_stream_s_right(data, batch_size, start_obj, stats, history = 0, mp_time_constraint = 0, progress = TRUE, threshold = -1)
+mstomp(data, window_size, exclusion_zone = 0.5, must_dim = NULL, exc_dim = NULL, n_workers = 1L, progress = TRUE)
+muinvn(data, window_size, n_workers = 1L, na_strategy = c("window_na", "remove", "error"), na.rm = NULL)
+normalize(data, min_lim = 0, max_lim = 1, rcpp = FALSE)
+rfcp(positive_data, negative_data, window_size, max_freq, exclusion_radius = NULL, query_begin = 1L, query_end = NULL, return_profiles = FALSE, n_workers = 1L, progress = TRUE, backend = "cpu")
+rfcp_top_k(positive_data, negative_data, window_size, k_platos = 2L, max_freq = 5L, exclusion_radius = NULL, min_rms = 1e-04, adaptive_max_freq = FALSE, min_freq = 2L, n_workers = 1L, backend = "cpu", progress = FALSE, query_block_size = NULL, progress_callback = NULL, checkpoint_callback = NULL, resume_state = NULL)
+scrimp(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1, pre_scrimp = 0.25, n_workers = 1, progress = TRUE)
+stamp(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1, n_workers = 1, progress = TRUE)
+std(data, na.rm = FALSE, rcpp = TRUE)
+stomp(data, window_size, query = NULL, exclusion_zone = 0.5, n_workers = 1, progress = TRUE, left_right_profile = FALSE)
+zero_crossing(data, window_size)
+znorm(data, rcpp = TRUE)
+
+## Foreign S3 methods
+
+print.rfcp_top_k(x, ...)

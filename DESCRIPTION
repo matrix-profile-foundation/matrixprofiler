@@ -1,7 +1,7 @@
 Type: Package
 Package: matrixprofiler
 Title: Matrix Profile for R
-Version: 0.1.10
+Version: 0.1.12
 Authors@R: c(
     person("Francisco", "Bischoff", , "fbischoff@med.up.pt", role = c("aut", "cre"),
            comment = c(ORCID = "https://orcid.org/0000-0002-5301-8672")),
@@ -22,15 +22,15 @@ Description: This is the core functions needed by the 'tsmp' package.  The
     These are implementations of the Matrix Profile concept that was
     created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.
 License: GPL-3
-URL: https://github.com/matrix-profile-foundation/matrixprofiler
+URL: https://matrix-profile-foundation.github.io/matrixprofiler/,
+    https://github.com/matrix-profile-foundation/matrixprofiler
 BugReports:
     https://github.com/matrix-profile-foundation/matrixprofiler/issues
 Depends:
     R (>= 4.1)
 Imports:
     checkmate (>= 2.1.0),
-    Rcpp (>= 1.0.9),
-    RcppParallel (>= 5.1.5)
+    Rcpp (>= 1.0.9)
 Suggests:
     debugme (>= 1.1.0),
     spelling (>= 2.2.0),
@@ -38,8 +38,6 @@ Suggests:
     xml2 (>= 1.3.3)
 LinkingTo:
     Rcpp (>= 1.0.9),
-    RcppParallel (>= 5.1.5),
-    RcppProgress (>= 0.4.2),
     RcppThread (>= 2.1.3)
 Config/testthat/edition: 3
 Config/testthat/parallel: false
@@ -48,5 +46,5 @@ Language: en-US
 LazyData: true
 NeedsCompilation: yes
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 SystemRequirements: GNU make
+Config/roxygen2/version: 8.1.0

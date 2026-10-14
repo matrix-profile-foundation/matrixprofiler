@@ -16,32 +16,66 @@ mov_mean(
   data,
   window_size,
   type = c("ogita", "normal", "weighted", "fading"),
-  eps = 0.9
+  eps = 0.9,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
 )
 
 mov_var(
   data,
   window_size,
   type = c("ogita", "normal", "weighted", "fading"),
-  eps = 0.9
+  eps = 0.9,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
 )
 
 mov_sum(
   data,
   window_size,
   type = c("ogita", "normal", "weighted", "fading"),
-  eps = 0.9
+  eps = 0.9,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
 )
 
-mov_max(data, window_size)
+mov_max(
+  data,
+  window_size,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
+)
 
-mov_min(data, window_size)
+mov_min(
+  data,
+  window_size,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
+)
 
-mov_std(data, window_size, rcpp = TRUE)
+mov_std(
+  data,
+  window_size,
+  rcpp = TRUE,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
+)
 
-movmean_std(data, window_size, rcpp = TRUE)
+movmean_std(
+  data,
+  window_size,
+  rcpp = TRUE,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
+)
 
-muinvn(data, window_size, n_workers = 1)
+muinvn(
+  data,
+  window_size,
+  n_workers = 1L,
+  na_strategy = c("window_na", "remove", "error"),
+  na.rm = NULL
+)
 
 zero_crossing(data, window_size)
 }
@@ -53,6 +87,18 @@ zero_crossing(data, window_size)
 \item{type}{A \code{string}. Select between several algorithms. Default is \code{ogita} (See details).}
 
 \item{eps}{A \code{numeric}. Used only for fading algorithms (See details), otherwise has no effect.}
+
+\item{na_strategy}{A \code{string} indicating how missing values (\code{NA}/\code{NaN}) are handled:
+\itemize{
+\item \code{"window_na"} (default): Any window touching an \code{NA}/\code{NaN} yields \code{NA_real_},
+without contaminating adjacent complete windows or stopping with an error.
+\item \code{"remove"}: Missing values inside the window are ignored, computing the statistic
+over remaining finite values.
+\item \code{"error"}: Throws an error immediately if missing values are present.
+}}
+
+\item{na.rm}{A \code{logical}. Standard R compatibility shortcut. If provided, \code{TRUE} maps to
+\code{na_strategy = "remove"}, and \code{FALSE} maps to \code{na_strategy = "window_na"}.}
 
 \item{rcpp}{A \code{logical}. If \code{TRUE} will use the Rcpp implementation, otherwise will use the R implementation,
 that may or not be slower.}
@@ -79,7 +125,8 @@ that may or not be slower.}
 \code{zero_crossing()} returns a \code{vector} of times the data crossed the 'zero' line inside a rolling window.
 }
 \description{
-These functions do not handle NA values
+These functions compute running window statistics with comprehensive support
+for missing and non-finite values (\code{NA}, \code{NaN}, \code{Inf}).
 }
 \details{
 Some functions may use different algorithms to compute the results.

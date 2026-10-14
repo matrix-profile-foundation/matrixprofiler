@@ -2,11 +2,11 @@ README
 ================
 Francisco Bischoff
 
-01 Dec 2025
+14 Oct 2026
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<img src="man/figures/logo.png" align="right" style="float:right;"/>
+<img src="man/figures/logo.png" align="right" alt="matrixprofiler logo" style="float:right;"/>
 
 ## Matrix Profile for R
 
@@ -29,32 +29,44 @@ Downloads](https://cranlogs.r-pkg.org/badges/matrixprofiler)](https://cran.r-pro
 
 <!-- badges: end -->
 
+## What’s New — v0.1.12 (October 2026)
+
+> **`matrixprofiler` is the high-performance C++ engine** of the Matrix
+> Profile ecosystem. This release focuses on native parallelism, new
+> algorithms, and safer NA handling.
+
+Key highlights:
+
+- ⚡ **`RcppThread`** replaces `RcppParallel`/Intel TBB —
+  zero-dependency, fork-safe multithreading on all platforms.
+- 🆕 **`contrast()`** — native Contrast Profile computation with
+  multi-threading, Pearson and Euclidean distance metrics.
+- 🆕 **`rfcp()` & `rfcp_top_k()`** — Relative Frequency Contrast Profile
+  with Top-K morphology discovery, frequency adaptation, checkpoints,
+  and CUDA acceleration.
+- 🆕 **`mstomp()`** — native C++ Multivariate STOMP with `n_workers`
+  support.
+- 🆕 **`mpdist()`** — native C++ MPdist (scalar and vector variants),
+  multi-thread.
+- 🔢 **`NA_integer_`** — invalid profile indices now follow R’s
+  canonical missing-value convention (was `-1L`).
+- 🛡️ **`na_strategy`** for all `mov_*` window functions — predictable,
+  non-cascading NA handling.
+
+📄 Full API changes, breaking changes, and migration guide:
+**[MIGRATION.md](https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/MIGRATION.md)**
+
 ### Overview
 
-R Functions implementing UCR Matrix Profile Algorithm
-(<http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>).
+R package implementing the UCR Matrix Profile Algorithm
+(<http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>) as an optimised
+C++17 engine.
 
-This package will keep all core functions that will allow you to use the
-Matrix Profile concept as a toolkit.
-
-This package provides (almost all) algorithms to build a Matrix Profile.
-
-The package `tsmp` will still be developed as “how we do data mining
-with Matrix Profile”, keeping all slow stuff to be handled by this
-optimized package.
-
-This will not be covered here, as it is a `tsmp` purpose:
-
-- Algorithms for MOTIF search for Unidimensional and Multidimensional
-  Matrix Profiles.
-- Algorithm for Chains search for Unidimensional Matrix Profile.
-- Algorithms for Semantic Segmentation (FLUSS) and Weakly Labeled data
-  (SDTS).
-- Algorithm for Salient Subsections detection allowing MDS plotting.
-- Basic plotting for all outputs generated here.
-
-You can find the current `tsmp` package here:
-<https://CRAN.R-project.org/package=tsmp>
+This package provides the **core computational primitives** for building
+and querying Matrix Profiles. Higher-level analytics (motif search,
+segmentation, snippets, plotting) live in the
+[`tsmp`](https://CRAN.R-project.org/package=tsmp) package, which uses
+`matrixprofiler` as its backend.
 
 ### Installation
 
@@ -66,44 +78,77 @@ install.packages("matrixprofiler")
 devtools::install_github("matrix-profile-foundation/matrixprofiler")
 ```
 
+#### Optional: NVIDIA CUDA GPU Acceleration
+
+By default, `matrixprofiler` installs as a portable, high-performance
+CPU engine with multi-threading via `RcppThread` (zero external
+dependencies, 100% CRAN compliant).
+
+If you have an **NVIDIA GPU** and the **CUDA Toolkit** installed, you
+can compile `matrixprofiler` with native CUDA acceleration for supported
+algorithms (such as `rfcp()` and `mpx()`):
+
+``` bash
+# Clone the repository
+git clone https://github.com/matrix-profile-foundation/matrixprofiler.git
+cd matrixprofiler
+
+# Compile CUDA kernels and install directly into your R library
+./inst/cuda/build_cuda_rcpp.sh R CMD INSTALL .
+# or with devtools:
+./inst/cuda/build_cuda_rcpp.sh Rscript -e 'devtools::install()'
+```
+
+Once installed, check if CUDA is enabled in your R session:
+
+``` r
+library(matrixprofiler)
+has_cuda()
+#> [1] TRUE
+```
+
 ### Currently available Features
 
-- STAMP (single and multi-thread versions)
-- STOMP (single and multi-thread versions)
-- SCRIMP (single and multi-thread versions, not for AB-joins yet)
-- MPX (single and multi-thread versions)
+- **STAMP** (single and multi-thread)
+- **STOMP** (single and multi-thread)
+- **SCRIMP** (single and multi-thread, not for AB-joins yet)
+- **MPX** (single and multi-thread)
+- **Contrast Profile (`contrast`)** — Contrast profile between positive
+  and negative classes (Euclidean/Pearson, multi-thread)
+- **RFCP (`rfcp`)** — Relative Frequency Contrast Profile for
+  discriminative pattern discovery (CPU multi-threaded & CUDA GPU)
+- **Top-K Morphology Discovery (`rfcp_top_k`)** — Iterative discovery of
+  top-K distinct morphologies with frequency adaptation and
+  checkpointing
+- **mSTOMP** — Multivariate STOMP, native C++ with `n_workers`
+- **MPdist** — Matrix Profile Distance, scalar and vector variants,
+  multi-thread
 - Misc:
-  - MASS v2.0
-  - MASS v3.0
-  - MASS extensions: UN (Unnormalized Query)
-  - MASS extensions: WQ (Weighted Query)
-  - MASS extensions: ABS (Absolute Query and Data)
-  - Window functions like mov_mean() and others.
+  - MASS v2.0 / v3.0 (multi-variant)
+  - MASS extensions: WQ (Weighted Query), ABS (Absolute), UN
+    (Unnormalized)
+  - Sliding-window functions (`mov_mean`, `mov_std`, `mov_var`,
+    `mov_min`, `mov_max`, `muinvn`, `zero_crossing`) with
+    `na_strategy = c("window_na", "remove", "error")` and `na.rm`
+    control
 
-### On Roadmap
+### Roadmap
 
-- STOMPi (On-line version)
-- Multivariate STOMP (mSTOMP)
-- SiMPle-Fast (Fast Similarity Matrix Profile for Music Analysis and
-  Exploration)
-- Exact Detection of Variable Length Motifs (VALMOD) (maybe will stay on
-  `tsmp` package)
-- MPdist: Matrix Profile Distance
-- MASS extensions: ADP (Approximate Distance Profile, with PAA) (maybe)
-- MASS extensions: QwG (Query with Gap)
-
-### Will stay on TSMP package
-
-- Time Series Chains
-- Multivariate MOTIF Search (from mSTOMP)
-- Salient Subsequences search for Multidimensional Space
-- Scalable Dictionary learning for Time Series (SDTS) prediction
-- FLUSS (Fast Low-cost Unipotent Semantic Segmentation)
-- FLOSS (Fast Low-cost On-line Unipotent Semantic Segmentation)
-- Annotation vectors (e.g., Stop-word MOTIF bias, Actionability bias)
-- FLUSS Arc Plot and SiMPle Arc Plot
-- Time Series Snippets
-- Subsetting Matrix Profiles (`head()`, `tail()`, `[`, etc.)
+- [x] Replace Intel TBB / `RcppParallel` with `RcppThread` (fork-safe,
+  zero external dep)
+- [x] Native Multivariate STOMP (`mstomp()`) in C++
+- [x] Native MPdist (`mpdist()`) in C++
+- [x] Contrast Profile (`contrast()`) in native C++
+- [x] Relative Frequency Contrast Profile (`rfcp()`) and Top-K
+  Morphology Discovery (`rfcp_top_k()`)
+- [x] Standardise invalid indices to `NA_integer_`
+- [x] `na_strategy` for all sliding-window functions
+- [ ] STOMPi (On-line / streaming version)
+- [ ] SiMPle-Fast (Music Analysis)
+- [ ] VALMOD (Variable Length Motifs) — candidate for `matrixprofiler`
+  core
+- [ ] MASS extensions: ADP (Approximate Distance Profile, with PAA), QwG
+  (Query with Gap)
 
 ### Other projects with Matrix Profile
 
@@ -137,7 +182,7 @@ Available at [RPubs](https://rpubs.com/franzbischoff/matrixprofiler).
 
 <center>
 
-![](man/figures/dependency_plot-1.png)<!-- -->
+<img src="man/figures/dependency_plot-1.png" alt="Matrixprofiler package dependencies network graph"  />
 
 </center>
 

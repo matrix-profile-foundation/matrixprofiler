@@ -4,18 +4,8 @@
 
 #include "mathtools.h"
 #include "fft.h"
-// [[Rcpp::depends(RcppParallel)]]
-#include <RcppParallel.h>
-using namespace RcppParallel;
 // [[Rcpp::depends(RcppThread)]]
 #include <RcppThread.h>
-
-#if RCPP_PARALLEL_USE_TBB
-#include "tbb/mutex.h"
-#else
-#include "rcpp_parallel_fix.h"
-#include "tthread/tinythread.h"
-#endif
 
 IntegerVector seq(uint64_t start, uint64_t end) {
 

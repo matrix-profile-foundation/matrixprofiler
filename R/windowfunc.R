@@ -2,23 +2,55 @@
 
 # Supports:
 #               NA/NaN  -Inf/Inf  Edge  Rcpp
-# mov_mean       No       Unk      No   Yes
-# mov_var        No       Unk      No   Yes
-# mov_sum        No       Unk      No   Yes
-# mov_max        No       Unk      No   Yes
-# mov_min        No       Unk      No   Yes
-# mov_std        No       Unk      No   Yes
-# movmean_std    No       Unk      No   Yes
-# muinvn         No       Unk      No   Yes
+# mov_mean       Yes      Yes      No   Yes
+# mov_var        Yes      Yes      No   Yes
+# mov_sum        Yes      Yes      No   Yes
+# mov_max        Yes      Yes      No   Yes
+# mov_min        Yes      Yes      No   Yes
+# mov_std        Yes      Yes      No   Yes
+# movmean_std    Yes      Yes      No   Yes
+# muinvn         Yes      Yes      No   Yes
+
+parse_na_strategy <- function(na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
+  if (!is.null(na.rm)) {
+    checkmate::qassert(na.rm, "B1")
+    if (isTRUE(na.rm)) {
+      return(1L) # "remove"
+    } else {
+      return(0L) # "window_na"
+    }
+  }
+  if (is.character(na_strategy)) {
+    na_strategy <- match.arg(na_strategy, c("window_na", "remove", "error"))
+  } else {
+    stop("'na_strategy' must be one of 'window_na', 'remove', or 'error'.")
+  }
+  switch(na_strategy,
+    window_na = 0L,
+    remove = 1L,
+    error = 2L
+  )
+}
 
 #' Several moving window functions
 #'
-#' These functions do not handle NA values
+#' These functions compute running window statistics with comprehensive support
+#' for missing and non-finite values (`NA`, `NaN`, `Inf`).
 #'
 #' @param data A `vector` or a column `matrix` of `numeric`.
 #' @param window_size An `integer`. The size of the rolling window.
 #' @param type A `string`. Select between several algorithms. Default is `ogita` (See details).
 #' @param eps A `numeric`. Used only for fading algorithms (See details), otherwise has no effect.
+#' @param na_strategy A `string` indicating how missing values (`NA`/`NaN`) are handled:
+#'   \itemize{
+#'     \item \code{"window_na"} (default): Any window touching an `NA`/`NaN` yields `NA_real_`,
+#'       without contaminating adjacent complete windows or stopping with an error.
+#'     \item \code{"remove"}: Missing values inside the window are ignored, computing the statistic
+#'       over remaining finite values.
+#'     \item \code{"error"}: Throws an error immediately if missing values are present.
+#'   }
+#' @param na.rm A `logical`. Standard R compatibility shortcut. If provided, `TRUE` maps to
+#'   `na_strategy = "remove"`, and `FALSE` maps to `na_strategy = "window_na"`.
 #'
 #' @details
 #' Some functions may use different algorithms to compute the results.
@@ -47,43 +79,27 @@
 #' @order 1
 #' @examples
 #' mov <- mov_mean(motifs_discords_small, 50)
-mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
+mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90,
+                     na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
   # Parse arguments ---------------------------------
-  "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   type <- match.arg(type)
   checkmate::qassert(eps, "N1")
-
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
   # Computation ------------------------------------
-  "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- switch(type,
-        ogita = movsum_ogita_rcpp(data, window_size) / window_size,
-        normal = movmean_rcpp(data, window_size),
-        weighted = movmean_weighted_rcpp(data, window_size, eps),
-        fading = movmean_fading_rcpp(data, window_size, eps)
-      )
-    },
-    error = print
+  result <- switch(type,
+    ogita = if (na_mode == 1L) movmean_rcpp(data, window_size, na_mode) else movsum_ogita_rcpp(data, window_size, na_mode) / window_size,
+    normal = movmean_rcpp(data, window_size, na_mode),
+    weighted = movmean_weighted_rcpp(data, window_size, eps),
+    fading = movmean_fading_rcpp(data, window_size, eps)
   )
+  return(result)
 }
 
 #' Fast implementation of moving variance
@@ -95,43 +111,27 @@ mov_mean <- function(data, window_size, type = c("ogita", "normal", "weighted", 
 #' @order 2
 #' @examples
 #' mov <- mov_var(motifs_discords_small, 50)
-mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
+mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90,
+                    na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
   # Parse arguments ---------------------------------
-  "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   type <- match.arg(type)
   checkmate::qassert(eps, "N1")
-
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
   # Computation ------------------------------------
-  "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- switch(type,
-        ogita = movvar_rcpp(data, window_size),
-        normal = movvar2_rcpp(data, window_size),
-        weighted = movvar_weighted_rcpp(data, window_size, eps),
-        fading = movvar_fading_rcpp(data, window_size, eps)
-      )
-    },
-    error = print
+  result <- switch(type,
+    ogita = movvar_rcpp(data, window_size, na_mode),
+    normal = movvar2_rcpp(data, window_size, na_mode),
+    weighted = movvar_weighted_rcpp(data, window_size, eps),
+    fading = movvar_fading_rcpp(data, window_size, eps)
   )
+  return(result)
 }
 
 #' Fast implementation of moving sum
@@ -142,43 +142,27 @@ mov_var <- function(data, window_size, type = c("ogita", "normal", "weighted", "
 #' @order 3
 #' @examples
 #' mov <- mov_sum(motifs_discords_small, 50)
-mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90) {
+mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "fading"), eps = 0.90,
+                    na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
   # Parse arguments ---------------------------------
-  "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
   type <- match.arg(type)
   checkmate::qassert(eps, "N1")
-
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
   # Computation ------------------------------------
-  "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- switch(type,
-        ogita = movsum_ogita_rcpp(data, window_size),
-        normal = movsum_rcpp(data, window_size),
-        weighted = movsum_weighted_rcpp(data, window_size, eps),
-        fading = movsum_fading_rcpp(data, window_size, eps)
-      )
-    },
-    error = print
+  result <- switch(type,
+    ogita = movsum_ogita_rcpp(data, window_size, na_mode),
+    normal = movsum_rcpp(data, window_size, na_mode),
+    weighted = movsum_weighted_rcpp(data, window_size, eps),
+    fading = movsum_fading_rcpp(data, window_size, eps)
   )
+  return(result)
 }
 
 #' Fast implementation of moving max
@@ -190,36 +174,19 @@ mov_sum <- function(data, window_size, type = c("ogita", "normal", "weighted", "
 #' @order 4
 #' @examples
 #' mov <- mov_max(motifs_discords_small, 50)
-mov_max <- function(data, window_size) {
+mov_max <- function(data, window_size, na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
   # Parse arguments ---------------------------------
-  "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
-
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
   # Computation ------------------------------------
-  "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- movmax_rcpp(data, window_size)
-    },
-    error = print
-  )
+  result <- movmax_rcpp(data, window_size, na_mode)
+  return(result)
 }
 
 #' Fast implementation of moving min
@@ -230,38 +197,20 @@ mov_max <- function(data, window_size) {
 #' @order 5
 #' @examples
 #' mov <- mov_min(motifs_discords_small, 50)
-mov_min <- function(data, window_size) {
+mov_min <- function(data, window_size, na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
   # Parse arguments ---------------------------------
-  "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
-
-  # Register anytime exit point ----------------------
-  "!DEBUG Register anytime exit point"
-  result <- NULL
-  on.exit(
-    if (is.null(result)) {
-      return(invisible(NULL))
-    } else {
-      return(result)
-    },
-    TRUE
-  )
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
   # Computation ------------------------------------
-  "!DEBUG Computation"
-  tryCatch(
-    {
-      result <- movmin_rcpp(data, window_size)
-    },
-    error = print
-  )
+  result <- movmin_rcpp(data, window_size, na_mode)
+  return(result)
 }
-
 
 #' Fast implementation of moving standard deviation
 #'
@@ -274,38 +223,33 @@ mov_min <- function(data, window_size) {
 #' @order 6
 #' @examples
 #' mov <- mov_std(motifs_discords_small, 50)
-mov_std <- function(data, window_size, rcpp = TRUE) {
+mov_std <- function(data, window_size, rcpp = TRUE,
+                    na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
   # Parse arguments ---------------------------------
-  "!!!DEBUG Parsing Arguments"
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  if (window_size < 2) {
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
   # Computation ------------------------------------
-  "!DEBUG Computation"
-  tryCatch(
-    {
-      if (rcpp) {
-        data_sd <- movstd_rcpp(data, window_size)
-      } else {
-        # Improve the numerical analysis by subtracting off the series mean
-        # this has no effect on the standard deviation.
-        data <- data - mean(data)
+  if (rcpp || anyNA(data)) {
+    data_sd <- movstd_rcpp(data, window_size, na_mode) # nolint
+  } else {
+    # Improve the numerical analysis by subtracting off the series mean
+    # this has no effect on the standard deviation.
+    data <- data - mean(data)
 
-        data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-        data_mean <- data_sum / window_size
+    data_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
+    data_mean <- data_sum / window_size
 
-        data2 <- data^2
-        data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-        data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
-        data_sd <- sqrt(data_sd2)
-      }
-    },
-    error = print
-  )
+    data2 <- data^2.0
+    data2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
+    data_sd2 <- (data2_sum / window_size) - (data_mean^2.0) # variance
+    data_sd <- sqrt(data_sd2)
+  }
 
   return(data_sd)
 }
@@ -318,31 +262,36 @@ mov_std <- function(data, window_size, rcpp = TRUE) {
 #' @order 7
 #' @examples
 #' mov <- movmean_std(motifs_discords_small, 50)
-movmean_std <- function(data, window_size, rcpp = TRUE) {
-  if (window_size < 2) {
+movmean_std <- function(data, window_size, rcpp = TRUE,
+                        na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
+  data <- as.numeric(data)
+  checkmate::qassert(data, "n+")
+  window_size <- as.integer(checkmate::qassert(window_size, "X+"))
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
 
-  if (rcpp) {
-    result <- movmean_std_rcpp(data, window_size)
+  if (rcpp || anyNA(data)) {
+    result <- movmean_std_rcpp(data, window_size, na_mode) # nolint
   } else {
-    mov_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
-    data2 <- data^2
-    mov2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
+    mov_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
+    data2 <- data^2.0
+    mov2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
     mov_mean <- mov_sum / window_size
     # Improve the numerical analysis by subtracting off the series mean
     # this has no effect on the standard deviation.
     dmean <- mean(data)
     data <- data - dmean
 
-    data_sum <- cumsum(c(sum(data[1:window_size]), diff(data, window_size)))
+    data_sum <- cumsum(c(sum(data[1L:window_size]), diff(data, window_size)))
     data_mean <- data_sum / window_size
-    data2 <- data^2
-    data2_sum <- cumsum(c(sum(data2[1:window_size]), diff(data2, window_size)))
-    data_sd2 <- (data2_sum / window_size) - (data_mean^2) # variance
-    data_sd2[data_sd2 < 0] <- 0
+    data2 <- data^2.0
+    data2_sum <- cumsum(c(sum(data2[1L:window_size]), diff(data2, window_size)))
+    data_sd2 <- (data2_sum / window_size) - (data_mean^2.0) # variance
+    data_sd2[data_sd2 < 0.0] <- 0.0
     data_sd <- sqrt(data_sd2) # std deviation
-    data_sig <- sqrt(1 / (data_sd2 * window_size))
+    data_sig <- sqrt(1.0 / (data_sd2 * window_size))
 
     result <- list(avg = mov_mean, sd = data_sd, sig = data_sig, sum = mov_sum, sqrsum = mov2_sum)
   }
@@ -360,17 +309,35 @@ movmean_std <- function(data, window_size, rcpp = TRUE) {
 #' @order 8
 #' @examples
 #' mov <- muinvn(motifs_discords_small, 50)
-muinvn <- function(data, window_size, n_workers = 1) {
-  if (window_size < 2) {
+muinvn <- function(data, window_size, n_workers = 1L,
+                   na_strategy = c("window_na", "remove", "error"), na.rm = NULL) {
+  data <- as.numeric(data)
+  checkmate::qassert(data, "n+")
+  if (!is.numeric(n_workers)) {
+    n_workers <- 1L
+  }
+  n_workers <- as.integer(n_workers)
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(
+      get("isChild", envir = asNamespace("parallel"))(),
+      error = function(e) FALSE
+    )
+    if (isTRUE(is_child)) {
+      warning("Multithreaded muinvn execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
+
+  window_size <- as.integer(checkmate::qassert(window_size, "X+"))
+  if (window_size < 2L) {
     stop("'window_size' must be at least 2.")
   }
-  if (n_workers > 1) {
-    p <- RcppParallel::defaultNumThreads()
-    n_workers <- min(n_workers, p)
-    RcppParallel::setThreadOptions(numThreads = n_workers)
-    result <- muinvn_rcpp_parallel(data, window_size)
+  na_mode <- parse_na_strategy(na_strategy, na.rm)
+
+  if (n_workers > 1L) {
+    result <- muinvn_rcpp_parallel(data, window_size, n_workers, na_mode) # nolint
   } else {
-    result <- muinvn_rcpp(data, window_size)
+    result <- muinvn_rcpp(data, window_size, na_mode) # nolint
   }
 
   return(result)
@@ -387,6 +354,6 @@ muinvn <- function(data, window_size, n_workers = 1) {
 zero_crossing <- function(data, window_size) {
   checkmate::qassert(data, "N+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
-  result <- zero_crossing_rcpp(data, window_size)
+  result <- zero_crossing_rcpp(data, window_size) # nolint
   return(result)
 }

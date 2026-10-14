@@ -9,13 +9,10 @@
 #' series joins, shapelet discovery (classification), density estimation, semantic segmentation, visualization, rule
 #' discovery, clustering etc.
 #'
-#' # Parallel backend
+#' # Multithreading
 #'
-#' This package uses RcppParallel in order to do multithreading computations. By default it uses the 'TBB' backend.
-#' If por any reason you want to change the backend to 'tinythread', you may use:
-#' `Sys.setenv(RCPP_PARALLEL_BACKEND = "tinythread")`. To configure back to 'TBB', use
-#' `Sys.setenv(RCPP_PARALLEL_BACKEND = "tbb")`.
-#'
+#' This package uses RcppThread for multithreaded computations. Thread counts
+#' can be controlled directly via the `n_workers` argument in each function.
 #'
 #' @references * Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All pairs similarity joins
 #'   for time series: A unifying view that includes motifs, discords and shapelets. Proc - IEEE Int Conf Data Mining,
@@ -37,5 +34,4 @@ NULL
 ## usethis namespace: start
 #' @importFrom Rcpp sourceCpp
 ## usethis namespace: end
-#' @importFrom RcppParallel RcppParallelLibs
 NULL

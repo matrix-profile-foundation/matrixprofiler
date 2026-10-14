@@ -5,6 +5,8 @@
 \alias{stomp}
 \alias{scrimp}
 \alias{mpx}
+\alias{mpx_stream_right}
+\alias{mpx_stream_s_right}
 \title{Matrix Profile Computation}
 \usage{
 stamp(
@@ -47,7 +49,28 @@ mpx(
   idxs = TRUE,
   distance = c("euclidean", "pearson"),
   n_workers = 1,
+  progress = TRUE,
+  na_strategy = c("monolithic", "segmented", "segmented_native"),
+  backend = c("cpu", "cuda")
+)
+
+mpx_stream_right(
+  new_data,
+  start_obj,
+  history = 0,
+  mp_time_constraint = 0,
   progress = TRUE
+)
+
+mpx_stream_s_right(
+  data,
+  batch_size,
+  start_obj,
+  stats,
+  history = 0,
+  mp_time_constraint = 0,
+  progress = TRUE,
+  threshold = -1
 )
 }
 \arguments{
@@ -55,14 +78,18 @@ mpx(
 
 \item{window_size}{Required. An integer defining the rolling window size.}
 
-\item{query}{(not yet on \code{scrimp()}) Optional. Another 1-dimension series of numbers for an AB-join similarity.
+\item{query}{Optional. Another 1-dimension series of numbers for an AB-join similarity.
 Default is \code{NULL} (See details).}
 
 \item{exclusion_zone}{A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
 trivial matches. Default is \code{0.5}, i.e., half of the \code{window_size}.}
 
 \item{s_size}{A numeric. Used on anytime algorithms (stamp, scrimp, mpx) if only part of the computation is needed.
-Default is \code{1.0} (means 100\%).}
+Default is \code{1.0} (means 100\%). For MPX specifically, values below \code{1} use a
+randomized subset of diagonals and are the recommended setting for an
+anytime approximation. At \code{1}, MPX computes every diagonal in monotone order
+for performance; the completed result is exact, but an interrupted partial
+result can be less representative than a randomized partial run.}
 
 \item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.}
 
@@ -78,6 +105,34 @@ This parameter is ignored when using multithread or AB-join.}
 \code{TRUE}.}
 
 \item{distance}{(\code{mpx()} only) A string. Currently accepts \code{euclidean} and \code{pearson}. Defaults to \code{euclidean}.}
+
+\item{na_strategy}{(\code{mpx()} only) Strategy for a parallel NA-aware join: \code{"monolithic"} (the default),
+\code{"segmented"}, or \code{"segmented_native"}. The native strategy supports sampled diagonal tiles when
+\code{s_size < 1}, marks the result as partial, and shares one native pre-calculation and scheduler across finite
+blocks. The native strategy also masks constant or otherwise non-normalizable windows. The \code{"segmented"}
+reference strategy remains restricted to inputs whose invalid windows are caused only by non-finite barriers.}
+
+\item{backend}{(\code{mpx()} only) Computation backend: \code{"cpu"} (default) or \code{"cuda"}. The CUDA backend is optional,
+supports exact joins only (\code{s_size = 1}), and requires a local build with CUDA enabled.}
+
+\item{new_data}{a vector with the new data}
+
+\item{start_obj}{obj from another run}
+
+\item{history}{an \code{int}. Max distance where to look for the best match in matrix profile.
+(default is NULL).}
+
+\item{mp_time_constraint}{time constraint for the mp update in terms of indices.
+This parameter specifies how far back in the time series the algorithm will search
+for the nearest neighbor. A value of 0 (default) means no constraint and the algorithm
+will check the entire time series. Higher values limit the search to a window
+that extends \code{mp_time_constraint} indices into the past.}
+
+\item{batch_size}{size of the new data}
+
+\item{stats}{obj with stats for mpx}
+
+\item{threshold}{Optional numeric threshold for distance comparison. Defaults to -1.0.}
 }
 \value{
 Returns a \code{list} with the \code{matrix_profile}, \code{profile_index} (if \code{idxs} is \code{TRUE} in \code{mpx()}), and some
@@ -126,9 +181,9 @@ the user, but the result is not considered anytime, just incomplete. For a anyti
 \subsection{scrimp}{
 
 The SCRIMP algorithm was the anytime solution for stomp. It is as fast as stomp but allows the user to cancel the
-computation and get an approximation of the final result. This implementation uses the SCRIMP++ code. This means
-that, at first, it will compute the pre-scrimp (a very fast and good approximation), and continue improving with
-scrimp. The exception is if you use multithreading, that skips the pre-scrimp stage.
+computation and get an approximation of the final result. The exact SCRIMP phase shares the NA-aware diagonal
+recurrence used by MPX. In serial mode, pre-scrimp first seeds the profile from sampled distance profiles; the
+multithreaded implementation skips this pre-scrimp stage.
 }
 
 \subsection{mpx}{
@@ -136,10 +191,48 @@ scrimp. The exception is if you use multithreading, that skips the pre-scrimp st
 This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
 least in one part of the process. This algorithm doesn't use FFT at all and is several times faster. It also relies
 on Ogita's work for better precision computing mean and standard deviation (part of the process).
+
+Inputs containing \code{NA}, \code{NaN}, \code{Inf}, or \code{-Inf} are automatically routed to the missing-data implementation. Fully
+finite inputs continue to use the faster regular MPX implementation.
+
+For MPX, values of \code{s_size} below \code{1} select a randomized subset of diagonals
+and provide the intended anytime approximation. With \code{s_size = 1}, all
+diagonals are processed in monotone order for better locality, so the final
+result is exact but an interruption before completion can be less
+representative than a randomized partial run. Use \code{s_size < 1} when an
+interrupted result should remain an anytime approximation.
+
+The native segmented parallel AA implementation has an optional cache-tuning
+setting for large NA-aware self-joins. This setting applies only when
+\code{na_strategy = "segmented_native"} selects the native NA-aware parallel path.
+When \code{s_size = 1}, \code{MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE} controls the number of
+profile windows in each rectangular internal block. Its default is \code{8192};
+values from \code{1024} to \code{262144} are accepted and invalid values fall back to
+the default. For example, set it for one shell invocation with
+\verb{MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE=16384 Rscript script.R}, or set it in R
+with \code{Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = "16384")} before
+calling \code{mpx()}. Remove the override with
+\code{Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")}. The setting is read
+at call time, does not change the public \code{mpx()} API or its numerical
+parameters, and is ignored for AB joins, finite inputs using regular MPX,
+and sampled native runs with \code{s_size < 1}. It primarily trades cache
+locality against task overhead; \code{8192} is a suitable starting point, while
+larger values should only be selected after benchmarking a substantially
+larger workload.
+
+The internal C++ target \code{matrix_profile_native_pairs_per_task} (currently
+\code{100000000} pairwise window comparisons) controls the granularity of native
+parallel AB tasks and sampled AA tasks. It is used only by the native
+NA-aware parallel implementation. It is not an \code{mpx()} argument or an
+environment variable; changing it requires a source change and recompiling
+the package. It is normally left unchanged: increase it only when profiling
+a very large workload shows excessive scheduling overhead, while retaining
+several tasks per worker for load balancing. Neither setting affects the
+regular MPX paths or the serial NA-aware implementations.
 }
 }
 \section{This document}{
-Last updated on 2025-12-01 using R version 4.2.3.
+Last updated on 2026-10-12 using R version 4.6.1.
 }
 
 \examples{
@@ -171,5 +264,8 @@ Website: \url{http://www.cs.ucr.edu/~eamonn/MatrixProfile.html}
 \code{mass()} for the underlying algorithm that finds best match of a query.
 
 \code{mpxab()} for the forward and reverse join-similarity.
+
+Other matrix profile computations:
+\code{\link[=mstomp]{mstomp()}}
 }
 \concept{matrix profile computations}

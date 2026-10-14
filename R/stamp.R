@@ -27,12 +27,16 @@
 #'
 #' @param data Required. Any 1-dimension series of numbers (`matrix`, `vector`, `ts` etc.) (See details).
 #' @param window_size Required. An integer defining the rolling window size.
-#' @param query (not yet on `scrimp()`) Optional. Another 1-dimension series of numbers for an AB-join similarity.
+#' @param query Optional. Another 1-dimension series of numbers for an AB-join similarity.
 #'   Default is `NULL` (See details).
 #' @param exclusion_zone A numeric. Defines the size of the area around the rolling window that will be ignored to avoid
 #'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
 #' @param s_size A numeric. Used on anytime algorithms (stamp, scrimp, mpx) if only part of the computation is needed.
-#' Default is `1.0` (means 100%).
+#' Default is `1.0` (means 100%). For MPX specifically, values below `1` use a
+#' randomized subset of diagonals and are the recommended setting for an
+#' anytime approximation. At `1`, MPX computes every diagonal in monotone order
+#' for performance; the completed result is exact, but an interrupted partial
+#' result can be less representative than a randomized partial run.
 #' @param pre_scrimp A numeric. If not zero, pre_scrimp is computed, using a fraction of the data. Default is `0.25`.
 #' This parameter is ignored when using multithread or AB-join.
 #' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.
@@ -66,27 +70,42 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
   "!!!DEBUG Parsing Arguments"
 
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   if (!is.null(query)) {
     query <- as.numeric(query)
-    checkmate::qassert(query, c("0", "N>=4"))
+    checkmate::qassert(query, c("0", "n>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
+  checkmate::qassert(s_size, "N1")
+  if (s_size < 0 || s_size > 1) {
+    stop("`s_size` must be between 0 and 1.", call. = FALSE)
+  }
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(
+      get("isChild", envir = asNamespace("parallel"))(),
+      error = function(e) FALSE
+    )
+    if (isTRUE(is_child)) {
+      warning("Multithreaded STAMP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
   checkmate::qassert(progress, "B+")
 
   ez <- exclusion_zone
   result <- NULL
 
-  query_size <- ifelse(is.null(query), length(data),
-    ifelse(length(data) > length(query), length(query),
-      length(data)
-    )
-  )
-
-  if (window_size > ceiling(query_size / 2)) {
+  min_size <- if (is.null(query)) length(data) else min(length(data), length(query))
+  if (window_size >= min_size) {
     stop("Time series is too short relative to desired window size.", call. = FALSE)
+  }
+  if (is.null(query) && exclusion_zone > 0) {
+    ez_points <- round(window_size * exclusion_zone)
+    if ((length(data) - window_size) <= ez_points) {
+      stop("Time series is too short relative to desired window size and exclusion zone.", call. = FALSE)
+    }
   }
 
   # Register anytime exit point ----------------------
@@ -106,70 +125,52 @@ stamp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size 
   if (is.null(query)) {
     ## Self-Join ====================================
     "!DEBUG Self-Join"
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- stamp_rcpp_parallel(
-            data,
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-          RcppParallel::setThreadOptions(numThreads = p)
-        } else {
-          result <- stamp_rcpp(
-            data,
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-        }
-      },
-      error = print
-    )
+    if (n_workers > 1) {
+      result <- stamp_rcpp_parallel(
+        data,
+        data,
+        window_size,
+        ez,
+        s_size,
+        n_workers,
+        as.logical(progress)
+      )
+    } else {
+      result <- stamp_rcpp(
+        data,
+        data,
+        window_size,
+        ez,
+        s_size,
+        as.logical(progress)
+      )
+    }
     "!DEBUG End Self-Join"
   } else {
     ## AB-Join ====================================
     "!DEBUG AB-Join"
     ez <- 0
 
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- stamp_rcpp_parallel(
-            data,
-            query,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-          RcppParallel::setThreadOptions(numThreads = p)
-        } else {
-          result <- stamp_rcpp(
-            data,
-            query,
-            window_size,
-            ez,
-            s_size,
-            as.logical(progress)
-          )
-        }
-      },
-      error = print
-    )
+    if (n_workers > 1) {
+      result <- stamp_rcpp_parallel(
+        data,
+        query,
+        window_size,
+        ez,
+        s_size,
+        n_workers,
+        as.logical(progress)
+      )
+    } else {
+      result <- stamp_rcpp(
+        data,
+        query,
+        window_size,
+        ez,
+        s_size,
+        as.logical(progress)
+      )
+    }
     "!DEBUG End AB-Join"
   }
 }

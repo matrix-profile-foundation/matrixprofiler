@@ -9,17 +9,17 @@ using namespace Rcpp;
 
 List mass_weighted_rcpp(ComplexVector data_fft, NumericVector query_window, uint32_t data_size, uint32_t window_size,
                         NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd,
-                        NumericVector data_pre, NumericVector weight, bool normalized = true);
+                        NumericVector data_pre, NumericVector weight, bool normalized, uint32_t n_workers);
 List mass_absolute_rcpp(ComplexVector data_fft, NumericVector query_window, uint32_t data_size, uint32_t window_size,
-                        NumericVector sumx2, double sumy2);
+                        NumericVector sumx2, double sumy2, uint32_t n_workers);
 List mass2_rcpp(ComplexVector data_fft, NumericVector query_window, uint64_t data_size, uint32_t window_size,
-                NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd);
+                NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd, uint32_t n_workers);
 List mass3_rcpp(const NumericVector &query_window, const NumericVector &data_ref, uint64_t data_size,
                 uint32_t window_size, const NumericVector &data_mean, const NumericVector &data_sd, double query_mean,
                 double query_sd, uint32_t grain = 4096);
 List mass3_rcpp_parallel(NumericVector query_window, NumericVector data_ref, uint64_t data_size, uint32_t window_size,
                          NumericVector data_mean, NumericVector data_sd, double query_mean, double query_sd,
-                         uint16_t grain = 8192);
+                         uint16_t grain = 8192, uint32_t n_workers = 1);
 uint32_t set_k_rcpp(uint32_t grain, uint64_t data_size, uint64_t window_size);
 uint32_t find_best_k_rcpp(NumericVector data_ref, NumericVector query_ref, uint32_t window_size);
 List mass_pre_rcpp(NumericVector data, NumericVector query, uint32_t window_size);
@@ -27,14 +27,34 @@ List mass_pre_abs_rcpp(NumericVector data_ref, NumericVector query_ref, uint32_t
 List mass_pre_weighted_rcpp(NumericVector data_ref, NumericVector query_ref, uint32_t window_size,
                             NumericVector weight);
 
+inline uint32_t set_k_cpp(uint32_t grain, uint64_t data_size, uint64_t window_size) {
+  if (grain > data_size) {
+    grain = static_cast<uint32_t>(pow(2, ceil(log2(sqrt(static_cast<double>(data_size))))));
+  }
+
+  if (grain <= window_size) {
+    grain = static_cast<uint32_t>(pow(2, ceil(log2(static_cast<double>(window_size))) + 1));
+    if (grain > data_size) {
+      grain = static_cast<uint32_t>(data_size);
+    }
+  }
+
+  return grain;
+}
+
 // redeclaration for MacOS compilation
 std::vector<std::complex<double>> fft_rcpp(std::vector<double> z, bool invert);
 std::vector<double> fft_rcpp_real(std::vector<std::complex<double>> z, bool invert);
 
+struct Mass3Result {
+  std::vector<double> distance_profile;
+  std::vector<double> last_product;
+};
+
 template <typename Iterator>
-List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t data_size, const uint32_t window_size,
-               const Iterator data_mean_it, const Iterator data_sd_it, const double query_mean, const double query_sd,
-               uint32_t grain) {
+Mass3Result mass3_cpp_result(const Iterator query_it, const Iterator data_it, const uint64_t data_size,
+                             const uint32_t window_size, const Iterator data_mean_it, const Iterator data_sd_it,
+                             const double query_mean, const double query_sd, uint32_t grain) {
 
   uint32_t w_size = window_size;
   uint64_t d_size = data_size;
@@ -45,7 +65,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
   std::vector<double> last(p_size);
   std::vector<double>::iterator const last_it = last.begin();
 
-  grain = set_k_rcpp(grain, d_size, w_size);
+  grain = set_k_cpp(grain, d_size, w_size);
 
   // compute query_it stats -- O(d_size)
   double q_mean = query_mean;
@@ -67,8 +87,7 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
   std::vector<double> z;
   std::vector<double> d(grain - w_size + 1);
 
-  try {
-    for (j = 0; j <= seq_end; j = j + jump) {
+  for (j = 0; j <= seq_end; j = j + jump) {
       // The main trick of getting dot products in O(d_size log d_size) time
       uint64_t idx_begin = j;
 
@@ -86,22 +105,14 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
 
       std::copy(d.begin(), d.begin() + grain - w_size + 1, dist_it + static_cast<int64_t>(j));
       std::copy(z.begin() + w_size - 1, z.begin() + grain, last_it + static_cast<int64_t>(j));
-    }
-  } catch (RcppThread::UserInterruptException &ex) {
-    Rcout << "Process terminated." << std::endl;
-  } catch (...) {
-    stop("c++ exception (unknown reason)");
   }
 
   jump = d_size - j;
 
-  try {
-    if (jump >= w_size) {
+  if (jump >= w_size) {
       uint64_t idx_begin = j;
 
-      if ((jump - (w_size - 1) + j) > (uint64_t)p_size) {
-        Rcout << "DEBUG: error." << std::endl;
-      } else {
+      if ((jump - (w_size - 1) + j) <= static_cast<uint64_t>(p_size)) {
         std::vector<double> data_chunk(data_it + j, data_it + d_size);
         std::vector<std::complex<double>> X = fft_rcpp(data_chunk, false);
         std::vector<double> const rev_query_chunk(rev_query.begin(), rev_query.begin() + static_cast<int64_t>(jump));
@@ -120,15 +131,10 @@ List mass3_cpp(const Iterator query_it, const Iterator data_it, const uint64_t d
 
         std::copy(d.begin(), d.begin() + static_cast<int64_t>(jump - w_size + 1), dist_it + static_cast<int64_t>(j));
         std::copy(z.begin() + w_size - 1, z.begin() + static_cast<int64_t>(jump), last_it + static_cast<int64_t>(j));
-      }
     }
-  } catch (RcppThread::UserInterruptException &ex) {
-    Rcout << "Process terminated." << std::endl;
-  } catch (...) {
-    stop("c++ exception (unknown reason)");
   }
 
-  return (List::create(Rcpp::Named("distance_profile") = dist, Rcpp::Named("last_product") = last));
+  return {std::move(dist), std::move(last)};
 }
 
 #endif // __MASS__

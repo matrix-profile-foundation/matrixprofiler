@@ -30,16 +30,14 @@ if (activated) {
 	}
 }
 RSCRIPT
-
 echo "[devcontainer] Installing prerequisite CRAN packages: languageserver, prompt, etc"
 R -q -e 'renv::install("languageserver")'
 R -q -e 'renv::install(c("prompt", "devtools", "conflicted", "here", "codemetar", "jsonld"))'
-R -q -e 'renv::install(c("ggnetwork", "miniCRAN", "r-lib/pkgapi", "r-lib/revdepcheck", "rhub"))'
-
-echo "[devcontainer] Installing nx10/httpgd via renv"
-R -q -e 'renv::install("nx10/httpgd")'
+R -q -e 'renv::install(c("ggnetwork", "miniCRAN","rhub", "httpgd", "r-lib/pkgapi", "r-lib/revdepcheck"))'
 
 echo "[devcontainer] Running renv::install() to install project dependencies"
 R -q -e 'renv::install()'
+
+bash .devcontainer/configure-git.sh
 
 echo "[devcontainer] post-create steps completed"

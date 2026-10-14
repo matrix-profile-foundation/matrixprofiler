@@ -5,11 +5,56 @@
 #' @param idxs (`mpx()` only) A logical. Specifies if the computation will return the Profile Index or not. Defaults to
 #'   `TRUE`.
 #' @param distance (`mpx()` only) A string. Currently accepts `euclidean` and `pearson`. Defaults to `euclidean`.
+#' @param na_strategy (`mpx()` only) Strategy for a parallel NA-aware join: `"monolithic"` (the default),
+#'   `"segmented"`, or `"segmented_native"`. The native strategy supports sampled diagonal tiles when
+#'   `s_size < 1`, marks the result as partial, and shares one native pre-calculation and scheduler across finite
+#'   blocks. The native strategy also masks constant or otherwise non-normalizable windows. The `"segmented"`
+#'   reference strategy remains restricted to inputs whose invalid windows are caused only by non-finite barriers.
+#' @param backend (`mpx()` only) Computation backend: `"cpu"` (default) or `"cuda"`. The CUDA backend is optional,
+#'   supports exact joins only (`s_size = 1`), and requires a local build with CUDA enabled.
 #'
 #' @details ## mpx
 #' This algorithm was developed apart from the main Matrix Profile branch that relies on Fast Fourier Transform (FFT) at
 #' least in one part of the process. This algorithm doesn't use FFT at all and is several times faster. It also relies
 #' on Ogita's work for better precision computing mean and standard deviation (part of the process).
+#'
+#' Inputs containing `NA`, `NaN`, `Inf`, or `-Inf` are automatically routed to the missing-data implementation. Fully
+#' finite inputs continue to use the faster regular MPX implementation.
+#'
+#' For MPX, values of `s_size` below `1` select a randomized subset of diagonals
+#' and provide the intended anytime approximation. With `s_size = 1`, all
+#' diagonals are processed in monotone order for better locality, so the final
+#' result is exact but an interruption before completion can be less
+#' representative than a randomized partial run. Use `s_size < 1` when an
+#' interrupted result should remain an anytime approximation.
+#'
+#' The native segmented parallel AA implementation has an optional cache-tuning
+#' setting for large NA-aware self-joins. This setting applies only when
+#' `na_strategy = "segmented_native"` selects the native NA-aware parallel path.
+#' When `s_size = 1`, `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE` controls the number of
+#' profile windows in each rectangular internal block. Its default is `8192`;
+#' values from `1024` to `262144` are accepted and invalid values fall back to
+#' the default. For example, set it for one shell invocation with
+#' `MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE=16384 Rscript script.R`, or set it in R
+#' with `Sys.setenv(MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE = "16384")` before
+#' calling `mpx()`. Remove the override with
+#' `Sys.unsetenv("MATRIXPROFILER_NATIVE_AA_BLOCK_SIZE")`. The setting is read
+#' at call time, does not change the public `mpx()` API or its numerical
+#' parameters, and is ignored for AB joins, finite inputs using regular MPX,
+#' and sampled native runs with `s_size < 1`. It primarily trades cache
+#' locality against task overhead; `8192` is a suitable starting point, while
+#' larger values should only be selected after benchmarking a substantially
+#' larger workload.
+#'
+#' The internal C++ target `matrix_profile_native_pairs_per_task` (currently
+#' `100000000` pairwise window comparisons) controls the granularity of native
+#' parallel AB tasks and sampled AA tasks. It is used only by the native
+#' NA-aware parallel implementation. It is not an `mpx()` argument or an
+#' environment variable; changing it requires a source change and recompiling
+#' the package. It is normally left unchanged: increase it only when profiling
+#' a very large workload shows excessive scheduling overhead, while retaining
+#' several tasks per worker for load balancing. Neither setting affects the
+#' regular MPX paths or the serial NA-aware implementations.
 #'
 #' @seealso `mpxab()` for the forward and reverse join-similarity.
 #'
@@ -22,39 +67,61 @@
 #' @examples
 #' mp <- mpx(motifs_discords_small, 50)
 mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 1.0, idxs = TRUE,
-                distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE) {
+                distance = c("euclidean", "pearson"), n_workers = 1, progress = TRUE,
+                na_strategy = c("monolithic", "segmented", "segmented_native"), backend = c("cpu", "cuda")) {
   # Parse arguments ---------------------------------
   "!!!DEBUG Parsing Arguments"
 
   data <- as.numeric(data)
-  checkmate::qassert(data, "N+")
+  checkmate::qassert(data, "n+")
   window_size <- as.integer(checkmate::qassert(window_size, "X+"))
   if (!is.null(query)) {
     query <- as.numeric(query)
-    checkmate::qassert(query, c("0", "N>=4"))
+    checkmate::qassert(query, c("0", "n>=4"))
   }
   checkmate::qassert(exclusion_zone, "N+")
+  checkmate::qassert(s_size, "N1")
+  if (s_size < 0 || s_size > 1) {
+    stop("`s_size` must be between 0 and 1.", call. = FALSE)
+  }
   checkmate::qassert(idxs, "B+")
   distance <- match.arg(distance)
+  na_strategy <- match.arg(na_strategy)
+  backend <- match.arg(backend)
   if (distance == "euclidean") {
     dist <- TRUE
   } else {
     dist <- FALSE
   }
   n_workers <- as.integer(checkmate::qassert(n_workers, "X+"))
+  if (n_workers > 1L && .Platform$OS.type != "windows") {
+    is_child <- tryCatch(get("isChild", envir = asNamespace("parallel"))(), error = function(e) FALSE)
+    if (isTRUE(is_child)) {
+      warning("Multithreaded execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      n_workers <- 1L
+    }
+  }
   checkmate::qassert(progress, "B+")
 
   ez <- exclusion_zone
   result <- NULL
+  has_non_finite <- any(!is.finite(data)) || (!is.null(query) && any(!is.finite(query)))
 
-  query_size <- ifelse(is.null(query), length(data),
-    ifelse(length(data) > length(query), length(query),
-      length(data)
-    )
-  )
-
-  if (window_size > ceiling(query_size / 2)) {
+  min_size <- if (is.null(query)) length(data) else min(length(data), length(query))
+  if (window_size >= min_size) {
     stop("Time series is too short relative to desired window size.", call. = FALSE)
+  }
+  if (is.null(query) && exclusion_zone > 0) {
+    ez_points <- round(window_size * exclusion_zone)
+    if ((length(data) - window_size) <= ez_points) {
+      stop("Time series is too short relative to desired window size and exclusion zone.", call. = FALSE)
+    }
+  }
+  if (backend == "cuda" && s_size != 1) {
+    stop("The CUDA backend currently requires `s_size = 1`.", call. = FALSE)
+  }
+  if (backend == "cuda" && na_strategy != "monolithic") {
+    stop("The CUDA backend currently requires `na_strategy = \"monolithic\"`.", call. = FALSE)
   }
 
 
@@ -75,74 +142,189 @@ mpx <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size = 
   if (is.null(query)) {
     ## Self-Join ====================================
     "!DEBUG Self-Join"
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- mpx_rcpp_parallel(
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
-          RcppParallel::setThreadOptions(numThreads = p)
-        } else {
-          result <- mpx_rcpp(
-            data,
-            window_size,
-            ez,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
-        }
-      },
-      error = print
-    )
+    if (backend == "cuda") {
+      result <- if (has_non_finite) {
+        mpx_na_gpu_rcpp(data, window_size, ez, as.logical(idxs), as.logical(dist))
+      } else {
+        mpx_gpu_rcpp(data, window_size, ez, as.logical(idxs), as.logical(dist))
+      }
+      return(result)
+    }
+    "!DEBUG n_workers = `n_workers`"
+    if (n_workers > 1 || (has_non_finite && na_strategy == "segmented_native")) {
+      if (has_non_finite && na_strategy == "segmented_native") {
+        result <- mpx_na_segmented_native_rcpp_parallel(
+          data,
+          window_size,
+          ez,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      } else if (has_non_finite) {
+        result <- mpx_na_rcpp_parallel(
+          data,
+          window_size,
+          ez,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      } else {
+        result <- mpx_rcpp_parallel(
+          data,
+          window_size,
+          ez,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      }
+    } else {
+      if (has_non_finite) {
+        result <- mpx_na_rcpp(
+          data,
+          window_size,
+          ez,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress)
+        )
+      } else {
+        result <- mpx_rcpp(
+          data,
+          window_size,
+          ez,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          60
+        )
+      }
+    }
     "!DEBUG End Self-Join"
   } else {
     ## AB-Join ====================================
     "!DEBUG AB-Join"
     ez <- 0
 
-    tryCatch(
-      {
-        "!DEBUG n_workers = `n_workers`"
-        if (n_workers > 1) {
-          p <- RcppParallel::defaultNumThreads()
-          n_workers <- min(n_workers, p)
-          RcppParallel::setThreadOptions(numThreads = n_workers)
-          result <- mpxab_rcpp_parallel(
-            data,
-            query,
-            window_size,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
-          RcppParallel::setThreadOptions(numThreads = p)
-        } else {
-          result <- mpxab_rcpp(
-            data,
-            query,
-            window_size,
-            s_size,
-            as.logical(idxs),
-            as.logical(dist),
-            as.logical(progress)
-          )
-        }
-      },
-      error = print
-    )
+    if (backend == "cuda") {
+      result <- if (has_non_finite) {
+        mpxab_na_gpu_rcpp(data, query, window_size, as.logical(idxs), as.logical(dist))
+      } else {
+        mpxab_gpu_rcpp(data, query, window_size, as.logical(idxs), as.logical(dist))
+      }
+      return(result)
+    }
+
+    "!DEBUG n_workers = `n_workers`"
+    if (n_workers > 1 || (has_non_finite && na_strategy != "monolithic")) {
+      if (has_non_finite && na_strategy == "segmented_native") {
+        result <- mpxab_na_segmented_native_rcpp_parallel(
+          data,
+          query,
+          window_size,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      } else if (has_non_finite && na_strategy == "segmented") {
+        result <- mpxab_na_segmented_rcpp_parallel(
+          data,
+          query,
+          window_size,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      } else if (has_non_finite) {
+        result <- mpxab_na_rcpp_parallel(
+          data,
+          query,
+          window_size,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      } else {
+        result <- mpxab_rcpp_parallel(
+          data,
+          query,
+          window_size,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress),
+          n_workers
+        )
+      }
+    } else {
+      if (has_non_finite) {
+        result <- mpxab_na_rcpp(
+          data,
+          query,
+          window_size,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress)
+        )
+      } else {
+        result <- mpxab_rcpp(
+          data,
+          query,
+          window_size,
+          s_size,
+          as.logical(idxs),
+          as.logical(dist),
+          as.logical(progress)
+        )
+      }
+    }
     "!DEBUG End AB-Join"
   }
+}
+
+#' @param new_data a vector with the new data
+#' @param start_obj obj from another run
+#' @param mp_time_constraint time constraint for the mp update in terms of indices.
+#'   This parameter specifies how far back in the time series the algorithm will search
+#'   for the nearest neighbor. A value of 0 (default) means no constraint and the algorithm
+#'   will check the entire time series. Higher values limit the search to a window
+#'   that extends `mp_time_constraint` indices into the past.
+#' @param history an `int`. Max distance where to look for the best match in matrix profile.
+#' (default is NULL).
+#' @export
+#' @rdname mp_algos
+
+
+mpx_stream_right <- function(new_data, start_obj, history = 0, mp_time_constraint = 0, progress = TRUE) {
+  mpxi_rcpp(new_data, start_obj, history, mp_time_constraint, progress)
+}
+
+#' @param batch_size size of the new data
+#' @param start_obj obj from another run
+#' @param stats obj with stats for mpx
+#' @param history an `int`. Max distance where to look for the best match in matrix profile.
+#' (default is NULL).
+#' @param threshold Optional numeric threshold for distance comparison. Defaults to -1.0.
+#' @export
+#' @rdname mp_algos
+
+mpx_stream_s_right <- function(data, batch_size, start_obj, stats, history = 0, mp_time_constraint = 0, progress = TRUE, threshold = -1.0) {
+  mpxis_rcpp(data, batch_size, start_obj, stats, history, mp_time_constraint, progress, threshold)
 }
