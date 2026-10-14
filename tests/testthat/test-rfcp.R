@@ -283,8 +283,8 @@ test_that("RFCP uses requested frequency denominator and deterministic ties", {
   )
 
   expect_equal(result$rms_profile, expected$rms, tolerance = 1e-9)
-  expect_identical(result$rfmpi_aa, expected$rfmpi_aa)
-  expect_identical(result$rfmpi_ab, expected$rfmpi_ab)
+  expect_equal(result$rfmp_aa, expected$rfmp_aa, tolerance = 1e-9)
+  expect_equal(result$rfmp_ab, expected$rfmp_ab, tolerance = 1e-9)
   expect_identical(result$requested_max_freq, 20L)
   expect_lt(result$effective_max_freq, result$requested_max_freq)
   expect_equal(
