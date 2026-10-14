@@ -10,6 +10,8 @@
 #'   trivial matches. Default is `0.5`, i.e., half of the `window_size`.
 #' @param distance A string. Currently accepts `euclidean` and `pearson`. Defaults to `euclidean`.
 #' @param n_workers An integer. The number of threads using for computing. Defaults to `1`.
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #' @param progress A logical. If `TRUE` (the default) will show a progress bar. Useful for long computations.
 #'
 #' @details ## Constrast Profile

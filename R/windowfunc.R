@@ -302,6 +302,8 @@ movmean_std <- function(data, window_size, rcpp = TRUE,
 #' Fast implementation of moving average and moving sigma
 #'
 #' @param n_workers An `integer`. The number of threads using for computing. Defaults to `1`.
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #'
 #' @return `muinvn()` returns a `list` with `vectors` of moving `avg` and `sig`.
 #' @export
@@ -323,7 +325,12 @@ muinvn <- function(data, window_size, n_workers = 1L,
       error = function(e) FALSE
     )
     if (isTRUE(is_child)) {
-      warning("Multithreaded muinvn execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      warning(
+        "Forked process detected: reducing n_workers to 1. ",
+        "Inherited multithreaded library state may still be unsafe. ",
+        "Use a PSOCK cluster for parallel execution across processes.",
+        call. = FALSE
+      )
       n_workers <- 1L
     }
   }

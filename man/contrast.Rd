@@ -29,7 +29,9 @@ trivial matches. Default is \code{0.5}, i.e., half of the \code{window_size}.}
 
 \item{distance}{A string. Currently accepts \code{euclidean} and \code{pearson}. Defaults to \code{euclidean}.}
 
-\item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.}
+\item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 
 \item{progress}{A logical. If \code{TRUE} (the default) will show a progress bar. Useful for long computations.}
 }

@@ -92,6 +92,8 @@ mass_pre <- function(data, window_size, query = NULL, type = c("normalized", "no
 #' @param version A `string`. Chooses the version of MASS what will be used. Ignored if `mass_pre()` is not the
 #'   "normalized" type.
 #' @param n_workers An `integer`. The number of threads used for computing. Defaults to `1`.
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #'
 #' @return
 #' `mass()` returns a `list` with the `distance_profile` and the `last_product` that is only useful for computing the
@@ -125,7 +127,12 @@ mass <- function(pre_obj, data, query = data, index = 1, version = c("v3", "v2")
       error = function(e) FALSE
     )
     if (isTRUE(is_child)) {
-      warning("Multithreaded MASS execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      warning(
+        "Forked process detected: reducing n_workers to 1. ",
+        "Inherited multithreaded library state may still be unsafe. ",
+        "Use a PSOCK cluster for parallel execution across processes.",
+        call. = FALSE
+      )
       n_workers <- 1L
     }
   }

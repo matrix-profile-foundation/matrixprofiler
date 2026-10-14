@@ -18,6 +18,28 @@ This package uses RcppThread for multithreaded computations. Thread counts
 can be controlled directly via the \code{n_workers} argument in each function.
 }
 
+\section{Parallel execution and forked processes}{
+\code{matrixprofiler} uses native threads for parallel computation. To parallelize
+a single computation, use the function's \code{n_workers} argument.
+
+Avoid calling package functions from fork-based workers, such as those created
+by \code{\link[parallel:mclapply]{parallel::mclapply()}}, particularly after multithreaded libraries have been
+initialized in the parent R session. Forked processes inherit library state
+that may cause deadlocks or crashes.
+
+Where fork detection is implemented, requesting multiple workers in a forked
+child triggers a warning and reduces \code{n_workers} to \code{1}. This precaution does
+not make fork-based execution safe, because it cannot undo inherited library
+state.
+
+To process multiple time series concurrently, prefer a PSOCK cluster, which
+starts independent R sessions (see \code{\link[parallel:makePSOCKcluster]{parallel::makePSOCKcluster()}}). Use
+\code{n_workers = 1} within each worker to avoid excessive thread creation.
+
+This limitation concerns the execution environment and applies to both STOMP
+and MPX; switching algorithms does not remove it.
+}
+
 \references{
 \itemize{
 \item Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All pairs similarity joins

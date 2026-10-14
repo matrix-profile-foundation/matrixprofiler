@@ -14,6 +14,28 @@
 #' This package uses RcppThread for multithreaded computations. Thread counts
 #' can be controlled directly via the `n_workers` argument in each function.
 #'
+#' # Parallel execution and forked processes
+#'
+#' `matrixprofiler` uses native threads for parallel computation. To parallelize
+#' a single computation, use the function's `n_workers` argument.
+#'
+#' Avoid calling package functions from fork-based workers, such as those created
+#' by [parallel::mclapply()], particularly after multithreaded libraries have been
+#' initialized in the parent R session. Forked processes inherit library state
+#' that may cause deadlocks or crashes.
+#'
+#' Where fork detection is implemented, requesting multiple workers in a forked
+#' child triggers a warning and reduces `n_workers` to `1`. This precaution does
+#' not make fork-based execution safe, because it cannot undo inherited library
+#' state.
+#'
+#' To process multiple time series concurrently, prefer a PSOCK cluster, which
+#' starts independent R sessions (see [parallel::makePSOCKcluster()]). Use
+#' `n_workers = 1` within each worker to avoid excessive thread creation.
+#'
+#' This limitation concerns the execution environment and applies to both STOMP
+#' and MPX; switching algorithms does not remove it.
+#'
 #' @references * Yeh CCM, Zhu Y, Ulanova L, Begum N, Ding Y, Dau HA, et al. Matrix profile I: All pairs similarity joins
 #'   for time series: A unifying view that includes motifs, discords and shapelets. Proc - IEEE Int Conf Data Mining,
 #'   ICDM. 2017;1317-22.

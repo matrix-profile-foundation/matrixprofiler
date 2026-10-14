@@ -152,7 +152,7 @@
     },
     "SystemRequirements": "GNU make"
   },
-  "fileSize": "56923.319KB",
+  "fileSize": "55730.745KB",
   "releaseNotes": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/NEWS.md",
   "readme": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/README.md",
   "contIntegration": "https://app.codecov.io/gh/matrix-profile-foundation/matrixprofiler",

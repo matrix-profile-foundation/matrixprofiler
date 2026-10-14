@@ -91,7 +91,9 @@ anytime approximation. At \code{1}, MPX computes every diagonal in monotone orde
 for performance; the completed result is exact, but an interrupted partial
 result can be less representative than a randomized partial run.}
 
-\item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.}
+\item{n_workers}{An integer. The number of threads using for computing. Defaults to \code{1}.
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 
 \item{progress}{A logical. If \code{TRUE} (the default) will show a progress bar. Useful for long computations. (See
 details)}
@@ -155,10 +157,9 @@ discovery, clustering etc.
 
 \code{progress}, it is really recommended to use it as feedback for long computations. It indeed adds some
 (neglectable) overhead, but the benefit of knowing that your computer is still computing is much bigger than the
-seconds you may lose in the final benchmark. About \code{n_workers}, for Windows systems, this package uses TBB for
-multithreading, and Linux and macOS, use TinyThread++. This may or not raise some issues in the future, so we must be
-aware of slower processing due to different mutexes implementations or even unexpected crashes. The Windows version
-is usually more reliable. The \code{data} and \code{query} parameters will be internally converted to a single vector using
+seconds you may lose in the final benchmark. Native multithreading uses RcppThread and is controlled by
+\code{n_workers}. See \link{matrixprofiler} for guidance on parallel execution across processes and fork limitations.
+The \code{data} and \code{query} parameters will be internally converted to a single vector using
 \code{as.numeric()}, thus, bear in mind that a multidimensional matrix may not work as you expect, but most 1-dimensional
 data types will work normally. If \code{query} is provided, expect the same pre-procesment done for \code{data}; in addition,
 \code{exclusion_zone} will be ignored and set to \code{0}. Both \code{data} and \code{query} doesn't need to have the same size and they

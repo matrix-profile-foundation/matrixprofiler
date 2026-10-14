@@ -21,6 +21,8 @@
 #'   to 5,000,000 rank-query cells. Defaults to `FALSE`.
 #' @param n_workers Number of native worker threads for the CPU backend.
 #'   Ignored when `backend = "cuda"`. Defaults to `1`.
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #' @param backend Computation backend: `"cpu"` (default) or `"cuda"`. The CUDA
 #'   backend is optional and requires a local build with CUDA enabled (see
 #'   `inst/cuda/build_cuda_rcpp.sh`).
@@ -140,7 +142,12 @@ rfcp <- function(positive_data, negative_data, window_size, max_freq,
       error = function(e) FALSE
     )
     if (isTRUE(is_child)) {
-      warning("Multithreaded RFCP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      warning(
+        "Forked process detected: reducing n_workers to 1. ",
+        "Inherited multithreaded library state may still be unsafe. ",
+        "Use a PSOCK cluster for parallel execution across processes.",
+        call. = FALSE
+      )
       n_workers <- 1L
     }
   }

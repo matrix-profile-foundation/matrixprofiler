@@ -55,7 +55,9 @@ of the current Plato. Defaults to \code{FALSE}.}
 Defaults to \code{2L}.}
 
 \item{n_workers}{Number of native worker threads for the CPU backend.
-Ignored when \code{backend = "cuda"}. Defaults to \code{1L}.}
+Ignored when \code{backend = "cuda"}. Defaults to \code{1L}.
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 
 \item{backend}{Computation backend: \code{"cpu"} (default) or \code{"cuda"}.}
 

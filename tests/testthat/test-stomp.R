@@ -73,7 +73,7 @@ test_that("STOMP warns and uses the serial path in a forked child", {
 
   expect_warning(
     child_result <- child_stomp(data, 50L, n_workers = 2L, progress = FALSE),
-    "will use 1 worker", fixed = TRUE
+    "Forked process detected: reducing n_workers to 1.", fixed = TRUE
   )
   expect_false(parallel_called)
   serial <- stomp(data, 50L, n_workers = 1L, progress = FALSE)

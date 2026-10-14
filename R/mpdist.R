@@ -9,6 +9,8 @@
 #' @param type the type of result: `"simple"` (default) returns a scalar distance, `"vector"` returns distance between all sliding windows.
 #' @param thr threshold for MPdist. (Default is `0.05`).
 #' @param n_workers an `int`. Number of threads for parallel computation. (Default is `1`).
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #'
 #' @return Returns the distance scalar (`"simple"`) or a numeric vector (`"vector"`).
 #' @export

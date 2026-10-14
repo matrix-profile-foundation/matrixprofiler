@@ -43,7 +43,12 @@ scrimp <- function(data, window_size, query = NULL, exclusion_zone = 0.5, s_size
       error = function(e) FALSE
     )
     if (isTRUE(is_child)) {
-      warning("Multithreaded SCIMP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      warning(
+        "Forked process detected: reducing n_workers to 1. ",
+        "Inherited multithreaded library state may still be unsafe. ",
+        "Use a PSOCK cluster for parallel execution across processes.",
+        call. = FALSE
+      )
       n_workers <- 1L
     }
   }

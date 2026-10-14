@@ -8,6 +8,8 @@
 #' @param must_dim an `int` or `vector` of which dimensions to forcibly include (default is `NULL`).
 #' @param exc_dim an `int` or `vector` of which dimensions to exclude (default is `NULL`).
 #' @param n_workers an `int`. Number of workers for parallel execution (default is `1`).
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #' @param progress a `logical`. If `TRUE` will show a progress bar. (Default is `TRUE`).
 #'
 #' @return Returns a `list` with the matrix profile `matrix_profile`, profile index `profile_index`,
@@ -89,7 +91,12 @@ mstomp <- function(data, window_size, exclusion_zone = 0.5, must_dim = NULL, exc
       error = function(e) FALSE
     )
     if (isTRUE(is_child)) {
-      warning("Multithreaded MSTOMP execution inside a forked process is unsafe and will use 1 worker to prevent crashes.", call. = FALSE)
+      warning(
+        "Forked process detected: reducing n_workers to 1. ",
+        "Inherited multithreaded library state may still be unsafe. ",
+        "Use a PSOCK cluster for parallel execution across processes.",
+        call. = FALSE
+      )
       n_workers <- 1L
     }
   }

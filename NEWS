@@ -2,6 +2,12 @@
 
 ## matrixprofiler 0.1.12
 
+-   **Parallel execution and fork**: Documented limitations of
+    fork-based workers with native threads, including STOMP and MPX.
+    Recommend PSOCK clusters with `n_workers = 1` per process for
+    parallel execution across series. Existing fork warnings now clarify
+    that reducing the thread count cannot undo inherited library state
+    and does not guarantee safe fork-based execution.
 -   **Native Multivariate STOMP (`mstomp`)**: Added native
     high-performance C++ engine (`mstomp_rcpp`) with multi-threading via
     `RcppThread`, properly sorting must/exclusion dimensions, and fixing

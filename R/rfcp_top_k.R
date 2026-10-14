@@ -27,6 +27,8 @@
 #'   Defaults to `2L`.
 #' @param n_workers Number of native worker threads for the CPU backend.
 #'   Ignored when `backend = "cuda"`. Defaults to `1L`.
+#'   For parallel execution across processes, prefer a PSOCK cluster and use
+#'   `n_workers = 1` within each worker. See [matrixprofiler] for fork limitations.
 #' @param backend Computation backend: `"cpu"` (default) or `"cuda"`.
 #' @param progress Logical progress flag for each RFCP iteration. Defaults to `FALSE`.
 #' @param query_block_size Optional integer query block size for chunked

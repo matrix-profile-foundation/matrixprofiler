@@ -25,7 +25,9 @@ mstomp(
 
 \item{exc_dim}{an \code{int} or \code{vector} of which dimensions to exclude (default is \code{NULL}).}
 
-\item{n_workers}{an \code{int}. Number of workers for parallel execution (default is \code{1}).}
+\item{n_workers}{an \code{int}. Number of workers for parallel execution (default is \code{1}).
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 
 \item{progress}{a \code{logical}. If \code{TRUE} will show a progress bar. (Default is \code{TRUE}).}
 }

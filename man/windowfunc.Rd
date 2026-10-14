@@ -103,7 +103,9 @@ over remaining finite values.
 \item{rcpp}{A \code{logical}. If \code{TRUE} will use the Rcpp implementation, otherwise will use the R implementation,
 that may or not be slower.}
 
-\item{n_workers}{An \code{integer}. The number of threads using for computing. Defaults to \code{1}.}
+\item{n_workers}{An \code{integer}. The number of threads using for computing. Defaults to \code{1}.
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 }
 \value{
 \code{mov_mean()} returns a \code{vector} with moving \code{avg}.

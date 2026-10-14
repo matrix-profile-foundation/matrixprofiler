@@ -24,7 +24,9 @@ mpdist(
 
 \item{thr}{threshold for MPdist. (Default is \code{0.05}).}
 
-\item{n_workers}{an \code{int}. Number of threads for parallel computation. (Default is \code{1}).}
+\item{n_workers}{an \code{int}. Number of threads for parallel computation. (Default is \code{1}).
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 }
 \value{
 Returns the distance scalar (\code{"simple"}) or a numeric vector (\code{"vector"}).

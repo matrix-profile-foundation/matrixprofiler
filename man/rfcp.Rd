@@ -42,7 +42,9 @@ matrices for the requested query block. This validation mode is limited
 to 5,000,000 rank-query cells. Defaults to \code{FALSE}.}
 
 \item{n_workers}{Number of native worker threads for the CPU backend.
-Ignored when \code{backend = "cuda"}. Defaults to \code{1}.}
+Ignored when \code{backend = "cuda"}. Defaults to \code{1}.
+For parallel execution across processes, prefer a PSOCK cluster and use
+\code{n_workers = 1} within each worker. See \link{matrixprofiler} for fork limitations.}
 
 \item{progress}{Logical progress flag. Reserved for native progress
 reporting; defaults to \code{TRUE}.}
