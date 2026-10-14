@@ -138,14 +138,14 @@ List mstomp_rcpp(const NumericMatrix data_ref, uint32_t window_size, double ez,
     n_workers = 1;
   }
 
-  uint64_t chunk_size = std::max<uint64_t>(1, (matrix_profile_size + n_workers - 1) / n_workers);
+  size_t chunk_size = std::max<size_t>(1, (matrix_profile_size + n_workers - 1) / n_workers);
   if (matrix_profile_size / chunk_size < n_workers) {
-    chunk_size = std::max<uint64_t>(1, matrix_profile_size / (n_workers * 2));
+    chunk_size = std::max<size_t>(1, matrix_profile_size / (n_workers * 2));
   }
 
   std::vector<std::pair<size_t, size_t>> chunks;
   for (size_t cur = 0; cur < matrix_profile_size; cur += chunk_size) {
-    size_t cur_end = std::min(cur + chunk_size, static_cast<size_t>(matrix_profile_size));
+    size_t cur_end = std::min<size_t>(cur + chunk_size, static_cast<size_t>(matrix_profile_size));
     chunks.emplace_back(cur, cur_end);
   }
 

@@ -12,16 +12,9 @@
 
 ## Test environments
 
-- rhub:
-  -  3 [VM] macos          R-* (any version)                     macos-13 on GitHub
-  -  9 [CT] clang-ubsan    R-devel (2025-11-30 r89082)           Ubuntu 22.04.5 LTS
-  - 10 [CT] clang16        R-devel (2025-11-29 r89077)           Ubuntu 22.04.5 LTS
-  - 16 [CT] gcc-asan       R-devel (2025-11-30 r89082)           Fedora Linux 40 (Container Image)
-  - 27 [CT] ubuntu-clang   R-devel (2025-11-30 r89082)           Ubuntu 22.04.5 LTS
-  - 30 [CT] ubuntu-release R-4.5.2 (2025-10-31)                  Ubuntu 24.04.3 LTS
-  - 31 [CT] valgrind       R-devel (2025-11-30 r89082)           Fedora Linux 38 (Container Image)
+- rhub: linux, windows, macos, clang-ubsan, valgrind
 
-- win-builder: devel, release, oldrel
+- win-builder: devel, release
 
 ## R CMD check results
 

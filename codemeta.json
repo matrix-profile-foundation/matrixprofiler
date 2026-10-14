@@ -4,6 +4,7 @@
   "identifier": "matrixprofiler",
   "description": "This is the core functions needed by the 'tsmp' package. The low level and carefully checked mathematical functions are here. These are implementations of the Matrix Profile concept that was created by CS-UCR <http://www.cs.ucr.edu/~eamonn/MatrixProfile.html>.",
   "name": "matrixprofiler: Matrix Profile for R",
+  "relatedLink": ["https://matrix-profile-foundation.github.io/matrixprofiler/", "https://CRAN.R-project.org/package=matrixprofiler"],
   "codeRepository": "https://github.com/matrix-profile-foundation/matrixprofiler",
   "issueTracker": "\n    https://github.com/matrix-profile-foundation/matrixprofiler/issues",
   "license": "https://spdx.org/licenses/GPL-3.0",
@@ -114,19 +115,6 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=testthat"
-    },
-    {
-      "@type": "SoftwareApplication",
-      "identifier": "xml2",
-      "name": "xml2",
-      "version": ">= 1.3.3",
-      "provider": {
-        "@id": "https://cran.r-project.org",
-        "@type": "Organization",
-        "name": "Comprehensive R Archive Network (CRAN)",
-        "url": "https://cran.r-project.org"
-      },
-      "sameAs": "https://CRAN.R-project.org/package=xml2"
     }
   ],
   "softwareRequirements": {
@@ -164,11 +152,10 @@
     },
     "SystemRequirements": "GNU make"
   },
-  "fileSize": "81109.042KB",
+  "fileSize": "56923.319KB",
   "releaseNotes": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/NEWS.md",
   "readme": "https://github.com/matrix-profile-foundation/matrixprofiler/blob/main/README.md",
   "contIntegration": "https://app.codecov.io/gh/matrix-profile-foundation/matrixprofiler",
   "developmentStatus": "https://lifecycle.r-lib.org/articles/stages.html",
-  "keywords": ["matrix-profile", "time-series", "r", "rcpp", "cran", "algorithm"],
-  "relatedLink": "https://CRAN.R-project.org/package=matrixprofiler"
+  "keywords": ["matrix-profile", "time-series", "r", "rcpp", "cran", "algorithm"]
 }
