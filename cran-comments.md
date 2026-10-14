@@ -12,7 +12,7 @@
 
 ## Test environments
 
-- rhub: linux, windows, macos, clang-ubsan, valgrind
+- rhub: linux-devel, windows-devel, macos-devel, clang-ubsan, valgrind
 
 - win-builder: devel, release
 

@@ -50,18 +50,34 @@ test_that("parallel STOMP returns left and right profiles", {
   )
 })
 
-test_that("parallel STOMP works safely inside forked processes (mclapply fork safety)", {
+test_that("STOMP warns and uses the serial path in a forked child", {
   skip_on_os("windows")
   set.seed(1004)
   data <- rnorm(400)
 
-  fork_results <- parallel::mclapply(1:2, function(i) {
-    stomp(data, 50L, n_workers = 2L, progress = FALSE)
-  }, mc.cores = 2L)
+  # Do not fork a test process that has already initialized native thread pools:
+  # the children inherit their allocations, but not their worker threads.
+  # Simulate child detection in a local copy without modifying any namespace.
+  child_stomp <- stomp
+  child_parallel <- list2env(list(isChild = function() TRUE), parent = baseenv())
+  parallel_called <- FALSE
+  environment(child_stomp) <- list2env(list(
+    asNamespace = function(ns) {
+      if (identical(ns, "parallel")) child_parallel else base::asNamespace(ns)
+    },
+    stomp_rcpp_parallel = function(...) {
+      parallel_called <<- TRUE
+      stop("A forked child must not start native workers")
+    }
+  ), parent = environment(stomp))
 
-  expect_false(any(vapply(fork_results, inherits, logical(1), "try-error")))
+  expect_warning(
+    child_result <- child_stomp(data, 50L, n_workers = 2L, progress = FALSE),
+    "will use 1 worker", fixed = TRUE
+  )
+  expect_false(parallel_called)
   serial <- stomp(data, 50L, n_workers = 1L, progress = FALSE)
-  expect_equal(fork_results[[1]]$matrix_profile, serial$matrix_profile, tolerance = 1e-10)
+  expect_equal(child_result, serial, tolerance = 1e-10)
 })
 
 test_that("STOMP directional profile indices are 1-based and use NA_integer_ for invalid matches", {
