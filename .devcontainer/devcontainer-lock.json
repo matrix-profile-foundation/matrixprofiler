@@ -15,10 +15,10 @@
       "resolved": "ghcr.io/rocker-org/devcontainer-features/pandoc@sha256:f748017491dfbc2962c32a5d34614ca25bef94cc76ecfb295f3566910926dead",
       "integrity": "sha256:f748017491dfbc2962c32a5d34614ca25bef94cc76ecfb295f3566910926dead"
     },
-    "ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
-      "version": "1.1.0",
-      "resolved": "ghcr.io/rocker-org/devcontainer-features/r-packages@sha256:1a4ec64c4d2060e78e9c812bd3b3622c7e008465d566a2781c0e2b17a82592e5",
-      "integrity": "sha256:1a4ec64c4d2060e78e9c812bd3b3622c7e008465d566a2781c0e2b17a82592e5"
+    "ghcr.io/rocker-org/devcontainer-features/r-packages:2": {
+      "version": "2.0.0",
+      "resolved": "ghcr.io/rocker-org/devcontainer-features/r-packages@sha256:906cedea6353cb8cc57f0133bb7b974051982218e21c961c0ff1ad01499fa355",
+      "integrity": "sha256:906cedea6353cb8cc57f0133bb7b974051982218e21c961c0ff1ad01499fa355"
     },
     "ghcr.io/rocker-org/devcontainer-features/renv-cache:0": {
       "version": "0.1.2",

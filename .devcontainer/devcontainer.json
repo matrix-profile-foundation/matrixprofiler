@@ -35,7 +35,7 @@
     //   "installTinyTex": true,
     //   "version": "latest"
     // },
-    "ghcr.io/rocker-org/devcontainer-features/r-packages:1": {
+    "ghcr.io/rocker-org/devcontainer-features/r-packages:2": {
       "packages": "jsonlite,pak,languageserver,conflicted,prompt,here,readr,covr,miniCRAN,httpgd",
       "installSystemRequirements": true
     },
